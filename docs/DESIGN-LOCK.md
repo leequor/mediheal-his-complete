@@ -1,0 +1,322 @@
+# DESIGN-LOCK.md — MediHeal HIS visual contract
+
+**Status:** authoritative for all future work.
+**Established:** 2026-11-17, from the live site `https://leequor.github.io/mediheal-his/` and the local `main` checkout at `fd5bf9f`.
+**Method:** every value below was read from the **rendered DOM** (`getComputedStyle` over all visible elements on all 20 pages) and cross-checked against the Figma measurements already recorded in `docs/START-HERE.md` §7 and `docs/IMPROVEMENT-PLAN.md` "Design format". Nothing here is invented.
+
+> The Figma file is the origin of truth. This document is the *derived* contract: it records what the
+> shipped site actually paints, so any change can be diffed against it. Where a value is an estimate,
+> it is marked `ESTIMATED` — matching the convention already used in the CSS comments.
+
+---
+
+## 1. The rule
+
+**The visual identity is locked.** Development improves behaviour, completeness, correctness and
+accessibility *underneath* this design. It does not redesign it.
+
+### Allowed
+- Fix misalignment, clipping, overflow, broken layout.
+- Fix rendering that demonstrably deviates from the recorded values below.
+- Add missing functionality using **existing** patterns and tokens.
+- Accessibility fixes that do not change the resting appearance (focus rings, ARIA, keyboard paths).
+- Responsive behaviour that preserves the visual language.
+
+### Forbidden
+- New colours, gradients, fonts, radii, shadows or spacing scales.
+- Replacing existing components with generic admin-template components.
+- Restyling a page "to look more modern".
+- Introducing a second design language for new features.
+- Silently "normalising" the known deviations in §9 — those need an owner decision.
+
+### When a decision is unresolved
+Preserve the **closest existing pattern**. Do not invent. Mark the value `ESTIMATED` and log it.
+
+---
+
+## 2. Layout skeleton
+
+| Element | Geometry | Source |
+|---|---|---|
+| Stage | `1440px` fixed width, `min-height:1120px`, centred, `position:relative` | `base.css` |
+| Header | `1440x83`, `position:absolute; top:0`, z-index 20 | Figma `header-bar 239:2978` |
+| Sidebar drawer | `430px` wide, full height, `position:fixed`, slides from left | Figma `Sidebar 211:1949` |
+| Page background | `#f6faff` + `background.jpg` marble, `center/cover`, `z-index:-1` | Figma frame fill |
+| Content origin | Stage-local coordinates equal Figma frame-local coordinates (header overlays y 0–83) | — |
+
+### Header slots (absolute, frame-local)
+| Slot | x | y | Size |
+|---|---|---|---|
+| Burger | 31 | 26 | 30x30 |
+| Logo | 61 | 9 | 111x77 (`object-fit:contain`) |
+| Brand text | 156 | 34 | Lexend 600 19/23.75 `#194182` |
+| Date | 983 | 33 | Inter 600 14/17 `#eef2f7` |
+| Bell | 1142 | 21 | 40x40 circle `#15405a`, badge 16px `#e0322c` |
+| Separator | 1206 | 25 | 1x32 `#2a6487` |
+| Profile | 1230 | 20 | h42, avatar 42px `#dff9ff`, name Inter 600 13, role Inter 500 10 uppercase |
+
+### Module-page content pattern (Consultation, Nursing, Treatment, Payroll, Personnel, Attendance, Pharmacy)
+- Page title: **Outfit 36px**, at `(68, 115)`, colour `--title`
+- Description: **Inter 14px**, at `(68, 166)`, colour `--muted`
+- Content lives in a **child wrapper** (`#prc`, `#pec`, `#tpc`, …) — never overwrite `#stage`
+- Cards: white, stroke `#c8dcea`, radius 12–16
+
+### Dashboard pattern (distinct)
+- Greeting: **Outfit 700 45/56.7**, at `(81, 105)`
+- KPI card: `336x160`, radius 12, border `#c8dcea`; icon tile `80x72` radius 24 `#dff0f8`/`#5b8db8`;
+  label Inter 500 16 `#5b8db8`; value Inter 700 30 `#1b4e6b`; delta Inter 600 15 `#5b8db8`
+
+### Sign-in pattern (distinct, `index.html`)
+- Frame `1440x1024` (height driven by `fit.js`, floor 780)
+- Left panel `721px`: `linear-gradient(90deg,#1b4e6b 1%,#3393c9 56.7%,#fafeff 100%)`
+- Headline: Lexend 700 40/50 white at `(57, 287)`, width 506
+- Sub: Lexend 400 18/22.5 white at `(57, 405)`, width 432
+- Right column x `820`, width `422`
+- Title: **Outfit 700 36/45.36** `#0f172a` at `(820, 298)`
+- Sub: Inter 400 16/19.36 `#6f8890` at `(820, 357)`
+- Input: `422x41`, radius 10, border `#8e8e8e`, Inter 400 16
+- Button: `422x46`, radius 10, bg `#0f172a`, text `#d6f4fc`, Inter 700 20, at `(820, 680)`
+
+---
+
+## 3. Colour tokens (measured)
+
+Canonical values from `assets/css/tokens.css`:
+
+| Token | Value | Role |
+|---|---|---|
+| `--bg` | `#f6faff` | Page background |
+| `--card` | `#ffffff` | Card / surface |
+| `--line` | `#c8dcea` | Card border |
+| `--row-line` | `#e3edf3` | Table row divider |
+| `--title` | `#15405a` | Page title |
+| `--section` | `#1b4e6b` | Section heading / dark accent |
+| `--muted` | `#6f8890` | Secondary text |
+| `--body` | `#1c2b30` | Body text |
+| `--primary` | `#1c6d9c` | Primary action |
+| `--navy` | `#15254c` | Sign-out / deep surface |
+| `--scrim` | `rgba(11,42,61,.35)` | Modal scrim |
+| `--shadow` | `0 4px 14px rgba(0,0,0,.15)` | Card shadow |
+| `--header-grad` | `linear-gradient(90deg,#dff9ff 0%,#3393c9 65.9%,#1b4e6b 100%)` | Header |
+| `--ok-bg` / `--ok-fg` | `#d8ffd3` / `#084d02` | Positive status |
+| `--in-bg` / `--in-fg` | `#ffcba3` / `#a6460a` | In-progress status |
+| `--off-bg` / `--off-fg` | `rgba(28,43,48,.16)` / `#1c2b30` | Neutral status |
+| `--red-bg` / `--red-fg` | `#ffd6d3` / `#9b1c14` | Critical status |
+
+Additional measured, in-use values not yet tokenised:
+
+| Value | Role | Where |
+|---|---|---|
+| `#5b8db8` | Table head / KPI accent / meta text | dashboard, billing, registration |
+| `#e8f4fb` | Highlight / hover wash | global |
+| `#dff0f8` | Icon tile background | KPI cards |
+| `#e3edf3` | Divider | tables |
+| `#8a97a6`, `#aab4bf`, `#8aa4b6` | Tertiary muted text | tables, footers |
+| `#1c506e` → `#5b8db8` | Sidebar gradient (`180deg`, 57% stop) | `.drawer` |
+| `#194182` | Header brand text | `.hd .brand` |
+| `#e0322c` | Notification badge | `.bell b` |
+| `#3a8017` | Schedule timeline dot | dashboard |
+
+### Frequency check (all 20 pages, visible elements)
+`rgba(0,0,0,0)` 3778 · `rgb(28,43,48)` 1067 · `rgb(228,242,246)` 954 · `rgb(255,255,255)` 558 ·
+`rgb(28,109,156)` 375 · `rgb(111,136,144)` 347 · `rgb(14,42,63)` 226 · `rgb(21,64,90)` 167 ·
+`rgb(27,78,107)` 140 · `rgb(91,141,184)` 133
+
+The core token set dominates. The exceptions are listed in §9.
+
+---
+
+## 4. Typography
+
+Three families, three jobs. Do not introduce a fourth.
+
+| Family | Role | Weights used |
+|---|---|---|
+| **Outfit** | Page titles only | 700 |
+| **Lexend** | Section headings, sidebar nav, badges, card titles | 300, 400, 500, 600, 700 |
+| **Inter** | Body, tables, labels, buttons, inputs, meta | 400, 500, 600, 700 |
+
+### Measured type scale (by instance count)
+| Family | Size | Weight | Line-height | Count | Typical use |
+|---|---|---|---|---|---|
+| Inter | 14 | 400 | 18.2 | 1107 | Body / table cell |
+| Lexend | 23.4 | 500 | 29.25 | 846 | Card heading |
+| Inter | 11 | 400 | 13.31 | 323 | Meta under name |
+| Inter | 12 | 600 | 14.52 | 150 | Label |
+| Inter | 13 | 600 | 15.73 | 131 | Label / pill |
+| Inter | 13.5 | 400 | 16.34 | 113 | Table secondary |
+| Inter | 13 | 500 | 18.2 | 108 | Meta |
+| Inter | 12 | 400 | 14.52 | 99 | Helper |
+| Inter | 14 | 600 | 17 | 90 | Button |
+| Inter | 13 | 600 | 17.55 | 90 | Table head |
+| Inter | 16 | 700 | 20 | 40 | Emphasis |
+| Inter | 11.5 | 600 | 23.6 | 40 | Compact chip |
+
+Documented anchors:
+- Page title **Outfit 36** at `(68,115)`; dashboard greeting **Outfit 700 45**.
+- Section heading **Lexend 500 20/25** (`#000` on cards, `#1b4e6b` in modals).
+- Modal title **Lexend 500 18/22.5** `#1b4e6b`; subtitle Inter 12 `#6f8890`.
+- Label **Inter 600 12** `#1b4e6b`; body **Inter 13** `#1c2b30`.
+- Badge **Lexend 700 12**.
+
+---
+
+## 5. Radii, borders, shadows
+
+| Token | Value | Use |
+|---|---|---|
+| Radius | `8px` | Inputs, small buttons, dropdown items |
+| Radius | `10px` | Buttons, dropdown shell, checkbox |
+| Radius | `12px` | KPI cards, tables |
+| Radius | `14px` | Large cards, generic modal |
+| Radius | `16px` | Panels, drawers |
+| Radius | `999px` | Status pills, avatars |
+| Border | `1px solid #c8dcea` | Card outline |
+| Border | `1px solid #e3edf3` | Row divider |
+| Border | `1px solid rgba(0,0,0,.3)` | Dropdown shell (Figma) |
+| Shadow (card) | `0 4px 14px rgba(0,0,0,.15)` | `--shadow` |
+| Shadow (inset ring) | `inset 0 0 0 1px #c8dcea` | Cards drawn with box-shadow |
+| Shadow (elevated) | `0 4px 16px rgba(27,78,107,.06)` | Panels |
+| Shadow (modal) | `0 20px 50px rgba(15,30,46,.25)` | `ESTIMATED` — Figma does not expose it |
+
+---
+
+## 6. Components
+
+### Status badge — `.badge` (Figma `mh-badge`)
+`inline-flex`, height `30px`, `min-width:93px`, padding `0 14px`, radius `999px`,
+**Lexend 700 12/15**. Variants: `.ok` `.in` `.off` `.red` (§3 colours).
+**Always pair colour with a text label** — colour alone is not the signal.
+
+### Dropdown — `.dd` (Figma dropdown frames)
+Shell `236x45`, items `38px` high, radius `10px`, border `rgba(0,0,0,.3)`, Inter 500 14.
+`.dd.light` variant is the neutral/slate form (see §9).
+
+### Modal — `.modal` / `.modal-bg`
+Scrim `rgba(11,42,61,.35)`, card `460px` radius 14, padding 24, `--shadow`.
+Actions right-aligned, gap 10. `.mbtn` height 40 radius 10; `.mbtn.out` is the outline variant.
+
+### Figma action-modal geometry (`HIS.kit.GEOM`) — use this for new modals
+- Modal `680` wide, left edge `380`
+- Shells: **664** (banner 366, textarea 484, buttons 600), **568** (textarea 388, buttons 504), **368** (textarea 388, buttons 300)
+- Label rows y `120 / 202 / 284 / 366` → inputs y `142 / 224 / 306 / 388`
+- Columns: left `32`, right `348`; widths `300` / `616`
+- Buttons: Cancel `100 @396`, OK `140 @508`
+
+### Toast — `.kit-toast`
+Fixed, centred, bottom 32, `#15405a`, radius 10, `role="status"`, `aria-live="polite"`.
+
+### Table
+Header row: Inter 600 13 `#5b8db8` (or `#64748b` on Appointments — §9). Row divider `#e3edf3`,
+row height `90–94px`. Cell primary Inter 700/600 14 `#1c2b30`; secondary Inter 400 11 `#6f8890`.
+
+---
+
+## 7. Page inventory (20 pages)
+
+| Page | Baseline file | Body height @1440 | Notes |
+|---|---|---|---|
+| `index.html` | `baseline__index__1440.png` | 900 | Sign-in, 2-column |
+| `dashboard.html` | `baseline__dashboard__1440.png` | 1120 | Greeting + 4 KPI + 2 panels |
+| `registration.html` | `baseline__registration__1440.png` | 1120 | Stats + table |
+| `registration-form.html` | `baseline__registration-form__1440.png` | 2789 | Long form |
+| `appointments.html` | `baseline__appointments__1440.png` | 1120 | §9 palette |
+| `appointment-form.html` | `baseline__appointment-form__1440.png` | 1120 | Form |
+| `appointment-confirmed.html` | `baseline__appointment-confirmed__1440.png` | 1120 | Confirmation |
+| `outpatient-form.html` | `baseline__outpatient-form__1440.png` | 2676 | Long form |
+| `profile.html` | `baseline__profile__1440.png` | 1332 | §9 palette |
+| `departments.html` | `baseline__departments__1440.png` | 1420 | List + details |
+| `consultation.html` | `baseline__consultation__1440.png` | 1262 | Module |
+| `treatment.html` | `baseline__treatment__1440.png` | 1262 | Module |
+| `nursing.html` | `baseline__nursing__1440.png` | 1262 | Module |
+| `billing.html` | `baseline__billing__1440.png` | 1120 | KPI + list + invoice |
+| `payroll.html` | `baseline__payroll__1440.png` | 1345 | Module |
+| `personnel.html` | `baseline__personnel__1440.png` | 1262 | Module |
+| `attendance.html` | `baseline__attendance__1440.png` | 1635 | Module |
+| `portal.html` | `baseline__portal__1440.png` | 900 | Patient portal (addition) |
+| `pharmacy.html` | `baseline__pharmacy__1440.png` | 1262 | Redirects to `treatment.html?modal=pharmacy` |
+| `staff.html` | `baseline__staff__1440.png` | 1262 | Redirects to `personnel.html` |
+
+All 20 render with **0 console errors** at 1440px and **0 horizontal overflow**.
+Baseline set: `qa/baseline/` (workspace, not committed — 9 MB). Regenerate with `qa/capture.mjs`.
+
+---
+
+## 8. Responsive behaviour (current, as-found)
+
+`assets/js/fit.js` scales the fixed 1440px stage with CSS `zoom = viewportWidth / 1440`
+(no effect at ≥1440px; `?fit=0` disables it). The drawer is additionally zoomed when the window is
+narrower than 430px, and a fixed 44px menu button appears below `0.7` scale.
+
+**Consequence:** at 390px the effective scale is `0.27`, so 14px body text renders at ~3.8px.
+This is not a real mobile layout — it is a scaled-down desktop. Recorded in §9 as a known gap;
+the improvement plan already flags it as blocked on mobile Figma frames.
+
+---
+
+## 9. Known deviations — recorded, NOT auto-fixed
+
+These are real inconsistencies found by measurement. They are **documented, not silently changed**,
+because the Figma file is not reachable from this environment and a unilateral restyle would violate
+the design lock. Each needs an owner decision.
+
+### 9.1 Appointments uses a second palette (Tailwind slate/emerald set)
+`assets/css/pages.css` (`Appointments` block) and `assets/css/components.css` `.dd.light`:
+
+| Appointments value | Core token equivalent | Delta |
+|---|---|---|
+| `#1e293b` text | `#1c2b30` | Δ ~6 RGB |
+| `#64748b` muted | `#6f8890` | Δ ~10 RGB |
+| `#e2e8f0` border | `#c8dcea` | visible |
+| `#f8fafc` table head | `#e8f4fb` | visible |
+| `#f1f5f9` hover | `#e8f4fb` | visible |
+| `#94a3b8` placeholder | `#8a97a6` | Δ ~6 RGB |
+| `.a-pill` `#e6fdf4`/`#10b981`, `#dbeafe`/`#3b82f6`, `#fee2e2`/`#ef4444`, `#fef3c7`/`#f59e0b` | `.badge` `.ok` `.in` `.red` `.off` | **different component**: 24px vs 30px tall, Inter 13 vs Lexend 12, saturated vs pastel |
+
+**Impact:** the Appointments status pills look materially different from every other page's badges.
+**Recommendation:** confirm against Figma `23:2289`. If the Figma frame uses `mh-badge`, migrate
+`.a-pill` → `.badge`. Do not do this blind.
+
+### 9.2 Profile uses a third palette
+`assets/css/profile.css`: `#1f2937` text, `#e6e9ee` borders, plus fractional type sizes
+(`17.744px`, `12.525px`, `8.35px` radius) that suggest a differently-scaled Figma export.
+**Impact:** low (colours are visually close); the fractional sizes are the real smell.
+**Recommendation:** confirm the export scale before touching.
+
+### 9.3 Sign-in dark values
+`#0f172a` for the sign-in title and button background, where `--navy` is `#15254c`.
+**Impact:** low. Both read as deep navy. Recorded for completeness.
+
+### 9.4 Scale-based responsiveness
+See §8. Text below ~11px effective size at 390px. Blocked on mobile Figma frames.
+
+### 9.5 Deliberate estimates already logged in code
+`#4f9a2b` (active dot, `personnel.css` / `treatment.css`), modal shadow, hover colours,
+`Inactive` badge colours. These are **known ESTIMATED** values, not drift — leave them.
+
+---
+
+## 10. Adding a new screen or state
+
+1. Reuse the tokens in §3 and the type scale in §4. No new values.
+2. Reuse a shell: module-page pattern (§2) or action modal (§6).
+3. Keep the stage-local coordinate system; the header overlays `y 0–83`.
+4. Put page content in a child wrapper, never replace `#stage`.
+5. Flag every addition in code: `// Addition (not in Figma) - <reason>`.
+6. Log it in the session addendum with the geometry used.
+7. Verify: 0 console errors, no overflow at 1440/1200/1000/800/390, and a visual diff against
+   the baseline that shows **only the intended region changed**.
+
+---
+
+## 11. Verification contract
+
+Any change ships only when all of these hold:
+
+- [ ] `qa/capture.mjs` → 0 console errors on all pages.
+- [ ] No horizontal overflow at 1440, 1200, 1000, 800, 390.
+- [ ] Visual diff vs `qa/baseline/` shows changes confined to the intended pages/regions.
+- [ ] Existing flows still pass (sign-in, registration, appointment, billing, payroll sync).
+- [ ] No new `mh_*` keys left behind by tests.
+- [ ] Keyboard: every new control reachable, Escape closes overlays, focus returns to trigger.
+- [ ] Colour is never the only carrier of meaning.
