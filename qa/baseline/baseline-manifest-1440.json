@@ -2,8 +2,8 @@
   "appointment-confirmed": {
     "width": 1440,
     "height": 1120,
-    "bytes": 631182,
-    "sha256": "d2424cf0f73aa0154d3e9cf0047c7bed4dd5d7b8efa910fa3989de64210b0a44"
+    "bytes": 631201,
+    "sha256": "9e4d63f5a3bd26cada6a03d9078f6f72de3d249bd277e4f604643b96cc2a3b53"
   },
   "appointment-form": {
     "width": 1440,
@@ -22,6 +22,12 @@
     "height": 1635,
     "bytes": 477756,
     "sha256": "044906bb4ee9e575d8e11574871b25d05a343e3efdf5712608ff3e834f56e70e"
+  },
+  "audit": {
+    "width": 1440,
+    "height": 1120,
+    "bytes": 572256,
+    "sha256": "9c696412fedc53a70b995c57a17cf39f11b49f4ff3b313b41827c9394a8cf493"
   },
   "billing": {
     "width": 1440,
@@ -92,8 +98,8 @@
   "profile": {
     "width": 1440,
     "height": 1332,
-    "bytes": 458083,
-    "sha256": "1e92af1b4f3bfebc690702b73e679f1ed2ac1dcb080ff6c63c38bbc33592878f"
+    "bytes": 458084,
+    "sha256": "70133434814c83d76ffb02663e8fd396ba2f5bd8ce2c3af6d061ed81be284ac3"
   },
   "registration-form": {
     "width": 1440,
@@ -107,11 +113,17 @@
     "bytes": 383686,
     "sha256": "a9a1f458fc53a1c7561a6402417ad36d9b13bf948a8b02c360ac247ae89af010"
   },
+  "reports": {
+    "width": 1440,
+    "height": 1120,
+    "bytes": 403499,
+    "sha256": "cbf965f9aad697218067dd367f587e0a0ef09b1dc32e919c67b002033d99d99d"
+  },
   "staff": {
     "width": 1440,
     "height": 1262,
-    "bytes": 430369,
-    "sha256": "f65e96d18c6096539955aacb4c5af43cd14ef959b6f0a806079e72e96ded426e"
+    "bytes": 436732,
+    "sha256": "08691ad0cc634d2ad3af1e11181f2a37c2dff2b526a0b614126b13527c5e7e96"
   },
   "treatment": {
     "width": 1440,

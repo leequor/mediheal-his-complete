@@ -22,9 +22,10 @@
       scope: 'Full system access, configuration, audit log and every clinical and financial screen.',
       pages: ['dashboard', 'registration', 'registration-form', 'outpatient-form', 'profile',
         'appointments', 'appointment-form', 'appointment-confirmed', 'consultation', 'treatment',
-        'nursing', 'pharmacy', 'attendance', 'personnel', 'payroll', 'departments', 'billing'],
+        'nursing', 'pharmacy', 'attendance', 'personnel', 'payroll', 'departments', 'billing',
+        'reports', 'audit'],
       nav: ['dashboard', 'registration', 'appointments', 'consultation', 'treatment', 'nursing',
-        'pharmacy', 'attendance', 'personnel', 'payroll', 'departments', 'billing'],
+        'pharmacy', 'attendance', 'personnel', 'payroll', 'departments', 'billing', 'reports', 'audit'],
       home: 'dashboard'
     },
     hospitaladmin: {
@@ -32,9 +33,10 @@
       person: { name: 'Atty. Ramon Silva', title: 'Hospital Administrator' },
       scope: 'Operational oversight: admissions, occupancy, staffing, department performance and financial summaries.',
       pages: ['dashboard', 'registration', 'profile', 'appointments', 'consultation', 'treatment',
-        'nursing', 'pharmacy', 'attendance', 'personnel', 'payroll', 'departments', 'billing'],
+        'nursing', 'pharmacy', 'attendance', 'personnel', 'payroll', 'departments', 'billing',
+        'reports', 'audit'],
       nav: ['dashboard', 'registration', 'appointments', 'consultation', 'treatment', 'nursing',
-        'pharmacy', 'attendance', 'personnel', 'payroll', 'departments', 'billing'],
+        'pharmacy', 'attendance', 'personnel', 'payroll', 'departments', 'billing', 'reports', 'audit'],
       home: 'dashboard'
     },
     receptionist: {
@@ -99,8 +101,8 @@
       label: 'Finance / Accounting', short: 'Finance',
       person: { name: 'Rowena Lim', title: 'Finance Officer' },
       scope: 'Collections, revenue, reconciliation, payer mix and financial reporting.',
-      pages: ['dashboard', 'billing'],
-      nav: ['dashboard', 'billing'],
+      pages: ['dashboard', 'billing', 'reports'],
+      nav: ['dashboard', 'billing', 'reports'],
       home: 'billing'
     },
     hr: {
@@ -123,9 +125,9 @@
       label: 'Auditor / Compliance', short: 'Auditor',
       person: { name: 'Ferdinand Yap', title: 'Compliance Auditor' },
       scope: 'Read-only access to the audit trail, payment history, payroll changes and administrative activity.',
-      pages: ['dashboard', 'billing', 'payroll', 'profile'],
-      nav: ['dashboard', 'billing', 'payroll'],
-      home: 'dashboard'
+      pages: ['dashboard', 'billing', 'payroll', 'profile', 'audit', 'reports'],
+      nav: ['dashboard', 'billing', 'payroll', 'audit', 'reports'],
+      home: 'audit'
     },
     patient: {
       label: 'Patient / Guardian', short: 'Patient',
@@ -148,7 +150,9 @@
     ['personnel', 'Personnel', 'id'],
     ['payroll', 'Payroll', 'peso'],
     ['departments', 'Departments', 'branches'],
-    ['billing', 'Billing', 'receipt']
+    ['billing', 'Billing', 'receipt'],
+    ['reports', 'Reports', 'chart'],
+    ['audit', 'Audit log', 'shield']
   ];
 
   function key() {

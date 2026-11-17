@@ -114,3 +114,92 @@ element, size or position changes.
 Role-tailored dashboard content, then the audit-log viewer and reports pages (both currently listed as
 "blocked on new Figma frames" in `IMPROVEMENT-PLAN.md` — they can be built as additions in the design
 format).
+
+---
+
+## M2 — Audit log + Reports POVs
+
+### What was done
+
+Two screens that `IMPROVEMENT-PLAN.md` listed as "blocked on new Figma frames", built instead as
+additions in the design format (`DESIGN-LOCK.md` §2 module-page pattern + §10 addition rules).
+Both are flagged `Addition (not in Figma)` in the HTML and in the module header.
+
+1. **`audit.html` + `assets/js/audit-page.js`** — read-only viewer over `HIS.audit` (`mh_audit`),
+   newest first. Columns: `# · When · Who · Role · Action · Change (before → after)`.
+   - Times rendered in **Asia/Manila** (`en-PH`, `timeZone:'Asia/Manila'`).
+   - Live search across who/role/action/entity, plus an activity-type filter
+     (role / billing / payroll / registration / clinical / other) derived from the entry text.
+   - **Export CSV** builds a real Blob download of the current filtered set.
+   - **Clear demo log** appears only for the Super Administrator role — the first place the RBAC
+     layer gates an *action* rather than a page. It goes through the shared confirm modal.
+   - Empty state explains how entries are created instead of showing a blank table.
+   - A footer note states plainly that the log is local, not tamper-evident, not server-side and not
+     a compliance trail.
+2. **`reports.html` + `assets/js/reports.js`** — billing and collection summary.
+   - **Every figure is derived** from `assets/js/data-billing.js`; nothing is hardcoded. Total billed
+     ₱160,860 · collected ₱100,700 · outstanding ₱60,160 · 63% collection rate · average ₱40,215.
+   - Per-invoice table with billed / collected / balance / derived status, plus a by-invoice-type
+     breakdown (Inpatient 2 invoices 93%, Outpatient 2 invoices 7%).
+   - Status is **derived** from `paid` vs `amount`, never read from a stored field, so it cannot
+     drift from the money.
+   - The page states its scope explicitly and explains why it does **not** reuse the Billing screen's
+     KPI cards (see the discrepancy below).
+3. **`assets/css/admin-pages.css`** — shared styles for both. Every value is an existing token or a
+   measured in-use value; no new colours, fonts or type sizes.
+4. **`rbac.js`** — `reports` and `audit` added to the nav model; granted to Super Admin,
+   Hospital Administrator, Finance (reports) and Auditor (both). Auditor's home is now the audit log.
+5. **`icons.js`** — added `chart` and `shield` glyphs in the existing 24px stroke style.
+
+### Verified
+
+- **Reports arithmetic** checked by hand against the ledger: 17,360 + 4,200 + 86,500 + 52,800 =
+  160,860 billed; 10,000 + 4,200 + 86,500 + 0 = 100,700 collected; 60,160 outstanding; 63% rate;
+  Inpatient 103,860/96,500/7,360 = 93%; Outpatient 57,000/4,200/52,800 = 7%. All correct on screen.
+- **Audit filters**: 3 seeded test entries → type filter `payroll` returns 1 row; search `aileen`
+  returns 1 row; count reads `1 of 3 entries`. Newest-first ordering correct (seq 3, 2, 1).
+- **Null `before`** renders as `— → PT-99214` rather than "null".
+- **Action gating**: `Clear demo log` absent for Auditor, present for Super Administrator.
+- **Role flow**: switching to Auditor from Reports lands on `audit.html` (home redirect) and the
+  switch itself appears as the first audit entry with correct before/after keys.
+- **Responsive**: 22 pages × 5 widths (1440/1200/1000/800/390) = 110 loads, **0 console errors,
+  0 horizontal overflow**. At 1000px the KPI strip reflows to 2 columns and the tables stay readable.
+- **Visual regression**: re-baselined to 22 pages; `--check` then reports **0.000% on all 22**.
+- Test entries and role key removed from the browser afterwards.
+
+### Bug found and fixed during this milestone
+
+`reports.js` rendered a literal `Same ' + bills.length + ' invoices` in the second card header — a
+string built with the wrong quote type. Caught by screenshot inspection, fixed, re-verified.
+Recorded here rather than silently corrected because the milestone log should show what inspection
+actually caught.
+
+### Data-integrity finding (documented, not changed)
+
+The **Billing** page's four KPI cards show ₱482K billed / ₱395K collected / ₱87K outstanding (Figma
+values, whole month), while its own table lists four invoices totalling ₱160,860. Both cannot
+describe the same set. Reports states its scope as the four-invoice ledger and does not reuse those
+cards. Reconciling the two bases is Phase 6.1 of `IMPROVEMENT-PLAN.md` ("one money chain") and needs
+an owner decision on whether the KPI cards should become derived values — changing them would move
+pixels on a Figma-locked screen.
+
+### NOT done in M2 — stated plainly
+
+- No PhilHealth, HMO or discount breakdown report; those amounts exist per invoice but are not
+  modelled as their own ledger.
+- No period selector; Reports covers the whole demo ledger only.
+- No payroll reconciliation report.
+- Audit entries are not cryptographically chained or tamper-evident.
+
+---
+
+## Verification summary for the branch
+
+| Milestone | Visual | Functional | Responsive | Console |
+|---|---|---|---|---|
+| M0 | baseline captured, deterministic (0.000% twice) | n/a — no code changed | 20 × 1440 | 0 errors |
+| M1 | 0.000% on all 20 pages | role switch, guard, audit, nav all exercised | 20 × 5 widths, 0 overflow | 0 errors |
+| M2 | 0.000% on all 22 pages | reports arithmetic, audit filters, CSV, action gating | 22 × 5 widths, 0 overflow | 0 errors |
+
+`main` was never modified. All work is on `dev/autonomous-milestones`; nothing was merged or pushed
+to `main`, so the live site at `https://leequor.github.io/mediheal-his/` still serves `fd5bf9f`.
