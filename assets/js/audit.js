@@ -14,11 +14,14 @@
   function append(e) {
     e = e || {};
     var rows = list();
+    // Identity follows the active demo role when rbac.js is loaded; HIS.user is the fallback.
+    var who = window.HIS && HIS.rbac ? HIS.rbac.person().name : (window.HIS && HIS.user ? HIS.user.name : 'unknown');
+    var role = window.HIS && HIS.rbac ? HIS.rbac.current().label : (window.HIS && HIS.user ? HIS.user.role : '');
     var row = {
       seq: nextSeq(rows),
       at: e.at || new Date().toISOString(),
-      who: e.who || (window.HIS && HIS.user ? HIS.user.name : 'unknown'),
-      role: e.role || (window.HIS && HIS.user ? HIS.user.role : ''),
+      who: e.who || who,
+      role: e.role || role,
       what: e.what || '',
       entity: e.entity || '',
       before: e.before === undefined ? null : e.before,
