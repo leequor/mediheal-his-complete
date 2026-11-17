@@ -96,7 +96,10 @@ for (const name of pages) {
         }
         // touch targets: interactive elements
         if (/^(BUTTON|A|INPUT|SELECT|TEXTAREA)$/.test(el.tagName) || el.getAttribute('role') === 'button') {
-          if (r.width < 32 || r.height < 32) tinyTargets.push({ t: (el.textContent || el.tagName).trim().slice(0, 22), w: Math.round(r.width), h: Math.round(r.height) });
+          let box = r;
+          const lab = el.closest('label');
+          if (lab && (el.type === 'checkbox' || el.type === 'radio')) box = lab.getBoundingClientRect();
+          if (box.width < 32 || box.height < 32) tinyTargets.push({ t: (el.textContent || el.tagName).trim().slice(0, 22), w: Math.round(box.width), h: Math.round(box.height) });
         }
       });
       sizes.sort((a, b) => a - b);
@@ -110,6 +113,9 @@ for (const name of pages) {
         tinyTargets: tinyTargets.length,
         tinySample: tinyTargets.slice(0, 3),
         overflow: document.documentElement.scrollWidth > document.documentElement.clientWidth + 1,
+        // The stage itself scrolling horizontally means the page is still using the interim
+        // fixed-width workaround rather than a real reflow.
+        stageScroll: (() => { const st = document.querySelector('.stage'); return st ? st.scrollWidth > st.clientWidth + 1 : false; })(),
         errors: 0
       };
     }, [BODY_MIN, SMALL_MIN]);
@@ -124,8 +130,8 @@ for (const name of pages) {
     // 1440px is the locked Figma desktop: its 11px labels are design, not a defect, so the
     // readability floor is only enforced below 1440. Overflow and errors always fail.
     const readabilityBad = w < 1440 && m.belowSmall > 0;
-    const flag = readabilityBad || m.overflow || m.errors ? 'FAIL' : 'ok  ';
-    console.log(`${flag} ${slug.padEnd(22)} @${String(w).padEnd(5)} min:${String(m.min).padStart(5)} p10:${String(m.p10).padStart(5)} med:${String(m.median).padStart(5)} <12px:${String(m.belowSmall).padStart(4)} tinyTargets:${String(m.tinyTargets).padStart(3)}${m.overflow ? ' OVERFLOW' : ''}${m.errors ? ' ERR' : ''}`);
+    const flag = readabilityBad || m.overflow || m.stageScroll || m.errors ? 'FAIL' : 'ok  ';
+    console.log(`${flag} ${slug.padEnd(22)} @${String(w).padEnd(5)} min:${String(m.min).padStart(5)} p10:${String(m.p10).padStart(5)} med:${String(m.median).padStart(5)} <12px:${String(m.belowSmall).padStart(4)} tinyTargets:${String(m.tinyTargets).padStart(3)}${m.overflow ? ' OVERFLOW' : ''}${m.stageScroll ? ' STAGE-SCROLL' : ''}${m.errors ? ' ERR' : ''}`);
     if (m.belowSmall && w === 390) console.log(`     e.g. ${m.belowSmallSample.map(s => s.px + 'px "' + s.t + '"').join(' | ')}`);
     await page.close();
   }

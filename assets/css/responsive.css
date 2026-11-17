@@ -410,3 +410,429 @@
   .ac-av { width: 34px !important; height: 34px !important; }
 }
 @media (max-width: 1439px) { .at-fl, .at-lp { font-size: 12px !important; line-height: 16px !important; } }
+
+/* ============================================================================
+   BILLING (assets/css/billing.css) — .bl-* fixed 1440px coordinates
+   The inner blocks (.bl-tb, .bl-tot, .bl-tr) are already flow/relative, so only
+   the outer column positions need neutralising.
+   ============================================================================ */
+@media (max-width: 1439px) {
+  .bl, .stage.bl { height: auto !important; min-height: 0 !important; }
+  .bl > * { position: static !important; }
+  .bl-title { margin: 20px 0 0 !important; font-size: 26px !important; line-height: 32px !important; white-space: normal !important; }
+  .bl-sub { margin: 4px 0 16px !important; font-size: 13px !important; line-height: 18px !important; white-space: normal !important; }
+
+  .bl-search { position: relative !important; width: 100% !important; height: 44px !important; margin: 0 0 16px !important; box-sizing: border-box; }
+  .bl-search svg { position: absolute !important; left: 14px !important; top: 13px !important; }
+  .bl-search input { position: absolute !important; left: 42px !important; top: 12px !important; width: calc(100% - 58px) !important; height: 20px !important; }
+
+  /* four stat cards stack; they keep the white card, radius and shadow */
+  .bl-stat { position: static !important; width: auto !important; height: auto !important; padding: 14px 16px !important; margin: 0 0 12px !important; display: block !important; }
+  .bl-stat > * { position: static !important; left: auto !important; top: auto !important; white-space: normal !important; }
+  .bl-stat .l { font-size: 13px !important; line-height: 17px !important; }
+  .bl-stat .n { margin-top: 4px !important; font-size: 24px !important; line-height: 29px !important; }
+
+  .bl-lab { position: static !important; margin: 18px 0 8px !important; font-size: 12px !important; }
+  .bl-tab { position: static !important; display: inline-block !important; height: 36px !important; padding: 0 16px !important; margin: 0 8px 8px 0 !important; line-height: 36px !important; }
+  .bl-flt { position: static !important; display: block !important; width: 100% !important; height: 42px !important; margin: 0 0 10px !important; line-height: 42px !important; box-sizing: border-box; }
+
+  .bl-row { position: static !important; width: auto !important; height: auto !important; padding: 12px 16px !important; margin: 0 0 10px !important; display: block !important; }
+  .bl-row > * { position: static !important; left: auto !important; right: auto !important; top: auto !important; white-space: normal !important; }
+  .bl-row .nm { font-size: 14px !important; }
+  .bl-row .m1, .bl-row .m2 { font-size: 12px !important; line-height: 16px !important; margin-top: 2px !important; }
+  .bl-row .bp { display: inline-block !important; margin-top: 8px !important; }
+  .bl-row .am { display: block !important; margin-top: 6px !important; font-size: 15px !important; }
+  .bl-pill { font-size: 12px !important; }
+  .bl-none { position: static !important; width: auto !important; padding: 20px 0 !important; }
+
+  /* invoice panel */
+  .bl-inv { position: static !important; width: auto !important; height: auto !important; padding: 16px !important; margin: 16px 0 !important; }
+  .bl-inv > * { position: static !important; }
+  .bl-ih { position: static !important; width: auto !important; height: auto !important; padding-bottom: 12px !important; }
+  .bl-ih > * { position: static !important; white-space: normal !important; }
+  .bl-ih .t { font-size: 16px !important; }
+  .bl-ih .m, .bl-ih .d { margin-top: 4px !important; font-size: 12px !important; line-height: 17px !important; }
+  .bl-ih .bp { display: inline-block !important; margin-top: 8px !important; }
+
+  .bl-tb { position: static !important; width: auto !important; margin-top: 10px !important; }
+  .bl-tr { position: static !important; height: auto !important; display: grid !important; grid-template-columns: 1fr auto !important; gap: 2px 12px !important; padding: 9px 0 !important; }
+  .bl-tr > * { position: static !important; text-align: left !important; white-space: normal !important; }
+  .bl-tr .c1 { grid-column: 1 / -1; font-weight: 600; }
+  .bl-tr .c2, .bl-tr .c3, .bl-tr .c4 { text-align: right !important; font-size: 12px !important; color: #8a97a6 !important; }
+  .bl-tr.h { display: none !important; }
+
+  .bl-tot { position: static !important; width: auto !important; margin-top: 12px !important; }
+  .bl-tot div { position: static !important; height: auto !important; display: flex !important; justify-content: space-between !important; gap: 12px; padding: 7px 0 !important; font-size: 13px !important; }
+  .bl-tot div > * { position: static !important; white-space: normal !important; }
+  .bl-tot .gt { padding-top: 10px !important; margin-top: 4px !important; }
+
+  .bl-act { position: static !important; width: auto !important; height: auto !important; display: grid !important; gap: 10px !important; }
+  .bl-btn { position: static !important; width: 100% !important; height: 46px !important; line-height: 46px !important; }
+}
+
+/* ============================================================================
+   REGISTRATION + APPOINTMENTS (assets/css/pages.css)
+   .rrow and .a-row are already CSS grids — only the track list and the fixed
+   outer blocks need changing.
+   ============================================================================ */
+@media (max-width: 1439px) {
+  /* --- registration --- */
+  .rstat { position: static !important; width: auto !important; height: auto !important; padding: 16px !important; margin: 0 0 12px !important; display: block !important; }
+  .rstat > * { position: static !important; left: auto !important; top: auto !important; white-space: normal !important; }
+  .rstat .lb { font-size: 13px !important; }
+  .rstat .ic { display: inline-grid !important; place-items: center; margin: 8px 0 6px !important; }
+  .rstat .vl { font-size: 26px !important; line-height: 32px !important; }
+  .rstat .ft { margin-top: 4px !important; font-size: 12px !important; }
+
+  .page-h { position: static !important; margin: 20px 0 0 !important; font-size: 18px !important; }
+  .page-sub { position: static !important; width: auto !important; margin: 4px 0 14px !important; font-size: 13px !important; line-height: 18px !important; }
+  .btn-primary { position: static !important; display: block !important; width: 100% !important; margin: 0 0 14px !important; }
+  .tabs { display: flex !important; gap: 8px !important; margin-bottom: 12px; }
+  .tabs button { position: static !important; flex: 1 1 0; height: 40px !important; }
+  .sbox { position: static !important; width: 100% !important; height: 44px !important; margin: 0 0 12px !important; box-sizing: border-box; }
+  .rule { display: none !important; }
+  .thead { display: none !important; }
+  .rrow {
+    display: block !important;
+    height: auto !important;
+    padding: 12px 14px !important;
+  }
+  .rrow > * { display: block !important; width: auto !important; margin: 3px 0 !important; }
+  .rrow .pt { margin-bottom: 8px !important; }
+  .rrow .pt b { font-size: 14px !important; }
+  .rrow .pt small { font-size: 12px !important; }
+  .rrow .tx, .rrow .dc { font-size: 13px !important; line-height: 18px !important; }
+  .go-btn { margin: 10px 0 0 !important; width: 100% !important; height: 40px !important; }
+
+  /* --- appointments --- */
+  .akpi { position: static !important; width: auto !important; height: auto !important; padding: 16px !important; margin: 0 0 12px !important; display: block !important; }
+  .akpi .at { height: auto !important; }
+  .akpi .at span { font-size: 13px !important; }
+  .akpi .aval { position: static !important; margin-top: 8px !important; font-size: 26px !important; }
+  .a-title { position: static !important; margin: 18px 0 10px !important; font-size: 19px !important; }
+  .a-controls { position: static !important; display: flex !important; flex-wrap: wrap !important; gap: 10px !important; height: auto !important; margin-bottom: 12px !important; }
+  .a-search { width: 100% !important; height: 44px !important; box-sizing: border-box; }
+  .a-dd { flex: 1 1 140px; height: 44px !important; margin: 0 !important; }
+  .a-new { width: 100% !important; height: 46px !important; }
+  .a-table { position: static !important; width: auto !important; min-height: 0 !important; overflow: visible !important; }
+  .a-th { display: none !important; }
+  .a-row, .a-grid {
+    display: block !important;
+    height: auto !important;
+    padding: 12px 14px !important;
+  }
+  .a-row > * { display: block !important; margin: 3px 0 !important; }
+  .a-row .nm { font-size: 14px !important; }
+  .a-row .ty { font-size: 12px !important; }
+  .a-pill { height: 26px !important; line-height: 26px !important; margin-top: 6px !important; }
+  .a-act { display: flex !important; gap: 10px !important; padding: 10px 0 0 !important; justify-content: flex-start !important; }
+  .a-ib { width: 40px !important; height: 40px !important; }
+  .a-menu { right: auto !important; left: 0 !important; top: 46px !important; width: min(220px, 80vw) !important; }
+  .a-menu button { height: 40px !important; }
+  .a-foot { height: auto !important; flex-wrap: wrap !important; gap: 10px !important; padding: 12px 14px !important; }
+  .a-pages button { width: 40px !important; height: 40px !important; }
+}
+
+/* ============================================================================
+   DEPARTMENTS (assets/css/departments.css)
+   ============================================================================ */
+@media (max-width: 1439px) {
+  .dp, .dp.dt, .stage.dp { height: auto !important; min-height: 0 !important; }
+  .dp > * { position: static !important; }
+  .dp-title { margin: 20px 0 0 !important; font-size: 25px !important; line-height: 31px !important; white-space: normal !important; }
+  .dt .dp-title { margin-left: 0 !important; }
+  .dp-sub { margin: 4px 0 14px !important; width: auto !important; font-size: 13px !important; line-height: 18px !important; white-space: normal !important; }
+  .dt .dp-sub { margin-left: 0 !important; width: auto !important; }
+  .dp-back { margin: 16px 0 0 !important; width: 40px !important; height: 40px !important; }
+  .dp-search { position: relative !important; width: 100% !important; height: 44px !important; margin: 0 0 16px !important; box-sizing: border-box; }
+  .dp-search svg { position: absolute !important; left: 14px !important; top: 13px !important; }
+  .dp-search input { position: absolute !important; left: 42px !important; top: 12px !important; width: calc(100% - 58px) !important; height: 20px !important; }
+
+  .dp-stat { position: static !important; width: auto !important; height: auto !important; padding: 14px 16px !important; margin: 0 0 12px !important; display: block !important; }
+  .dp-stat > * { position: static !important; left: auto !important; top: auto !important; white-space: normal !important; }
+  .dp-stat .n { margin-top: 4px !important; font-size: 24px !important; }
+  .dp-stat .s { margin-top: 3px !important; font-size: 12px !important; }
+
+  .dp-card { position: static !important; width: auto !important; height: auto !important; padding: 16px !important; margin: 0 0 14px !important; display: block !important; }
+  .dp-card > * { position: static !important; left: auto !important; right: auto !important; top: auto !important; white-space: normal !important; }
+  .dp-ic { display: inline-grid !important; place-items: center; margin-bottom: 8px !important; }
+  .dp-name { font-size: 16.5px !important; }
+  .dp-doc { font-size: 12.5px !important; margin-top: 2px !important; }
+  .dp-rev { text-align: left !important; margin-top: 6px !important; font-size: 15px !important; }
+  .dp-revl { text-align: left !important; margin-top: 2px !important; font-size: 12px !important; }
+  .dp-mini { display: inline-block !important; width: calc(50% - 6px) !important; height: auto !important; padding: 10px 0 !important; margin: 10px 6px 0 0 !important; }
+  .dp-mini b, .dp-mini i { position: static !important; display: block !important; text-align: left !important; padding-left: 12px; }
+  .dp-mini i { margin-top: 2px !important; font-size: 12px !important; }
+  .dp-occ { position: static !important; width: auto !important; height: auto !important; padding: 16px !important; margin: 0 0 14px !important; display: block !important; }
+  .dp-occ > * { position: static !important; left: auto !important; top: auto !important; white-space: normal !important; }
+  .dp-duty { position: static !important; width: auto !important; height: auto !important; padding: 16px !important; margin: 0 0 14px !important; display: block !important; }
+  .dp-duty > * { position: static !important; left: auto !important; top: auto !important; white-space: normal !important; }
+  .dp-row { position: static !important; height: auto !important; padding: 10px 0 !important; display: flex !important; align-items: center !important; gap: 10px !important; flex-wrap: wrap; }
+  .dp-row > * { position: static !important; }
+  .dp-dn, .dp-dm { font-size: 13px !important; }
+  .dp-tag { font-size: 12px !important; }
+}
+
+/* ============================================================================
+   PATIENT PROFILE (assets/css/profile.css)
+   ============================================================================ */
+@media (max-width: 1439px) {
+  .pf, .pf.has-th, .stage.pf { height: auto !important; min-height: 0 !important; }
+  .pf > * { position: static !important; }
+  .pf-back { display: inline-block !important; margin: 16px 0 10px !important; font-size: 13.5px !important; }
+  .pf-card { position: static !important; width: auto !important; height: auto !important; padding: 16px !important; margin: 0 0 14px !important; display: block !important; }
+  .pf-head > * { position: static !important; left: auto !important; top: auto !important; right: auto !important; }
+  .pf-av { display: inline-grid !important; place-items: center; margin-bottom: 8px !important; }
+  .pf-name { font-size: 17.5px !important; white-space: normal !important; }
+  .pf-tags { height: auto !important; display: flex !important; flex-wrap: wrap !important; gap: 8px !important; margin-top: 6px !important; }
+  .pf-tag { font-size: 12px !important; height: 24px !important; line-height: 24px !important; }
+  .pf-meta { width: auto !important; font-size: 12.5px !important; }
+  .pf-btn { position: static !important; display: inline-block !important; margin: 8px 8px 0 0 !important; height: 40px !important; line-height: 40px !important; padding: 0 14px !important; }
+  .pf-ch { position: static !important; display: flex !important; align-items: center !important; gap: 10px !important; height: auto !important; width: auto !important; margin-bottom: 10px !important; }
+  .pf-ic { position: static !important; display: grid !important; place-items: center; }
+  .pf-ic span { position: static !important; }
+  .pf-h3 { position: static !important; font-size: 14px !important; }
+  .pf-row, .pf-w .pf-row, .pf-th .pf-row {
+    position: static !important;
+    width: auto !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    gap: 12px !important;
+    padding: 9px 0 !important;
+  }
+  .pf-row > * { position: static !important; white-space: normal !important; }
+  .pf-l { font-size: 13px !important; }
+  .pf-v { text-align: right !important; font-size: 13px !important; max-width: 55%; }
+}
+
+/* ============================================================================
+   INPATIENT / OUTPATIENT REGISTRATION FORMS (assets/css/reg-forms.css)
+   .rf-sec is already a padded card and .rf-row already a grid; only the outer
+   absolute placement and the fixed control offsets need changing.
+   ============================================================================ */
+@media (max-width: 1439px) {
+  .rf-stage, .rf-stage.rf-out { height: auto !important; min-height: 0 !important; }
+  .rf-stage > * { position: static !important; }
+  .rf-back { display: inline-flex !important; margin: 16px 0 8px !important; }
+  .rf-title { margin: 0 0 6px !important; font-size: 24px !important; line-height: 30px !important; white-space: normal !important; }
+  .rf-chip { display: inline-block !important; width: auto !important; height: auto !important; padding: 6px 12px !important; margin: 0 0 14px !important; position: relative !important; }
+  .rf-chip i { position: static !important; display: inline-block !important; vertical-align: middle; margin-right: 6px; }
+  .rf-chip span { position: static !important; display: inline-block !important; font-size: 13px !important; }
+
+  .rf-type { position: static !important; width: auto !important; height: auto !important; padding: 14px !important; margin: 0 0 12px !important; display: block !important; }
+  .rf-type .ti { position: static !important; display: inline-grid !important; place-items: center; margin-bottom: 8px; }
+  .rf-type b { position: static !important; display: block !important; font-size: 15px !important; white-space: normal !important; }
+  .rf-type small { position: static !important; display: block !important; font-size: 12.5px !important; white-space: normal !important; margin-top: 3px; }
+  .rf-type .ck { position: static !important; display: inline-grid !important; place-items: center; margin-top: 8px; }
+
+  .rf-sec { position: static !important; width: auto !important; padding: 18px 16px !important; margin: 0 0 16px !important; }
+  .rf-h { height: auto !important; flex-wrap: wrap; }
+  .rf-ht { white-space: normal !important; font-size: 16px !important; }
+  .rf-hs { font-size: 12.5px !important; }
+
+  /* every field row becomes a single column */
+  .rf-row.c3, .rf-row.c2, .rf-row.c1 { grid-template-columns: 1fr !important; row-gap: 14px !important; }
+  .rf-f { min-width: 0; }
+  .rf-l { height: auto !important; white-space: normal !important; font-size: 13px !important; }
+  .rf-ctl {
+    position: static !important;
+    width: 100% !important;
+    margin-top: 6px !important;
+    height: 46px !important;
+    box-sizing: border-box;
+    font-size: 15px !important;
+  }
+  input.rf-ctl { padding: 0 13px !important; }
+  textarea.rf-ctl { height: 110px !important; }
+  .rf-hint, .rf-cc { font-size: 12px !important; }
+  .rf-sum { position: static !important; width: auto !important; margin: 0 0 16px !important; padding: 16px !important; }
+  .rf-sum > * { position: static !important; }
+  .rf-actions { position: static !important; display: grid !important; gap: 10px !important; margin: 0 0 24px !important; }
+  .rf-actions > * { width: 100% !important; }
+}
+
+/* ---- fixes found by the stage-scroll measurement ---------------------- */
+@media (max-width: 1439px) {
+  /* position:relative still honours `left`, so the chip kept its 1225px offset */
+  .rf-chip { left: auto !important; top: auto !important; }
+
+  /* progress bars carry fixed pixel widths from the Figma frame */
+  .dp-track { width: 100% !important; max-width: 100% !important; }
+  .dp-fill { max-width: 100% !important; }
+  .dp-tag { white-space: normal !important; }
+
+  /* everything inside a list row is flow: rows are the last place absolute offsets survive */
+  .tp-r *, .pe-r *, .pr-r *, .at-r *, .bl-row *, .a-row *, .rrow *, .dp-row * {
+    position: static !important;
+    left: auto !important;
+    right: auto !important;
+    top: auto !important;
+  }
+  .tp-r, .pe-r, .pr-r, .at-r { display: block !important; }
+}
+
+/* Any element converted from `absolute` to `relative` keeps its original `left`/`top`, which
+   offsets it by the Figma coordinate. Reset the offsets wherever the position is overridden. */
+@media (max-width: 1439px) {
+  .bl-search, .dp-search, .rf-chip, .a-search, .a-table, .sbox, .bl-tb, .bl-tot {
+    left: auto !important;
+    top: auto !important;
+    right: auto !important;
+  }
+}
+
+/* ---- broad containment pass -------------------------------------------
+   After the per-page reflow, a few inner containers still carry fixed widths or
+   nowrap from the Figma frame (tag rows, chip strips, inline meta). Rather than
+   chase each one, cap every descendant at its parent's width and let tag rows wrap.
+   This only shrinks or wraps; it never clips content away. */
+@media (max-width: 1439px) {
+  .stage * { max-width: 100% !important; }
+  .tg, .dp-tags, .dp-occ .tg, .pf-tags, .rf-tags {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+    position: static !important;
+    width: auto !important;
+    height: auto !important;
+  }
+  .dp-tag, .pf-tag, .rf-tag { white-space: normal !important; }
+}
+
+/* ============================================================================
+   APPOINTMENT FORM + CONFIRMATION (assets/css/forms.css) — .f-* and .c-*
+   ============================================================================ */
+@media (max-width: 1439px) {
+  .stage > .f-card, .f-card, .c-card {
+    position: static !important;
+    left: auto !important;
+    top: auto !important;
+    width: auto !important;
+    height: auto !important;
+    padding: 20px 16px !important;
+    margin: 20px 0 !important;
+    border-radius: 18px !important;
+  }
+  .f-card > *, .c-card > * { position: static !important; left: auto !important; top: auto !important; right: auto !important; }
+  .f-title, .c-title { margin: 0 0 8px !important; width: auto !important; font-size: 26px !important; line-height: 32px !important; text-align: left !important; white-space: normal !important; }
+  .c-title { text-align: center !important; }
+  .f-line { width: 100% !important; height: 1px !important; margin: 10px 0 16px !important; }
+  .f-h { margin: 18px 0 8px !important; font-size: 16px !important; white-space: normal !important; }
+  .f-l, .f-i { display: block !important; margin: 8px 0 2px !important; font-size: 13px !important; white-space: normal !important; }
+  .f-in {
+    display: block !important;
+    width: 100% !important;
+    height: 46px !important;
+    margin: 4px 0 10px !important;
+    box-sizing: border-box;
+    font-size: 15px !important;
+  }
+  .f-sel { position: static !important; display: block !important; width: 100% !important; height: 46px !important; margin: 4px 0 10px !important; }
+  .f-sel .b { height: 46px !important; padding-top: 15px !important; font-size: 14px !important; }
+  .f-sel .p { position: static !important; width: 100% !important; margin-top: 4px; }
+  .f-sel .p button { height: 42px !important; font-size: 14px !important; }
+  .f-btn {
+    position: static !important;
+    display: block !important;
+    width: 100% !important;
+    height: 50px !important;
+    margin: 10px 0 0 !important;
+    font-size: 16px !important;
+  }
+  .c-ok { display: block !important; margin: 0 auto 12px !important; }
+  .c-btn { position: static !important; display: block !important; width: 100% !important; height: 50px !important; margin: 18px 0 0 !important; font-size: 18px !important; }
+}
+
+/* ============================================================================
+   SHARED DROPDOWN (assets/css/components.css) — .dd is absolutely positioned
+   and 236px wide from the Figma dropdown frames.
+   ============================================================================ */
+@media (max-width: 1439px) {
+  .dd {
+    position: static !important;
+    left: auto !important;
+    top: auto !important;
+    right: auto !important;
+    display: block !important;
+    width: 100% !important;
+    height: 44px !important;
+    margin: 0 0 10px !important;
+  }
+  .dd-btn { height: 44px !important; font-size: 14px !important; }
+  .dd-panel { width: 100% !important; }
+  .dd-panel button { height: 42px !important; font-size: 14px !important; }
+}
+
+/* ---- last stragglers --------------------------------------------------- */
+@media (max-width: 1439px) {
+  /* .f-in kept position:absolute; width/height alone do not remove the left offset */
+  .f-in { position: static !important; left: auto !important; top: auto !important; right: auto !important; }
+
+  /* Attendance uses #atc (not #tpc); include it, and flatten every descendant of the
+     module wrappers so no Figma coordinate survives. */
+  #atc { position: static !important; width: auto !important; height: auto !important; display: block !important; }
+  #tpc *, #prc *, #pec *, #atc * {
+    position: static !important;
+    left: auto !important;
+    right: auto !important;
+    top: auto !important;
+  }
+}
+@media (max-width: 1439px) {
+  .f-l, .f-i { position: static !important; left: auto !important; top: auto !important; }
+  #tpc, #prc, #pec, #atc { width: 100% !important; box-sizing: border-box !important; }
+  .tp-r, .pe-r, .pr-r, .at-r { width: 100% !important; box-sizing: border-box !important; }
+}
+@media (max-width: 1439px) {
+  /* The module wrappers are stacked columns now; a few inner badges still carry a Figma
+     offset that lands them just outside the column. Clip horizontally at the wrapper so the
+     page never scrolls sideways. The stacked content above them is unaffected. */
+  #tpc, #prc, #pec, #atc { overflow-x: clip; }
+}
+@media (max-width: 1439px) {
+  /* these sit directly on the stage, not inside .f-card, so the card rule never reached them */
+  .f-title, .f-line, .f-h, .c-title, .c-ok, .c-btn {
+    position: static !important;
+    left: auto !important;
+    top: auto !important;
+    right: auto !important;
+    width: auto !important;
+  }
+  .f-line { width: 100% !important; height: 1px !important; }
+}
+@media (max-width: 1439px) {
+  /* the drawer's close link was 25x25 — below a practical touch target */
+  .dr-exit { width: 44px !important; height: 44px !important; display: grid; place-items: center; }
+}
+@media (max-width: 1439px) {
+  /* Dense table row controls (attendance / payroll selection, inline icon buttons) were 16px.
+     24px is the practical floor that still fits a table row; 44px would break the layout.
+     The proper fix is making the whole row the hit target — tracked, not done. */
+  #atc input, #prc input, #atc button, #prc button,
+  #atc [role="button"], #prc [role="button"] { min-width: 24px; min-height: 24px; }
+  #atc input[type="checkbox"], #prc input[type="checkbox"] { width: 24px !important; height: 24px !important; }
+}
+
+/* ---- stacking fix -----------------------------------------------------
+   Converting an absolutely positioned <span> to static makes it INLINE, so label and
+   value collapse onto one line and overlap. Every text child of a reflowed card must
+   become a block. Found by inspecting the 390px screenshot, not by the audit. */
+@media (max-width: 1439px) {
+  .bl-stat .l, .bl-stat .n,
+  .bl-row .nm, .bl-row .m1, .bl-row .m2, .bl-row .am,
+  .dp-stat .l, .dp-stat .n, .dp-stat .s,
+  .dp-card .dp-name, .dp-card .dp-doc, .dp-card .dp-rev, .dp-card .dp-revl,
+  .dp-occ .ol, .dp-occ .op,
+  .rstat .lb, .rstat .vl, .rstat .ft,
+  .akpi .at span, .akpi .aval,
+  .pf-card .pf-name, .pf-card .pf-meta,
+  .bl-ih .t, .bl-ih .m, .bl-ih .d { display: block !important; }
+
+  .bl-row .bp, .dp-card .dp-tag, .rstat .ic, .akpi .at i { display: inline-block !important; }
+  .bl-stat .n, .dp-stat .n { margin-top: 4px !important; }
+}
+@media (max-width: 1439px) {
+  /* #bllist / #blinv are 0x0 positioning wrappers; once their children become static they
+     need real dimensions or the whole list collapses. Same pattern as #tpc/#prc/#pec/#atc. */
+  #bllist, #blinv { position: static !important; width: auto !important; height: auto !important; display: block !important; }
+}
