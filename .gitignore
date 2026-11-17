@@ -1,0 +1,8 @@
+# Visual-regression baseline images (9 MB). The manifest is committed so drift is detectable by
+# hash; regenerate the images locally with: node scripts/visual-check.mjs --capture
+qa/baseline/*.png
+
+# Test artefacts
+qa/diff/
+qa/tmp/
+*.log

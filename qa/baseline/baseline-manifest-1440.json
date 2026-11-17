@@ -1,0 +1,122 @@
+{
+  "appointment-confirmed": {
+    "width": 1440,
+    "height": 1120,
+    "bytes": 631182,
+    "sha256": "d2424cf0f73aa0154d3e9cf0047c7bed4dd5d7b8efa910fa3989de64210b0a44"
+  },
+  "appointment-form": {
+    "width": 1440,
+    "height": 1120,
+    "bytes": 365219,
+    "sha256": "cfbb729ac7036e60048215aa36cb0ba613da9264fae283ad14fe4217eda2b23a"
+  },
+  "appointments": {
+    "width": 1440,
+    "height": 1120,
+    "bytes": 482437,
+    "sha256": "f4e4ebdf8880abdfa75090a72b9db69d3e9e7882050fd40c905ab94b07162970"
+  },
+  "attendance": {
+    "width": 1440,
+    "height": 1635,
+    "bytes": 477756,
+    "sha256": "044906bb4ee9e575d8e11574871b25d05a343e3efdf5712608ff3e834f56e70e"
+  },
+  "billing": {
+    "width": 1440,
+    "height": 1120,
+    "bytes": 461218,
+    "sha256": "e6a91bb31e8dff5a20d489480d8d23b010938202248cc5b521b4e5a748fd897b"
+  },
+  "consultation": {
+    "width": 1440,
+    "height": 1262,
+    "bytes": 439446,
+    "sha256": "8903ab2789fff35cf8faa6813bc75a1025edf3929c09c16fdcb19bedfa413449"
+  },
+  "dashboard": {
+    "width": 1440,
+    "height": 1120,
+    "bytes": 426783,
+    "sha256": "05d80065b51cd8e1ffcd6025fed97fcd3ad4f082e395a0f921e463cf51064ce9"
+  },
+  "departments": {
+    "width": 1440,
+    "height": 1420,
+    "bytes": 425063,
+    "sha256": "9feffc675987727b4a76494bb8d825ff6489d65dfa8205c3b25863e67cdd0e05"
+  },
+  "index": {
+    "width": 1440,
+    "height": 900,
+    "bytes": 697957,
+    "sha256": "2072b956ab4484518d7269b9f6023af868baf2f21e7eb9dbaee975e1560f6f96"
+  },
+  "nursing": {
+    "width": 1440,
+    "height": 1262,
+    "bytes": 455131,
+    "sha256": "96c23ba0c53cf3c3686325a32db596426f6b0f9453c24a70f616ab629b6ec096"
+  },
+  "outpatient-form": {
+    "width": 1440,
+    "height": 2676,
+    "bytes": 625362,
+    "sha256": "8a4fdafd5d4564cbf1bc7908f0c52620539007a79d6c563682e246cb0fddb608"
+  },
+  "payroll": {
+    "width": 1440,
+    "height": 1345,
+    "bytes": 461099,
+    "sha256": "3819da5f300af2d5760c3d7c446e690c0effbe39f9a560785f623473037339b6"
+  },
+  "personnel": {
+    "width": 1440,
+    "height": 1262,
+    "bytes": 436732,
+    "sha256": "08691ad0cc634d2ad3af1e11181f2a37c2dff2b526a0b614126b13527c5e7e96"
+  },
+  "pharmacy": {
+    "width": 1440,
+    "height": 1262,
+    "bytes": 388878,
+    "sha256": "95f882807bc322edee1539713d949151330a4618723b772a76b2f320e3130348"
+  },
+  "portal": {
+    "width": 1440,
+    "height": 900,
+    "bytes": 271092,
+    "sha256": "590732e13bbed7210669ebe705a927720939f738801a3cb69e0a480d4d723f2b"
+  },
+  "profile": {
+    "width": 1440,
+    "height": 1332,
+    "bytes": 458083,
+    "sha256": "1e92af1b4f3bfebc690702b73e679f1ed2ac1dcb080ff6c63c38bbc33592878f"
+  },
+  "registration-form": {
+    "width": 1440,
+    "height": 2789,
+    "bytes": 632984,
+    "sha256": "88ec14bb9e417eab359fb39cfa19a6aacdd8ed35691ab0e497f962ed06c2e849"
+  },
+  "registration": {
+    "width": 1440,
+    "height": 1120,
+    "bytes": 383686,
+    "sha256": "a9a1f458fc53a1c7561a6402417ad36d9b13bf948a8b02c360ac247ae89af010"
+  },
+  "staff": {
+    "width": 1440,
+    "height": 1262,
+    "bytes": 430369,
+    "sha256": "f65e96d18c6096539955aacb4c5af43cd14ef959b6f0a806079e72e96ded426e"
+  },
+  "treatment": {
+    "width": 1440,
+    "height": 1262,
+    "bytes": 448052,
+    "sha256": "332b6175748501144fa6e852e9d7ae3d93b2027f78e11afb908eea688486330c"
+  }
+}
