@@ -31,9 +31,9 @@
     "<div class='scrim' id='scrim'></div>" +
     "<aside class='drawer' aria-label='Main menu'><div class='dr-in'>" +
     "<span class='dr-brand'>MediHeal</span>" +
-    "<a class='dr-exit' href='index.html' aria-label='Sign out'>" + svg('exit', 25) + '</a>' +
+    "<a class='dr-exit' id='drExit' href='index.html' aria-label='Sign out'>" + svg('exit', 25) + '</a>' +
     '<nav>' + navLinks.map(n => "<a href='" + n[0] + ".html'>" + svg(n[2], 44) + n[1] + '</a>').join('') + '</nav>' +
-    "<a class='dr-out' href='index.html'>Sign out</a>" +
+    "<a class='dr-out' id='drOut' href='index.html'>Sign out</a>" +
     "<div class='dr-contact'>" + HIS.contact.email + '<br>' + HIS.contact.phone + '</div>' +
     '</div></aside>');
   document.querySelectorAll('img[data-fallback]').forEach(i => i.addEventListener('error', () => { i.src = i.dataset.fallback; }, { once: true }));
@@ -42,13 +42,19 @@
   document.getElementById('burger').onclick = () => toggle(true);
   document.getElementById('scrim').onclick = () => toggle(false);
   document.addEventListener('keydown', e => e.key === 'Escape' && toggle(false));
+  // Sign out clears the demo session before leaving, so Back cannot reveal a protected page.
+  ['drExit', 'drOut'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('click', e => { e.preventDefault(); HIS.auth.signOut(); location.replace('index.html'); });
+  });
 })();
 
-// ---- Demo role switcher (M1, Addition - not in Figma).
-// Opens from the existing header profile block, so no new element is added to the locked header:
-// the profile already shows the name and role it switches between. Panel geometry follows the
-// design format (white card, r14, 1px #c8dcea ring, Inter 13 body, Lexend 16 title).
-(function roleSwitcher() {
+// ---- Account menu (M3, Addition - not in Figma).
+// Replaces the M1 role switcher. There is NO role selection anywhere in the signed-in UI: the
+// account decides the role. The menu shows who you are and offers sign-out, plus a link to account
+// management for the Super Administrator only. It opens from the existing header profile block, so
+// no new element is added to the locked header.
+(function accountMenu() {
   if (!window.HIS.rbac) return;
   const prof = document.getElementById('profile');
   if (!prof) return;
@@ -57,58 +63,58 @@
   css.textContent =
     '.profile{cursor:pointer}' +
     '.profile:focus-visible{outline:2px solid #dff9ff;outline-offset:3px;border-radius:10px}' +
-    '.rb-m{position:absolute;top:74px;right:16px;width:372px;max-height:min(560px,calc(100vh - 96px));display:none;flex-direction:column;background:#fff;border-radius:14px;box-shadow:inset 0 0 0 1px #c8dcea,0 12px 32px rgba(15,30,46,.18);z-index:24;overflow:hidden;font-family:Inter,sans-serif}' +
-    '.rb-m.on{display:flex}' +
-    '.rb-m *{box-sizing:border-box}' +
-    '.rb-h{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:16px 20px 0}' +
-    '.rb-t{font:500 16px/20px Lexend,Inter,sans-serif;color:#1b4e6b}' +
-    '.rb-x{width:28px;height:28px;flex:none;border:0;border-radius:8px;background:#fff;box-shadow:inset 0 0 0 1px #c8dcea;color:#1b4e6b;font:500 14px/26px Inter,sans-serif;cursor:pointer;padding:0;text-align:center}' +
-    '.rb-x:hover{background:#e8f4fb}' +
-    '.rb-s{margin:4px 0 0;padding:0 20px 12px;font:400 12px/15.6px Inter,sans-serif;color:#6f8890}' +
-    '.rb-l{overflow-y:auto;border-top:1px solid #e3edf3}' +
-    '.rb-r{display:block;width:100%;padding:9px 20px;border:0;border-bottom:1px solid #f0f5f9;background:#fff;text-align:left;cursor:pointer;position:relative}' +
-    '.rb-r:hover{background:#e8f4fb}' +
-    '.rb-r.on{background:#f6fafd}' +
-    '.rb-r.on::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:#1c6d9c}' +
-    '.rb-n{display:block;font:600 13px/16px Inter,sans-serif;color:#1c2b30}' +
-    '.rb-r.on .rb-n{color:#15405a}' +
-    '.rb-d{display:block;margin-top:2px;font:400 11px/14.3px Inter,sans-serif;color:#6f8890;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}' +
-    '.rb-f{flex:none;padding:9px 20px;border-top:1px solid #e3edf3;background:#f6fafd;font:500 11px/14.3px Inter,sans-serif;color:#8a97a6}';
+    '.am-m{position:absolute;top:74px;right:16px;width:340px;display:none;flex-direction:column;background:#fff;border-radius:14px;box-shadow:inset 0 0 0 1px #c8dcea,0 12px 32px rgba(15,30,46,.18);z-index:24;overflow:hidden;font-family:Inter,sans-serif}' +
+    '.am-m.on{display:flex}' +
+    '.am-m *{box-sizing:border-box}' +
+    '.am-id{display:flex;gap:12px;align-items:center;padding:18px 20px 14px}' +
+    '.am-av{width:44px;height:44px;flex:none;border-radius:22px;background:#dff9ff;color:#1b4e6b;display:grid;place-items:center;font:700 15px Inter,sans-serif}' +
+    '.am-nm{font:600 14px/18px Inter,sans-serif;color:#1c2b30;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' +
+    '.am-ti{font:400 12px/15.6px Inter,sans-serif;color:#6f8890;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' +
+    '.am-rows{padding:0 20px 14px}' +
+    '.am-r{display:flex;justify-content:space-between;gap:12px;padding:5px 0;font:400 12px/16px Inter,sans-serif}' +
+    '.am-r span{color:#6f8890}.am-r b{font-weight:600;color:#1c2b30;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}' +
+    '.am-a{display:block;width:100%;padding:11px 20px;border:0;border-top:1px solid #e3edf3;background:#fff;text-align:left;font:600 13px/17px Inter,sans-serif;color:#1b4e6b;cursor:pointer;text-decoration:none}' +
+    '.am-a:hover{background:#e8f4fb}' +
+    '.am-a.out{color:#9b1c14}' +
+    '.am-f{padding:9px 20px;border-top:1px solid #e3edf3;background:#f6fafd;font:500 11px/14.3px Inter,sans-serif;color:#8a97a6}';
   document.head.appendChild(css);
 
   const panel = document.createElement('div');
-  panel.className = 'rb-m';
+  panel.className = 'am-m';
   panel.setAttribute('role', 'dialog');
-  panel.setAttribute('aria-label', 'Switch demo role');
+  panel.setAttribute('aria-label', 'Account menu');
   hd.appendChild(panel);
 
   function render() {
-    const cur = HIS.rbac.key();
+    const a = HIS.auth.account();
+    if (!a) return;
+    const r = HIS.rbac.ROLES[a.role] || { label: a.role };
+    const ini = a.name.replace(/^Dr\.\s*/, '').split(' ').map(s => s[0]).join('').slice(0, 2).toUpperCase();
     panel.innerHTML =
-      "<div class='rb-h'><span class='rb-t'>Switch role</span><button class='rb-x' data-act='close' aria-label='Close role switcher'>\u2715</button></div>" +
-      "<p class='rb-s'>Changes the navigation and what each screen allows. Frontend demonstration only \u2014 not a security boundary.</p>" +
-      "<div class='rb-l'>" + Object.keys(HIS.rbac.ROLES).map(k => {
-        const r = HIS.rbac.ROLES[k];
-        return "<button class='rb-r" + (k === cur ? ' on' : '') + "' data-role='" + k + "'" + (k === cur ? " aria-current='true'" : '') + ">" +
-          "<span class='rb-n'>" + HIS.kit.esc(r.label) + '</span>' +
-          "<span class='rb-d'>" + HIS.kit.esc(r.scope) + '</span></button>';
-      }).join('') + '</div>' +
-      "<div class='rb-f'>Demo environment \u00b7 synthetic data only</div>";
+      "<div class='am-id'><span class='am-av'>" + HIS.kit.esc(ini) + '</span><div style="min-width:0">' +
+      "<div class='am-nm'>" + HIS.kit.esc(a.name) + '</div>' +
+      "<div class='am-ti'>" + HIS.kit.esc(a.title || r.label) + '</div></div></div>' +
+      "<div class='am-rows'>" +
+      "<div class='am-r'><span>Email</span><b>" + HIS.kit.esc(a.email) + '</b></div>' +
+      "<div class='am-r'><span>Role</span><b>" + HIS.kit.esc(r.label) + '</b></div>' +
+      (a.dept ? "<div class='am-r'><span>Department</span><b>" + HIS.kit.esc(a.dept) + '</b></div>' : '') +
+      '</div>' +
+      (a.role === 'superadmin' ? "<a class='am-a' href='accounts.html'>Manage accounts</a>" : '') +
+      "<button class='am-a out' data-act='signout'>Sign out</button>" +
+      "<div class='am-f'>Demo environment \u00b7 synthetic data only</div>";
   }
   function setOpen(o) {
     panel.classList.toggle('on', o);
     prof.setAttribute('aria-expanded', o ? 'true' : 'false');
-    if (o) { render(); const first = panel.querySelector('.rb-r.on') || panel.querySelector('.rb-r'); if (first) first.focus(); }
+    if (o) { render(); const b = panel.querySelector('[data-act="signout"]'); if (b) b.focus(); }
   }
   prof.addEventListener('click', () => setOpen(!panel.classList.contains('on')));
   prof.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setOpen(!panel.classList.contains('on')); } });
   panel.addEventListener('click', e => {
-    const b = e.target.closest('button'); if (!b) return;
-    if (b.dataset.act === 'close') { setOpen(false); prof.focus(); return; }
-    const k = b.dataset.role; if (!k || k === HIS.rbac.key()) { setOpen(false); return; }
-    HIS.rbac.set(k);
-    // Land on a page the new role can open; the reload re-renders the drawer for that role.
-    location.href = HIS.rbac.home();
+    const b = e.target.closest('[data-act="signout"]');
+    if (!b) return;
+    HIS.auth.signOut();
+    location.replace('index.html');
   });
   document.addEventListener('click', e => {
     if (!panel.classList.contains('on')) return;
