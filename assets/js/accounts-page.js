@@ -78,11 +78,11 @@
     };
     document.getElementById('acRole').onchange = function (e) { roleFilter = e.target.value; render(); };
     document.getElementById('acNew').onclick = function () { editor(null); };
-    stage.querySelectorAll('.ac-edit').forEach(function (b) { b.onclick = function () { editor(HIS.accounts.byId(b.dataset.id)); }; });
+    stage.querySelectorAll('.ac-edit').forEach(function (b) { b.onclick = function () { editor(HIS.accounts.byId(b.dataset.id), b); }; });
   }
 
   // ---- editor modal (design format: white r16 card, 1px #c8dcea, Lexend 20 title) --------------
-  function editor(acct) {
+  function editor(acct, trigger) {
     var isNew = !acct;
     var a = acct || { name: '', email: '', role: 'receptionist', dept: '', title: '', status: 'active' };
     var bg = document.createElement('div');
@@ -113,7 +113,14 @@
       '</form>';
     document.body.appendChild(bg);
     var err = bg.querySelector('#acErr');
-    function close() { bg.remove(); document.removeEventListener('keydown', escKey); }
+    // Remember what opened the dialog so focus can go back there. Without this, Escape dropped
+    // focus onto <body> and a keyboard user lost their place in the table (M9.2 a11y audit).
+    var opener = trigger || document.activeElement;
+    function close() {
+      bg.remove();
+      document.removeEventListener('keydown', escKey);
+      if (opener && document.contains(opener) && typeof opener.focus === 'function') opener.focus();
+    }
     function escKey(e) { if (e.key === 'Escape') close(); }
     document.addEventListener('keydown', escKey);
     bg.addEventListener('mousedown', function (e) { if (e.target === bg) close(); });

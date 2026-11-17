@@ -17,7 +17,7 @@
 import http from 'node:http';
 import { readFile, readdir } from 'node:fs/promises';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const BASE = process.env.BASE || 'http://127.0.0.1:8788';
@@ -28,7 +28,12 @@ const SKIP_CLICK = 'print|download|export|\\bpdf\\b|sync|approve|decline|sign ou
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.png': 'image/png', '.jpg': 'image/jpeg', '.svg': 'image/svg+xml', '.json': 'application/json', '.woff2': 'font/woff2' };
 
 let chromium;
-try { ({ chromium } = await import(PW)); }
+try {
+  const spec = PW.startsWith('/') || /^[A-Za-z]:[\\/]/.test(PW) ? pathToFileURL(PW).href : PW;
+  const mod = await import(spec);
+  chromium = mod.chromium || (mod.default && mod.default.chromium);
+  if (!chromium) throw new Error('no chromium export');
+}
 catch {
   console.error(`Cannot import playwright-core (tried "${PW}").\nSet PW to its index.js, e.g.\n  PW="$PWD/node_modules/playwright-core/index.js" node scripts/smoke.mjs`);
   process.exit(2);
@@ -48,7 +53,10 @@ const server = http.createServer(async (req, res) => {
 await new Promise(r => server.listen(port, r));
 
 const pages = (await readdir(ROOT)).filter(f => f.endsWith('.html')).sort();
-const browser = await chromium.connectOverCDP(CDP);
+const browser = await (async () => {
+  try { return await chromium.connectOverCDP(CDP); }
+  catch { return await chromium.launch({ channel: process.env.CHANNEL || 'chrome' }); }
+})();
 let ctx;
 try { ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } }); }
 catch { ctx = browser.contexts()[0]; } // older CDP builds only expose the default context
