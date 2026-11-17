@@ -49,9 +49,9 @@
   },
   "dashboard": {
     "width": 1440,
-    "height": 1120,
-    "bytes": 426783,
-    "sha256": "05d80065b51cd8e1ffcd6025fed97fcd3ad4f082e395a0f921e463cf51064ce9"
+    "height": 1128,
+    "bytes": 358772,
+    "sha256": "260fcbaf76c2a433fd239f091c175eb50ac46a907f1af927703553eec2610535"
   },
   "departments": {
     "width": 1440,
@@ -122,8 +122,8 @@
   "reports": {
     "width": 1440,
     "height": 1120,
-    "bytes": 403495,
-    "sha256": "ea504863aaaeb53a12fc92801a672e03ff7574b3711f8f85fccddf007e237559"
+    "bytes": 403499,
+    "sha256": "cbf965f9aad697218067dd367f587e0a0ef09b1dc32e919c67b002033d99d99d"
   },
   "staff": {
     "width": 1440,

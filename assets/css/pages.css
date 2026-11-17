@@ -83,3 +83,14 @@
 .a-pages button{width:32px;height:32px;border-radius:8px;border:1px solid #e2e8f0;background:#fff;color:#1e293b;font:500 13px var(--font-inter)}
 .a-pages button.on{background:#1b4e6b;border-color:#1b4e6b;color:#fff}
 .a-pages button:disabled{opacity:.45;cursor:default}
+
+/* ===== M4 role dashboards (addition) =====================================================
+   The dashboard table rows reuse the Figma .dr grid. Role content can be longer than the frame's
+   original sample text, so non-name cells clamp to their column instead of overflowing the card.
+   This only affects cells that opt in via .dc-clamp; the original .dr rules are untouched. */
+.dr .c.dc-clamp{overflow:hidden;text-overflow:ellipsis;display:block}
+/* Empty-state copy inside the 424px feed panel: wraps instead of running past the card. */
+.dc-empty{position:absolute;left:55px;top:129px;width:322px;font:400 12px/17px var(--font-inter);color:#6f8890}
+/* M4: role dashboards widen the name block per column and clamp long badges/pills. */
+.dr .who.dc-who{width:auto}
+.badge.dc-badge{overflow:hidden;text-overflow:ellipsis}
