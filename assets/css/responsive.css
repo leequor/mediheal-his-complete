@@ -1,0 +1,412 @@
+/* ============================================================================
+   responsive.css — real responsive layouts (mobile hotfix, M9 foundation)
+
+   WHY: fit.js v3 scaled the 1440px stage with CSS zoom = width/1440. At 390px that is
+   0.2708, so 16px labels painted at 4.3px and the smallest text on the site measured
+   2.6px. Overflow-free is not the same as readable.
+
+   HOW: below 1440px the absolute Figma geometry is neutralised with !important and the
+   content reflows. Above 1440px NOTHING here applies — the desktop design stays
+   pixel-identical (visual-check.mjs is the guard).
+
+   RULES:
+   - No new colours, fonts, radii or shadows. Only layout, and only the existing
+     type scale (nothing below 12px effective).
+   - The Figma components keep their look: .badge, .kpi, .card-lg, .dr, .btn colours.
+   - !important is deliberate: page markup carries inline left/top coordinates that a
+     normal rule cannot override.
+   ============================================================================ */
+
+/* ---- shared: stop the fixed canvas ------------------------------------- */
+@media (max-width: 1439px) {
+  html { overflow-x: hidden; }
+  body { min-width: 0 !important; }
+
+  .stage {
+    width: 100% !important;
+    max-width: 1440px;
+    min-height: 0 !important;
+    margin: 0 auto !important;
+    padding: 0 24px 40px !important;
+    box-sizing: border-box;
+  }
+
+  /* header: absolute overlay -> sticky bar in normal flow */
+  .header {
+    position: sticky !important;
+    top: 0 !important;
+    height: 68px !important;
+    z-index: 50;
+  }
+  .hd {
+    width: 100% !important;
+    height: 68px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    padding: 0 16px !important;
+    box-sizing: border-box;
+  }
+  .hd > * { position: static !important; }
+  .hd .logo { width: 46px !important; height: 46px !important; flex: none; }
+  .hd .brand { font-size: 17px !important; line-height: 1 !important; flex: none; }
+  .hd-date { display: none !important; }
+  .hd .sep { display: none !important; }
+  .bell { margin-left: auto !important; width: 40px !important; height: 40px !important; flex: none; }
+  .profile { margin-left: 4px !important; flex: none; }
+  .profile .nm { font-size: 12.5px !important; }
+  /* was 9.5px — below the 12px secondary floor. Tightened tracking keeps it inside the header. */
+  .profile small { font-size: 12px !important; letter-spacing: .02em !important; }
+  .avatar { width: 38px !important; height: 38px !important; }
+
+  /* drawer: full-width sheet on small screens */
+  .drawer { width: min(430px, 86vw) !important; }
+
+  /* account menu: never wider than the screen */
+  .am-m { width: min(340px, calc(100vw - 24px)) !important; right: 12px !important; top: 62px !important; }
+  .rb-m { width: min(372px, calc(100vw - 24px)) !important; right: 12px !important; top: 62px !important; }
+
+  /* generic dialogs must fit the viewport */
+  .modal { width: min(460px, calc(100vw - 32px)) !important; max-height: calc(100vh - 48px); overflow-y: auto; }
+  .ac-m { width: min(620px, calc(100vw - 32px)) !important; max-height: calc(100vh - 40px); }
+  .dm { width: min(760px, calc(100vw - 24px)) !important; }
+}
+
+/* ---- dashboard: absolute KPI row + two panels -> fluid grid ------------- */
+@media (max-width: 1439px) {
+  .dash-title {
+    position: static !important;
+    left: auto !important;
+    top: auto !important;
+    margin: 24px 0 4px !important;
+    font-size: clamp(24px, 4vw, 38px) !important;
+    line-height: 1.15 !important;
+    white-space: normal !important;
+  }
+
+  #kpis {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)) !important;
+    gap: 16px !important;
+    margin: 20px 0 24px !important;
+  }
+  .kpi {
+    position: static !important;
+    left: auto !important;
+    top: auto !important;
+    width: auto !important;
+    height: auto !important;
+    min-height: 120px;
+    padding: 16px !important;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 14px;
+    align-items: center;
+  }
+  .kpi .ic { position: static !important; left: auto !important; top: auto !important; width: 56px !important; height: 56px !important; border-radius: 18px !important; }
+  .kpi .ic svg { width: 26px !important; height: 26px !important; }
+  .kpi .tx { position: static !important; left: auto !important; top: auto !important; width: auto !important; }
+  .kpi .l { font-size: 13px !important; line-height: 17px !important; }
+  .kpi .v { font-size: 24px !important; line-height: 30px !important; }
+  .kpi .d { font-size: 12px !important; line-height: 16px !important; white-space: normal !important; }
+
+  /* the two panels stack and their inner absolute layout becomes flow */
+  .card-lg {
+    position: static !important;
+    left: auto !important;
+    top: auto !important;
+    width: auto !important;
+    min-height: 0 !important;
+    margin: 0 0 24px !important;
+    padding: 18px 16px 12px !important;
+    box-sizing: border-box;
+  }
+  .card-lg .card-h { position: static !important; left: auto !important; top: auto !important; margin: 0 !important; font-size: 17px !important; line-height: 22px !important; }
+  .card-lg .card-sub { position: static !important; left: auto !important; top: auto !important; margin: 3px 0 0 !important; font-size: 12.5px !important; line-height: 16px !important; }
+  .sched-ic { display: none !important; }
+
+  .dhead { display: none !important; }
+
+  /* table row -> stacked card */
+  .dr {
+    position: relative !important;
+    height: auto !important;
+    min-height: 0 !important;
+    display: block !important;
+    padding: 12px 0 !important;
+  }
+  .dr > * { position: static !important; left: auto !important; top: auto !important; transform: none !important; }
+  .dr .who { width: auto !important; margin-bottom: 6px; }
+  .dr .who b { font-size: 14px !important; line-height: 18px !important; }
+  .dr .who small { font-size: 12px !important; line-height: 16px !important; white-space: normal !important; }
+  .dr .c, .dr .c.dc-clamp {
+    display: block !important;
+    max-width: none !important;
+    margin: 3px 0 0 !important;
+    font-size: 13px !important;
+    line-height: 18px !important;
+    white-space: normal !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+  }
+  .dr .badge { display: inline-flex !important; margin-top: 8px !important; }
+
+  /* timeline feed -> plain stacked list */
+  .tl, .dot { display: none !important; }
+  .si {
+    position: static !important;
+    left: auto !important;
+    top: auto !important;
+    width: auto !important;
+    padding: 10px 0 !important;
+    border-top: 1px solid #e3edf3;
+  }
+  .si .t { font-size: 12px !important; line-height: 16px !important; }
+  .si b { font-size: 14px !important; line-height: 18px !important; }
+  .si small { font-size: 12px !important; line-height: 16px !important; }
+  .sched-badge { position: static !important; margin-top: 6px !important; display: inline-flex !important; }
+  .dc-empty { position: static !important; width: auto !important; top: auto !important; left: auto !important; font-size: 13px !important; line-height: 19px !important; }
+}
+
+/* ---- admin pages (accounts, audit, reports) ---------------------------- */
+@media (max-width: 1439px) {
+  .ad-title { position: static !important; margin: 24px 0 0 !important; font-size: clamp(24px, 3.6vw, 34px) !important; line-height: 1.15 !important; }
+  .ad-sub { position: static !important; margin: 6px 0 20px !important; font-size: 13.5px !important; line-height: 19px !important; }
+  .ad-body { position: static !important; left: auto !important; top: auto !important; width: auto !important; }
+  .ad-kpis { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)) !important; gap: 16px !important; }
+  .ad-bar { flex-wrap: wrap !important; gap: 10px !important; }
+  .ad-bar h2 { flex: 1 1 100%; }
+  .ad-search { width: 100% !important; }
+  .ad-sel { flex: 1 1 140px; }
+  /* tables: header row hidden, each record becomes a stacked block */
+  .ad-th { display: none !important; }
+  .ad-tr {
+    display: block !important;
+    padding: 12px 16px !important;
+    min-height: 0 !important;
+  }
+  .ad-tr > span {
+    display: block !important;
+    text-align: left !important;
+    font-size: 13px !important;
+    line-height: 18px !important;
+    margin: 2px 0 !important;
+  }
+  .ad-tr .num { text-align: left !important; }
+  .ad-tr .badge { display: inline-flex !important; margin-top: 6px !important; }
+  .ad-tr.ac-g, .ad-tr.ad-g-audit, .ad-tr.ad-g-rep { display: block !important; }
+  .ac-who { margin-bottom: 6px; }
+  .ac-edit { width: 100% !important; margin-top: 8px; }
+  .ad-note { font-size: 12.5px !important; line-height: 19px !important; }
+}
+
+/* ---- sign in ----------------------------------------------------------- */
+@media (max-width: 1439px) {
+  .si { width: 100% !important; height: auto !important; overflow: visible !important; }
+  .si-bleed { display: none !important; }
+  .si-panel { position: relative !important; width: 100% !important; height: auto !important; padding: 28px 24px 40px !important; box-sizing: border-box; }
+  .si > * { position: static !important; }
+  .si-logo { width: 92px !important; height: 64px !important; }
+  .si-brand { display: block; margin: 6px 0 0 !important; font-size: 18px !important; }
+  .si-h { margin: 20px 0 0 !important; width: auto !important; font-size: 27px !important; line-height: 34px !important; }
+  .si-p { margin: 10px 0 0 !important; width: auto !important; font-size: 14.5px !important; line-height: 20px !important; }
+  .si-ic, .si-ft, .si-fd { display: none !important; }
+  .si-demo { position: static !important; margin-top: 22px !important; }
+  /* the form column becomes the page body */
+  #sif, .si-state { position: static !important; width: auto !important; height: auto !important; display: block !important; margin: 0 !important; padding: 24px 0 0 !important; }
+  #sif > *, .si-state > * { position: static !important; }
+  .si-t { margin: 20px 0 0 !important; width: auto !important; font-size: 26px !important; line-height: 32px !important; white-space: normal !important; }
+  .si-s { margin: 6px 0 18px !important; width: auto !important; font-size: 14px !important; line-height: 19px !important; }
+  .si-l { display: block; margin: 14px 0 6px !important; font-size: 13px !important; }
+  .si-i { width: 100% !important; height: 46px !important; box-sizing: border-box; font-size: 15px !important; }
+  .si-eye { position: absolute !important; right: 10px; left: auto !important; top: 62px !important; }
+  .si-k { position: static !important; display: inline-flex !important; align-items: center; gap: 8px; margin: 14px 0 0 !important; height: auto !important; width: auto !important; }
+  .si-k .box { position: static !important; }
+  .si-k .tx { position: static !important; font-size: 13.5px !important; }
+  .si-f { position: static !important; display: inline-block; margin: 10px 0 0 !important; width: auto !important; font-size: 13.5px !important; }
+  .si-msg { position: static !important; margin: 10px 0 0 !important; width: auto !important; font-size: 13px !important; }
+  .si-b { position: static !important; width: 100% !important; height: 48px !important; margin: 16px 0 0 !important; font-size: 16px !important; }
+  .si-pt { position: static !important; display: block; margin: 12px 0 0 !important; width: auto !important; font-size: 12.5px !important; }
+  .si-help { position: static !important; margin: 0 0 12px !important; width: auto !important; font-size: 13.5px !important; line-height: 20px !important; }
+  .dm-r { grid-template-columns: 1fr auto !important; row-gap: 6px; }
+  .dm-r code { grid-column: 1 / -1; }
+}
+
+/* ---- phone: tighten spacing, keep type readable ------------------------ */
+@media (max-width: 600px) {
+  .stage { padding: 0 14px 32px !important; }
+  .ad-kpis { grid-template-columns: 1fr 1fr !important; }
+  .ad-kpi .v { font-size: 22px !important; }
+  .kpi { min-height: 104px; }
+  .card-lg { padding: 14px 12px 8px !important; }
+}
+
+@media (max-width: 380px) {
+  .ad-kpis { grid-template-columns: 1fr !important; }
+}
+
+/* ---- touch targets ----------------------------------------------------- */
+@media (max-width: 1439px) {
+  .burger { width: 40px !important; height: 40px !important; }
+  .burger i { height: 3px !important; }
+  .burger i:nth-child(1) { top: 12px !important; width: 24px !important; }
+  .burger i:nth-child(2) { top: 19px !important; width: 16px !important; }
+  .burger i:nth-child(3) { top: 26px !important; width: 24px !important; }
+  .bell, .profile, .dr-out, .am-a, .ad-btn, .ad-sel, .ac-edit { min-height: 40px; }
+  .dr-out { height: auto !important; min-height: 48px; }
+}
+
+/* ---- header must never overflow the viewport --------------------------- */
+@media (max-width: 1439px) {
+  .hd { overflow: hidden; }
+  .bell b { right: 0 !important; }
+}
+@media (max-width: 700px) {
+  .hd { gap: 8px !important; padding: 0 12px !important; }
+  /* On a phone the profile shows the avatar only; the name, role and email stay one tap away in
+     the account menu. This is what stops the header overflowing at 390px. */
+  .profile > div { display: none !important; }
+  .hd .brand { font-size: 16px !important; }
+  .avatar { width: 36px !important; height: 36px !important; }
+}
+
+/* ---- module pages (Treatment, Nursing, Consultation, Personnel, Pharmacy, Attendance)
+   These share one layout system: a #tpc/#prc/#pec wrapper filled with absolutely positioned
+   .tp-a blocks at fixed coordinates. Below 1440 those coordinates cannot reflow, so the wrapper
+   becomes a flow column and every block stacks. Cards keep their white surface, radius and
+   shadow; only position, width and wrapping change. ---- */
+@media (max-width: 1439px) {
+  .tp, .stage.tp { height: auto !important; min-height: 0 !important; }
+  #tpc, #prc, #pec, #tpc * { box-sizing: border-box; }
+  #tpc, #prc, #pec {
+    position: static !important;
+    width: auto !important;
+    height: auto !important;
+    display: block !important;
+  }
+  .tp-a {
+    position: static !important;
+    left: auto !important;
+    top: auto !important;
+    width: auto !important;
+    height: auto !important;
+    white-space: normal !important;
+    margin: 0 0 10px !important;
+  }
+  /* cards become full-width blocks */
+  .tp-card {
+    position: static !important;
+    width: auto !important;
+    height: auto !important;
+    border-radius: 14px !important;
+    padding: 16px !important;
+    margin: 0 0 18px !important;
+  }
+  .tp-dir, .tp-prof, .tp-sum, .tp-board, .tp-sec {
+    position: static !important;
+    width: auto !important;
+    height: auto !important;
+    left: auto !important;
+    top: auto !important;
+  }
+  /* decorative separators and the fixed icon circles are meaningless once stacked */
+  .tp-sd { display: none !important; }
+  .tp-ico {
+    position: static !important;
+    left: auto !important; top: auto !important;
+    width: 40px !important; height: 40px !important;
+    display: inline-grid !important;
+    place-items: center;
+    margin: 0 0 8px !important;
+  }
+  .tp-ico svg { position: static !important; left: auto !important; top: auto !important; }
+  /* buttons that draw their label with an absolutely positioned child */
+  .tp-rx, .tp-btn2 {
+    position: static !important;
+    width: 100% !important;
+    height: 44px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 8px !important;
+    margin: 0 0 10px !important;
+    text-align: center !important;
+  }
+  .tp-rx svg, .tp-rx span, .tp-btn2 svg, .tp-btn2 span {
+    position: static !important; left: auto !important; top: auto !important;
+  }
+  .tp-rx span, .tp-btn2 span { font-size: 13.5px !important; }
+  .tp-t { font-size: clamp(24px, 6vw, 34px) !important; line-height: 1.15 !important; }
+  .tp-d { font-size: 13.5px !important; line-height: 19px !important; }
+  .tp-h2 { font-size: 16.5px !important; line-height: 21px !important; }
+  .tp-l, .tp-s12, .tp-cnt { font-size: 12px !important; line-height: 16px !important; }
+  .tp-v1 { font-size: 16px !important; line-height: 20px !important; }
+  .tp-v2 { font-size: 14px !important; line-height: 18px !important; }
+  /* search + filter controls */
+  .tp-search, .tp-filter {
+    position: static !important;
+    width: 100% !important;
+    height: 42px !important;
+    margin: 0 0 10px !important;
+  }
+  /* rows inside module lists */
+  .tp-r {
+    position: static !important;
+    width: auto !important;
+    height: auto !important;
+    left: auto !important; top: auto !important;
+    display: block !important;
+    padding: 10px 0 !important;
+  }
+  .tp-r > * { position: static !important; left: auto !important; top: auto !important; }
+  .tp-r .dot { display: none !important; }
+}
+
+/* ---- minimum readable size for label/meta text -------------------------
+   Every class below is an 11px "label" or "meta" style measured across the module
+   stylesheets. At desktop they stay as Figma drew them; below 1440 they are lifted to
+   the 12px secondary-text floor from the brief. No new type size is introduced — 12px
+   already exists throughout the design (badges, table heads, helper text). */
+@media (max-width: 1439px) {
+  .tp-l, .tp-th span, .tp-r .rl, .tp-r .id, .tp-badge, .tp-eid, .tp-fl,
+  .dr .who small, .si small, .rrow .ini, .rrow .pt small,
+  .bl-lab, .bl-row .m1, .bl-row .m2, .bl-pill, .bl-tr.h,
+  .pr-lbl, .pr-meth, .pr-m .s, .pr-h, .pr-r .mt, .pr-p .lb,
+  .pe-l, .pe-th span, .pe-r .rl, .pe-r .id, .pe-badge, .pe-eid,
+  .dp-stat .s, .dp-revl, .dp-mini i, .dp-tag, .dp-dl,
+  .pf-tag,
+  .at-lbl, .at-meth, .at-m .s, .at-h, .at-r .mt, .at-p,
+  .rf-hint, .rf-cc,
+  .f-l, .f-i, .f-in,
+  .ad-th, .ad-count, .ad-foot, .dm-f, .am-f, .rb-f, .nf-rm, .nf-rb,
+  .ac-you, .ac-wt small, .ad-tr .mu
+  { font-size: 12px !important; line-height: 16px !important; }
+
+  /* nothing inside a module wrapper may exceed its column */
+  #tpc *, #prc *, #pec * { max-width: 100% !important; }
+  .tp-r, .tp-r > *, .pe-r, .pe-r > *, .pr-r, .pr-r > *, .at-r, .at-r > *, .bl-row, .bl-row > * {
+    max-width: 100% !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+  .tp-r, .pe-r, .pr-r, .at-r, .bl-row { overflow: visible !important; }
+}
+
+/* ---- interim containment for screens not yet reflowed -------------------
+   Billing, Registration, Appointments, Departments, Profile, Portal and the two long
+   registration forms still place content with fixed 1440px coordinates. Reflowing them
+   properly is tracked as remaining work. Until then the page itself must not overflow:
+   the stage becomes the scroll container, so the DOCUMENT stays 100% wide, text keeps its
+   real size (no zoom), and the dense card can be panned sideways instead of the whole
+   page being broken. Screens reflowed above are unaffected — they never overflow. */
+@media (max-width: 1439px) {
+  .stage { overflow-x: auto; overflow-y: visible; -webkit-overflow-scrolling: touch; }
+  body { overflow-x: hidden; }
+}
+
+/* ---- final label/meta classes found by the 390px audit ------------------ */
+@media (max-width: 1439px) {
+  .pe-fl, .pe-s12, .ac-av, .pt-tile span { font-size: 12px !important; line-height: 16px !important; }
+  .ac-av { width: 34px !important; height: 34px !important; }
+}
+@media (max-width: 1439px) { .at-fl, .at-lp { font-size: 12px !important; line-height: 16px !important; } }
