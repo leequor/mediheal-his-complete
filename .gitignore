@@ -10,3 +10,4 @@ qa/tmp/
 # Mobile audit output (screenshots + JSON). Regenerate with: node scripts/mobile-audit.mjs
 qa/mobile/
 qa/audit-out.txt
+qa/matrix.txt
