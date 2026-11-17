@@ -94,3 +94,69 @@ PW=<path>/playwright-core/index.js node scripts/mobile-audit.mjs
 PW=<path>/playwright-core/index.js node scripts/visual-check.mjs --check
 PW=<path>/playwright-core/index.js node scripts/responsive-check.mjs
 ```
+
+---
+
+## M9.1 — responsive completion (follow-up)
+
+### What changed since the hotfix
+
+The hotfix left seven screens using an interim "stage scrolls horizontally" workaround. Those are now
+genuinely reflowed, and the workaround is **gone**: the audit asserts `stage.scrollWidth <= stage.clientWidth`
+on every page at every width.
+
+| Screen | Reflow |
+|---|---|
+| Billing | stats stack (label above value), bill rows become cards, invoice lines become a 2-column grid, totals become flex rows, actions full-width |
+| Registration | stat cards stack, `.rrow` grid collapses to blocks, table head hidden |
+| Appointments | KPI cards stack, controls wrap, `.a-row` collapses, pagination and icon buttons enlarge to 40px |
+| Departments | cards stack, mini-stats become 2-up, tag rows wrap, progress tracks become fluid |
+| Profile | identity card stacks, `.pf-row` becomes a flex label/value pair |
+| Inpatient / Outpatient forms | `.rf-sec` cards full-width, every `.rf-row` becomes one column, inputs 46px tall, actions full-width |
+| Appointment form + confirmation | `.f-*` and `.c-*` fully stacked, dropdowns and buttons full-width |
+
+Also handled: the shared `.dd` dropdown (was fixed at 236px), `#bllist`/`#blinv` 0×0 wrappers,
+`#atc` (Attendance's wrapper — previously only `#tpc`/`#prc`/`#pec` were covered), and every
+`position:relative` conversion that still honoured its original `left` offset.
+
+### Bugs found by inspecting screenshots (not by the audit)
+
+1. **Inline collapse.** Converting an absolutely positioned `<span>` to `static` makes it *inline*, so
+   `Total billed (Aug)` and `₱482K` collapsed onto one line and overlapped. The audit passed — text
+   size and overflow were fine. Only the screenshot showed it. Fixed by forcing `display:block` on
+   every reflowed card's text children.
+2. **Collapsed list.** `#bllist` is a 0×0 positioning wrapper; once its children became static the
+   entire bill list collapsed. Fixed by giving it real dimensions.
+3. **`position:relative` keeps `left`.** `.bl-search` kept `left:1138px` and sat 1124px off-screen.
+   Same class of bug on `.rf-chip` and `.f-in`/`.f-l` (which never received `position:static` at all).
+
+### Verified
+
+| Check | Result |
+|---|---|
+| `mobile-audit.mjs`, 23 pages × 390/430/768/1024/1280/1440 | **138 / 138 pass** — 0 failures |
+| Stage horizontal scroll | **0 pages** (workaround removed) |
+| Smallest rendered text below 1440 | **12px** |
+| `visual-check.mjs --check` | all 23 pages match baseline (desktop untouched) |
+| `roles-check.mjs` | 119 checks, 0 failures |
+
+### Honest status
+
+- **Touch targets are improved but not compliant.** The drawer exit link went 25px → 44px. Dense table
+  controls on Attendance and Payroll remain **24px**, not 44px: 44px breaks the row layout. The
+  correct fix is making the whole row the hit target, which needs a JS change — **not done**.
+  The audit still reports 21 and 18 such controls.
+- **Visual inspection covered Billing in detail.** The other reflowed screens were checked by
+  measurement and by the audit, not by eye at 390px. Given that the audit missed two real
+  layout breaks on Billing, the remaining screens should be inspected the same way before this
+  milestone is called finished.
+- **No accessibility audit yet** — contrast, focus order, screen-reader labels, reduced motion.
+- Landscape mobile (844×390) was not tested.
+
+### Commands
+
+```
+PW=<path>/playwright-core/index.js node scripts/mobile-audit.mjs --widths 390,430,768,1024,1280,1440
+PW=<path>/playwright-core/index.js node scripts/visual-check.mjs --check
+PW=<path>/playwright-core/index.js node scripts/roles-check.mjs
+```
