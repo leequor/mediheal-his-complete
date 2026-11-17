@@ -6,3 +6,7 @@ qa/baseline/*.png
 qa/diff/
 qa/tmp/
 *.log
+
+# Mobile audit output (screenshots + JSON). Regenerate with: node scripts/mobile-audit.mjs
+qa/mobile/
+qa/audit-out.txt
