@@ -313,10 +313,25 @@ See §8. Text below ~11px effective size at 390px. Blocked on mobile Figma frame
 
 Any change ships only when all of these hold:
 
-- [ ] `qa/capture.mjs` → 0 console errors on all pages.
+- [ ] `node scripts/visual-check.mjs --check` → no page exceeds the diff threshold.
+- [ ] `qa/capture.mjs` (or `smoke.mjs`) → 0 console errors on all pages.
 - [ ] No horizontal overflow at 1440, 1200, 1000, 800, 390.
 - [ ] Visual diff vs `qa/baseline/` shows changes confined to the intended pages/regions.
 - [ ] Existing flows still pass (sign-in, registration, appointment, billing, payroll sync).
 - [ ] No new `mh_*` keys left behind by tests.
 - [ ] Keyboard: every new control reachable, Escape closes overlays, focus returns to trigger.
 - [ ] Colour is never the only carrier of meaning.
+
+### Reading the harness output honestly
+
+The diff runs with a per-channel tolerance of **12/255** and fails a page above **0.05%** differing
+pixels. Both defaults exist because text antialiasing varies slightly between browser launches:
+
+- A repeat capture of an unchanged page can differ by ~0.1% of pixels at deltas up to ~100/255,
+  scattered across glyph edges. Measured example: `staff.html` old-vs-new = 2085 px (0.11%), max
+  delta 102, **zero** pixels ≥128, images visually indistinguishable. That is renderer noise.
+- **A real layout change looks different**: large contiguous regions with deltas near 255.
+  Check the reported bounding box, not just the percentage.
+- PNG bytes are not a reliable identity check across sessions — the same pixels can encode to
+  different bytes. `baseline-manifest-1440.json` stores a `sha256` for reference, but the
+  **pixel diff is authoritative**, not the hash.

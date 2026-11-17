@@ -25,7 +25,9 @@ const ICON_PATHS = {
   'id': "<rect x='3' y='4' width='18' height='16' rx='2'/><circle cx='12' cy='10' r='3'/><path d='M7 18c1-3 9-3 10 0'/>",
   'peso': "<text x='12' y='18' text-anchor='middle' font-size='18' font-weight='700' fill='currentColor' stroke='none' font-family='Inter'>\u20b1</text>",
   'branches': "<circle cx='12' cy='5' r='2'/><circle cx='5' cy='19' r='2'/><circle cx='19' cy='19' r='2'/><path d='M12 7v5M5 17v-3a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v3'/>",
-  'receipt': "<path d='M5 3h14v18l-3-2-2 2-2-2-2 2-2-2-3 2zM8 8h8M8 12h8'/>"
+  'receipt': "<path d='M5 3h14v18l-3-2-2 2-2-2-2 2-2-2-3 2zM8 8h8M8 12h8'/>",
+  'chart': "<path d='M3 3v18h18'/><path d='M7 16v-5M12 16V7M17 16v-9'/>",
+  'shield': "<path d='M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6z'/><path d='m9 12 2 2 4-4'/>"
 };
 function svg(name, size = 20, extra = '') {
   return "<svg width='" + size + "' height='" + size + "' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' " + extra + '>' + (ICON_PATHS[name] || '') + '</svg>';
