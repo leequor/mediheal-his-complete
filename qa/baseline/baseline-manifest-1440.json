@@ -1,4 +1,10 @@
 {
+  "accounts": {
+    "width": 1440,
+    "height": 1336,
+    "bytes": 434933,
+    "sha256": "9bc23594b3974880e1a7b9271c118b9c93ca2bbe1998773f0ea9417a7bfa851e"
+  },
   "appointment-confirmed": {
     "width": 1440,
     "height": 1120,
@@ -56,8 +62,8 @@
   "index": {
     "width": 1440,
     "height": 900,
-    "bytes": 697957,
-    "sha256": "2072b956ab4484518d7269b9f6023af868baf2f21e7eb9dbaee975e1560f6f96"
+    "bytes": 704158,
+    "sha256": "e1e7596d4c10e43c3c3c3112bee1862e912dc8e4a5e8c25896e57d6cc6f5d08b"
   },
   "nursing": {
     "width": 1440,
@@ -116,8 +122,8 @@
   "reports": {
     "width": 1440,
     "height": 1120,
-    "bytes": 403499,
-    "sha256": "cbf965f9aad697218067dd367f587e0a0ef09b1dc32e919c67b002033d99d99d"
+    "bytes": 403495,
+    "sha256": "ea504863aaaeb53a12fc92801a672e03ff7574b3711f8f85fccddf007e237559"
   },
   "staff": {
     "width": 1440,

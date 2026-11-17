@@ -1,18 +1,16 @@
-// Role-based access (M1). A frontend DEMONSTRATION of role-scoped navigation and page access.
+// Role-based access (M1, reworked in M3 to account-based identity).
+//
+// The active role is resolved from the SIGNED-IN ACCOUNT (`HIS.auth.account().role`), never from a
+// user-editable role string. There is no role switcher: a person signs in with their own email and
+// the account record decides everything.
 //
 // THIS IS NOT SECURITY. Every "restriction" below is enforced in the browser and is trivially
-// bypassable. It exists to show how the same dataset looks from each hospital role's point of view.
-// See docs/DESIGN-LOCK.md §10 for the addition rules this UI follows.
+// bypassable. It shows how the same dataset looks from each hospital role's point of view.
+// See docs/DESIGN-LOCK.md §10 for the addition rules this UI follows, and docs/AUTH.md for what a
+// real deployment would need.
 //
-// Default role is `superadmin`, whose demo persona is Dr. Elsie Chen / Chief Physician — the same
-// identity the header already rendered before this module existed. That keeps the shipped pages
-// pixel-identical at rest (verified with scripts/visual-check.mjs) while making every other role
-// reachable from the header switcher.
-//
-// Persisted in `mh_role` through HIS.store; load store.js and audit.js first.
+// Load order: data.js -> store.js -> audit.js -> kit.js -> accounts.js -> auth.js -> rbac.js.
 (function () {
-  var KEY = 'mh_role';
-
   // `pages` are page stems (filename without .html). `nav` is the order of the drawer links.
   // `home` must always be present in `pages`.
   var ROLES = {
@@ -23,9 +21,9 @@
       pages: ['dashboard', 'registration', 'registration-form', 'outpatient-form', 'profile',
         'appointments', 'appointment-form', 'appointment-confirmed', 'consultation', 'treatment',
         'nursing', 'pharmacy', 'attendance', 'personnel', 'payroll', 'departments', 'billing',
-        'reports', 'audit'],
+        'reports', 'audit', 'accounts'],
       nav: ['dashboard', 'registration', 'appointments', 'consultation', 'treatment', 'nursing',
-        'pharmacy', 'attendance', 'personnel', 'payroll', 'departments', 'billing', 'reports', 'audit'],
+        'pharmacy', 'attendance', 'personnel', 'payroll', 'departments', 'billing', 'reports', 'audit', 'accounts'],
       home: 'dashboard'
     },
     hospitaladmin: {
@@ -152,15 +150,25 @@
     ['departments', 'Departments', 'branches'],
     ['billing', 'Billing', 'receipt'],
     ['reports', 'Reports', 'chart'],
-    ['audit', 'Audit log', 'shield']
+    ['audit', 'Audit log', 'shield'],
+    ['accounts', 'Accounts', 'key']
   ];
 
+  // No session means no role. A guest role keeps every helper total instead of returning undefined.
+  var GUEST = { label: 'Signed out', short: 'Guest', person: { name: 'Signed out', title: '' }, scope: '', pages: [], nav: [], home: 'index' };
+
   function key() {
-    var k = HIS.store.get(KEY, 'superadmin');
-    return ROLES[k] ? k : 'superadmin';
+    if (!window.HIS.auth) return null;
+    var a = HIS.auth.account();
+    return a && ROLES[a.role] ? a.role : null;
   }
-  function current() { return ROLES[key()]; }
-  function person() { return current().person; }
+  function current() { return ROLES[key()] || GUEST; }
+  // Identity always comes from the signed-in account record, never from a stored role string.
+  function person() {
+    var a = window.HIS.auth ? HIS.auth.account() : null;
+    if (a) return { name: a.name, title: a.title || ROLES[a.role].label, email: a.email, dept: a.dept };
+    return GUEST.person;
+  }
   function stem() {
     var f = (location.pathname.split('/').pop() || 'index.html').replace(/\.html$/, '');
     return f || 'index';
@@ -170,34 +178,22 @@
     var allowed = current().nav;
     return NAV.filter(function (n) { return allowed.indexOf(n[0]) > -1; });
   }
-  // Switch role, persist, audit, then land on a page the new role can actually open.
-  function set(k, opts) {
-    if (!ROLES[k]) return false;
-    var from = key();
-    HIS.store.set(KEY, k);
-    if (!(opts && opts.silent) && window.HIS.audit) {
-      HIS.audit.append({
-        who: ROLES[k].person.name, role: ROLES[k].label,
-        what: 'Switched role: ' + ROLES[from].label + ' \u2192 ' + ROLES[k].label,
-        entity: 'session', before: from, after: k
-      });
-    }
-    return true;
-  }
   // Land on the role's home when the current page is out of scope.
   function home() {
     var r = current();
+    if (!r.home) return 'index.html';
     return r.external || (r.home + '.html');
   }
+  // Route guard: authentication first, then role scope.
   function guard() {
-    if (allows()) return true;
-    location.replace(home());
-    return false;
+    if (window.HIS.auth && !HIS.auth.requireAuth()) return false;
+    if (!allows()) { location.replace(home()); return false; }
+    return true;
   }
 
   HIS.rbac = {
-    KEY: KEY, ROLES: ROLES, NAV: NAV,
+    ROLES: ROLES, NAV: NAV,
     key: key, current: current, person: person, stem: stem,
-    allows: allows, nav: nav, set: set, home: home, guard: guard
+    allows: allows, nav: nav, home: home, guard: guard
   };
 })();

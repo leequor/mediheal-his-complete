@@ -6,7 +6,14 @@
 <link href='https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lexend:wght@300;400;500;600;700&family=Outfit:wght@700&display=swap' rel='stylesheet'>
 <link rel='stylesheet' href='assets/css/tokens.css'><link rel='stylesheet' href='assets/css/base.css'><link rel='stylesheet' href='assets/css/signin.css'>
 </head><body>
-<!-- Figma: Sign in 211:34 (1440x1024, origin 0,34000). Coordinates below are frame-local. Sign in button goes to Dashboard 211:59. -->
+<!-- Figma: Sign in 211:34 (1440x1024, origin 0,34000). Coordinates below are frame-local.
+     M3 additions (all flagged "Addition (not in Figma)"):
+       - password show/hide control inside the existing password field
+       - inline status/error row just above the Sign in button (y 652)
+       - "Demo accounts" disclosure anchored to the bottom of the left panel
+       - the Figma "Reset link sent" state (4031:9586) is NOT used: it claims an email was sent,
+         which a static site cannot do. See docs/AUTH.md.
+     The rest of the layout is unchanged from the Figma frame. -->
 <div class='si-bleed' aria-hidden='true'></div>
 <div class='si'>
   <div class='si-panel'></div>
@@ -21,66 +28,72 @@
   <svg class='si-ic' style='left:57px;top:679px;width:40px;height:40px' viewBox='0 0 24 24' fill='none' stroke='#fff' stroke-width='1.2' stroke-linecap='round' stroke-linejoin='round'><path d='M4 4.5A1.5 1.5 0 0 1 5.5 3h10A1.5 1.5 0 0 1 17 4.5V12'/><path d='M4 4.5V19a1.5 1.5 0 0 0 1.5 1.5H12'/><path d='M7.5 8h6M7.5 11.5h4'/><rect x='12' y='13.5' width='9' height='6.5' rx='1.5'/><path d='M14.5 16.8h4'/></svg>
   <div class='si-ft' style='left:114px;top:676px'>Billing &amp; Management Reports</div><div class='si-fd' style='left:114px;top:699px'>Clear, accurate reports for management</div>
 
+  <!-- Addition (not in Figma): demo-access disclosure, anchored to the panel bottom so it never
+       collides with the feature list at any frame height. -->
+  <button type='button' class='si-demo' id='siDemo'>
+    <svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><circle cx='7.5' cy='15.5' r='4.5'/><path d='m10.8 12.2 8-8M16 3.5l4.5 4.5M14 6l3 3'/></svg>
+    Demo accounts &amp; password
+  </button>
+
   <h1 class='si-t' id='sit1'>Sign in to your workspace</h1>
   <p class='si-s' id='sis1'>Enter your staff credentials to access the hospital Information System.</p>
+
   <form id='sif' novalidate>
     <label class='si-l' for='sie' style='left:820px;top:429px'>Email Address</label>
-    <input class='si-i' id='sie' type='email' autocomplete='username' placeholder='name@mediheal.com' style='left:820px;top:457px'>
+    <input class='si-i' id='sie' type='email' autocomplete='username' placeholder='name@mediheal.test' style='left:820px;top:457px' aria-describedby='siMsg'>
     <label class='si-l' for='sip' style='left:820px;top:524px'>Password</label>
-    <input class='si-i' id='sip' type='password' autocomplete='current-password' placeholder='Enter your password' style='left:820px;top:552px'>
+    <input class='si-i pw' id='sip' type='password' autocomplete='current-password' placeholder='Enter your password' style='left:820px;top:552px'>
+    <button type='button' class='si-eye' id='siEye' aria-label='Show password' aria-pressed='false'>
+      <svg class='eye-off' width='19' height='19' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><path d='M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z'/><circle cx='12' cy='12' r='3'/><path d='m3 3 18 18'/></svg>
+      <svg class='eye-on' width='19' height='19' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><path d='M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z'/><circle cx='12' cy='12' r='3'/></svg>
+    </button>
     <label class='si-k'><input type='checkbox' id='sik'><span class='box'><svg viewBox='0 0 24 24' width='18' height='18' fill='none' stroke='#000' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'><path d='m5 12 5 5 9-10'/></svg></span><span class='tx'>Keep me signed in</span></label>
     <button type='button' class='si-f' id='sif2'>Forgot password?</button>
-    <button class='si-b' type='submit'>Sign in →</button>
-    <!-- Addition (not in Figma): entry to the public patient portal. -->
+    <!-- Addition (not in Figma): one inline status row between the forgot link and the button. -->
+    <div class='si-msg' id='siMsg' role='alert' aria-live='polite'></div>
+    <button class='si-b' type='submit' id='siBtn'><span id='siBtnTx'>Sign in →</span></button>
     <a class='si-pt' href='portal.html'>New patient? Open the patient portal →</a>
   </form>
-  <!-- Figma states 4031:9535 Forgot password and 4031:9586 Reset link sent (same right column, frame-local coords) -->
+
+  <!-- Honest password-help state. No "reset link sent" claim: a static site cannot send mail. -->
   <div class='si-state' id='si-forgot' hidden>
-    <label class='si-l' for='sife' style='left:820px;top:429px'>Email Address</label>
-    <input class='si-i' id='sife' type='email' autocomplete='username' placeholder='name@mediheal.com' style='left:820px;top:457px'>
-    <button type='button' class='si-b' id='sif-send' style='top:550px'>Send reset link</button>
-    <button type='button' class='si-f' id='sif-back' style='left:820px;top:616px;width:130px'>Back to sign in</button>
-  </div>
-  <div class='si-state' id='si-sent' hidden>
-    <button type='button' class='si-b' id='sis-back' style='top:440px'>Back to sign in</button>
+    <p class='si-help' style='top:396px'>
+      <b>Password help</b>
+      This demonstration runs entirely in your browser, so it cannot send email or verify that you
+      own an address.
+    </p>
+    <p class='si-help' style='top:476px'>
+      Ask the <b>Super Administrator</b> to reset your demo password from <b>Accounts</b>, or sign in
+      with any demo account using the shared demo password.
+    </p>
+    <button type='button' class='si-b' id='sif-demo' style='top:560px'>Show demo accounts</button>
+    <button type='button' class='si-f' id='sif-back' style='left:820px;top:626px;width:130px'>Back to sign in</button>
   </div>
 </div>
+
+<!-- Addition (not in Figma): demo credential reference. A list, NOT a role selector — it only
+     fills the form so you can try each identity; the account still decides the role. -->
+<div class='dm-bg' id='dmBg' hidden>
+  <div class='dm' role='dialog' aria-modal='true' aria-labelledby='dmTitle'>
+    <div class='dm-h'>
+      <div>
+        <h3 id='dmTitle'>Demo accounts</h3>
+        <p>Every account shares one public demo password. These are reserved <code>.test</code> addresses, not real mailboxes.</p>
+      </div>
+      <button type='button' class='dm-x' id='dmX' aria-label='Close demo accounts'>✕</button>
+    </div>
+    <div class='dm-pw'>
+      <span>Demo password</span>
+      <code id='dmPw'>MediHeal2026!</code>
+      <button type='button' class='dm-copy' data-copy='MediHeal2026!'>Copy</button>
+    </div>
+    <div class='dm-list' id='dmList'></div>
+    <div class='dm-f'>Demonstration only · synthetic records · no real patient data</div>
+  </div>
+</div>
+
 <div class='si-tip' id='sit' hidden></div>
 <script src='assets/js/fit.js'></script>
-<script>
-(function(){
-  var e=document.getElementById('sie'),p=document.getElementById('sip'),t=document.getElementById('sit'),tm;
-  function tip(m){t.textContent=m;t.hidden=false;clearTimeout(tm);tm=setTimeout(function(){t.hidden=true},2600)}
-  [e,p].forEach(function(i){i.addEventListener('input',function(){i.classList.remove('bad')})});
-  document.getElementById('sif').addEventListener('submit',function(ev){
-    ev.preventDefault();
-    var ok1=/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e.value.trim()),ok2=p.value.length>0;
-    e.classList.toggle('bad',!ok1);p.classList.toggle('bad',!ok2);
-    if(!ok1){tip('Enter a valid email address');e.focus();return}
-    if(!ok2){tip('Enter your password');p.focus();return}
-    location.href='dashboard.html';
-  });
-  document.getElementById('sif2').addEventListener('click',function(){view('forgot');document.getElementById('sife').focus()});
-  var VIEWS={
-    signin:['Sign in to your workspace','Enter your staff credentials to access the hospital Information System.'],
-    forgot:['Reset your password','Enter your staff email address and we will send you a link to reset your password.'],
-    sent:['Check your email','If that email is registered, a reset link is on its way. It expires in 30 minutes.']
-  };
-  function view(v){
-    document.getElementById('sif').hidden=v!=='signin';
-    document.getElementById('si-forgot').hidden=v!=='forgot';
-    document.getElementById('si-sent').hidden=v!=='sent';
-    document.getElementById('sit1').textContent=VIEWS[v][0];
-    document.getElementById('sis1').textContent=VIEWS[v][1];
-  }
-  var fe=document.getElementById('sife');
-  fe.addEventListener('input',function(){fe.classList.remove('bad')});
-  document.getElementById('sif-send').addEventListener('click',function(){
-    if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(fe.value.trim())){fe.classList.add('bad');tip('Enter a valid email address');fe.focus();return}
-    view('sent');
-  });
-  document.getElementById('sif-back').addEventListener('click',function(){view('signin');e.focus()});
-  document.getElementById('sis-back').addEventListener('click',function(){view('signin');e.focus()});
-})();
-</script>
+<script src='assets/js/data.js'></script><script src='assets/js/store.js'></script><script src='assets/js/audit.js'></script><script src='assets/js/kit.js'></script><script src='assets/js/accounts.js'></script><script src='assets/js/auth.js'></script><script src='assets/js/rbac.js'></script>
+<script src='assets/js/signin.js'></script>
 </body></html>

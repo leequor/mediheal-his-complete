@@ -40,3 +40,61 @@
 .si-state{left:0;top:0;width:0;height:0}
 .si-state[hidden]{display:none}
 .si-state>*{position:absolute}
+
+/* ===== M3 additions (not in Figma) =====================================================
+   All values below come from tokens.css or from values already measured in this file.
+   Nothing here introduces a new colour, font or radius scale. */
+
+/* Password show/hide, sitting inside the existing password field. The field gains right padding
+   so typed text never runs under the control. */
+.si-i.pw{padding-right:46px}
+.si-eye{left:1204px;top:558px;width:32px;height:30px;display:grid;place-items:center;padding:0;border:0;border-radius:8px;background:transparent;color:#6f8890;cursor:pointer}
+.si-eye:hover{color:#1c6d9c;background:#e8f4fb}
+.si-eye:focus-visible{outline:2px solid #1c6d9c;outline-offset:1px}
+.si-eye .eye-on{display:none}
+.si-eye.on .eye-on{display:block}
+.si-eye.on .eye-off{display:none}
+
+/* Inline status row between the forgot link and the Sign in button. */
+.si-msg{left:820px;top:650px;width:422px;margin:0;font:500 12.5px/17px Inter,sans-serif;display:none}
+.si-msg.on{display:block}
+.si-msg.bad{color:#9b1c14}
+.si-msg.ok{color:#084d02}
+.si-b.busy{background:#1b2a47;cursor:default}
+.si-b.done{background:#084d02;cursor:default}
+
+/* Demo-access disclosure. Anchored to the panel bottom, but sized to clear the feature list at the
+   780px frame floor (last feature line ends at y718; the button occupies y734-768). */
+.si-demo{position:absolute;left:57px;bottom:12px;display:inline-flex;align-items:center;gap:8px;height:34px;padding:0 13px;border:1px solid rgba(255,255,255,.45);border-radius:10px;background:rgba(255,255,255,.08);color:#fff;font:600 12.5px Inter,sans-serif;cursor:pointer}
+.si-demo:hover{background:rgba(255,255,255,.18)}
+.si-demo:focus-visible{outline:2px solid #fff;outline-offset:2px}
+
+/* Password-help paragraphs (replaces the old "reset link sent" state). */
+.si-help{left:820px;width:422px;margin:0;font:400 14px/21px Inter,sans-serif;color:#6f8890}
+.si-help b{color:#15405a;font-weight:600}
+
+/* Demo credential reference. A list, not a role selector. */
+.dm-bg{position:fixed;inset:0;z-index:2000;background:rgba(11,42,61,.35);display:grid;place-items:center;padding:24px}
+.dm-bg[hidden]{display:none}
+.dm{width:760px;max-width:100%;max-height:min(84vh,760px);display:flex;flex-direction:column;background:#fff;border-radius:16px;box-shadow:0 20px 50px rgba(15,30,46,.25);overflow:hidden}
+.dm-h{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:22px 24px 0}
+.dm-h h3{margin:0;font:500 20px/25px Lexend,sans-serif;color:#1b4e6b}
+.dm-h p{margin:6px 0 0;max-width:560px;font:400 12.5px/18px Inter,sans-serif;color:#6f8890}
+.dm-h code{background:#e8f4fb;padding:1px 5px;border-radius:4px;color:#1b4e6b}
+.dm-x{width:32px;height:32px;flex:none;border:0;border-radius:8px;background:#fff;box-shadow:inset 0 0 0 1px #c8dcea;color:#1b4e6b;font:500 15px/30px Inter,sans-serif;cursor:pointer;padding:0;text-align:center}
+.dm-x:hover{background:#e8f4fb}
+.dm-pw{display:flex;align-items:center;gap:12px;margin:16px 24px 0;padding:12px 16px;border-radius:12px;background:#f6fafd;border:1px solid #e3edf3;font:400 12.5px Inter,sans-serif;color:#6f8890}
+.dm-pw code{font:600 14px/18px Inter,monospace;color:#15405a;letter-spacing:.02em}
+.dm-list{margin:14px 0 0;overflow-y:auto;border-top:1px solid #e3edf3}
+.dm-r{display:grid;grid-template-columns:1fr auto auto auto;align-items:center;gap:12px;padding:9px 24px;border-bottom:1px solid #f0f5f9}
+.dm-r:hover{background:#fbfdff}
+.dm-ri{min-width:0}
+.dm-ri b{display:block;font:600 13px/17px Inter,sans-serif;color:#1c2b30;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dm-ri span{display:block;font:400 11px/15px Inter,sans-serif;color:#6f8890;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dm-r code{font:500 12px/16px Inter,monospace;color:#1b4e6b;background:#f6fafd;padding:3px 7px;border-radius:6px;white-space:nowrap}
+.dm-copy,.dm-use{height:28px;padding:0 11px;border-radius:8px;font:600 11.5px Inter,sans-serif;cursor:pointer;white-space:nowrap}
+.dm-copy{border:1px solid #c8dcea;background:#fff;color:#1b4e6b}
+.dm-copy:hover{background:#e8f4fb}
+.dm-use{border:1px solid #1c6d9c;background:#1c6d9c;color:#fff}
+.dm-use:hover{background:#1b4e6b;border-color:#1b4e6b}
+.dm-f{flex:none;padding:10px 24px;border-top:1px solid #e3edf3;background:#f6fafd;font:500 11px/14.3px Inter,sans-serif;color:#8a97a6}

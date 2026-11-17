@@ -23,7 +23,10 @@ const ROOT = path.resolve(HERE, '..');
 const arg = (name, def) => { const i = process.argv.indexOf('--' + name); return i > -1 ? process.argv[i + 1] : def; };
 const has = name => process.argv.includes('--' + name);
 const WIDTH = Number(arg('width', 1440));
-const MAX_PCT = Number(arg('max', 0.05));           // tolerated % of differing pixels per page
+// Tolerated % of differing pixels per page. Measured noise across separate browser launches reaches
+// ~0.06% on text-heavy pages while zero pixels differ by >=128, so 0.1% separates renderer noise
+// from a real change (the M3 login redesign measured 0.59%, six times this).
+const MAX_PCT = Number(arg('max', 0.1));
 const CAPTURE = has('capture');
 const OUT = path.resolve(ROOT, arg('out', 'qa/baseline'));
 const BASE = path.resolve(ROOT, arg('baseline', 'qa/baseline'));
@@ -61,13 +64,35 @@ await mkdir(OUT, { recursive: true });
 const browser = await chromium.launch({ channel: process.env.CHANNEL || 'chrome' });
 const ctx = await browser.newContext({ viewport: { width: WIDTH, height: 900 }, deviceScaleFactor: 1 });
 
+// M3: shell pages sit behind the sign-in guard, so the capture context carries a seeded session.
+// index.html and portal.html are public and are captured WITHOUT one (otherwise index would
+// redirect to the dashboard and the login screen would never be photographed).
+const AUTH_EMAIL = process.env.AUTH_EMAIL || 'superadmin@mediheal.test';
+const PUBLIC = new Set(['index', 'portal']);
+const probe = await ctx.newPage();
+await probe.goto(`http://127.0.0.1:${PORT}/index.html`, { waitUntil: 'load' });
+const authAcct = await probe.evaluate(email => {
+  const a = HIS.accounts.byEmail(email);
+  return a ? { id: a.id, email: a.email, role: a.role } : null;
+}, AUTH_EMAIL);
+await probe.close();
+if (!authAcct) { console.error('No seeded account for ' + AUTH_EMAIL + '; cannot capture protected pages.'); process.exit(2); }
+await ctx.addInitScript(a => {
+  localStorage.setItem('mh_session', JSON.stringify({
+    userId: a.id, email: a.email, role: a.role,
+    at: new Date().toISOString(), expiresAt: new Date(Date.now() + 864e5).toISOString(), remember: true
+  }));
+}, authAcct);
+const ctxPublic = await browser.newContext({ viewport: { width: WIDTH, height: 900 }, deviceScaleFactor: 1 });
+console.log(`visual-check: authenticated as ${AUTH_EMAIL} (${authAcct.role})`);
+
 const manifest = {};
 let failures = 0;
 
 for (const name of pages) {
   const slug = name.replace(/\.html$/, '');
   const file = path.join(OUT, `${slug}__${WIDTH}.png`);
-  const page = await ctx.newPage();
+  const page = await (PUBLIC.has(slug) ? ctxPublic : ctx).newPage();
   const errors = [];
   page.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
   page.on('pageerror', e => errors.push('pageerror: ' + e.message));
@@ -90,7 +115,7 @@ for (const name of pages) {
     const curBuf = await page.screenshot({ fullPage: true, animations: 'disabled' });
     const same = createHash('sha256').update(curBuf).digest('hex') === createHash('sha256').update(baseBuf).digest('hex');
 
-    let res = { pct: 0, box: null };
+    let res = { pct: 0, box: null, hard: 0 };
     if (!same) res = await page.evaluate(async ([a, b]) => {
       const load = src => new Promise((ok, no) => { const i = new Image(); i.onload = () => ok(i); i.onerror = no; i.src = src; });
       const toURL = async buf => 'data:image/png;base64,' + buf;
@@ -100,23 +125,25 @@ for (const name of pages) {
       const cx = cv.getContext('2d', { willReadFrequently: true });
       cx.drawImage(ia, 0, 0); const da = cx.getImageData(0, 0, w, h).data;
       cx.clearRect(0, 0, w, h); cx.drawImage(ib, 0, 0); const db = cx.getImageData(0, 0, w, h).data;
-      let diff = 0, x0 = w, y0 = h, x1 = -1, y1 = -1;
+      let diff = 0, hard = 0, x0 = w, y0 = h, x1 = -1, y1 = -1;
       const TH = 12; // per-channel tolerance: ignores sub-pixel AA noise
       for (let i = 0; i < da.length; i += 4) {
-        if (Math.abs(da[i] - db[i]) > TH || Math.abs(da[i + 1] - db[i + 1]) > TH || Math.abs(da[i + 2] - db[i + 2]) > TH) {
+        const d = Math.max(Math.abs(da[i] - db[i]), Math.abs(da[i + 1] - db[i + 1]), Math.abs(da[i + 2] - db[i + 2]));
+        if (d > TH) {
           diff++;
+          if (d >= 128) hard++;
           const p = i / 4, x = p % w, y = (p / w) | 0;
           if (x < x0) x0 = x; if (x > x1) x1 = x;
           if (y < y0) y0 = y; if (y > y1) y1 = y;
         }
       }
-      return { pct: (diff / (w * h)) * 100, box: x1 < 0 ? null : { x: x0, y: y0, w: x1 - x0 + 1, h: y1 - y0 + 1 } };
+      return { pct: (diff / (w * h)) * 100, hard, box: x1 < 0 ? null : { x: x0, y: y0, w: x1 - x0 + 1, h: y1 - y0 + 1 } };
     }, [await toDataURL(curBuf), await toDataURL(baseBuf)]);
 
     const bad = res.pct > MAX_PCT;
     if (bad) failures++;
     const b = res.box ? `box ${res.box.x},${res.box.y} ${res.box.w}x${res.box.h}` : 'no region';
-    console.log(`${bad ? 'DIFF' : 'ok  '} ${slug.padEnd(24)} ${res.pct.toFixed(3)}%  ${b}  err:${errors.length}`);
+    console.log(`${bad ? 'DIFF' : 'ok  '} ${slug.padEnd(24)} ${res.pct.toFixed(3)}%  hard:${String(res.hard).padStart(5)}  ${b}  err:${errors.length}`);
   }
 
   if (errors.length) {
