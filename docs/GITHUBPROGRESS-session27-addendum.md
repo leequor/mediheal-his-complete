@@ -201,5 +201,26 @@ pixels on a Figma-locked screen.
 | M1 | 0.000% on all 20 pages | role switch, guard, audit, nav all exercised | 20 × 5 widths, 0 overflow | 0 errors |
 | M2 | 0.000% on all 22 pages | reports arithmetic, audit filters, CSV, action gating | 22 × 5 widths, 0 overflow | 0 errors |
 
+### `scripts/roles-check.mjs` (added at the end of M2)
+
+Automated reachability check for the RBAC layer. For every role it asserts three things:
+the role's home page loads **without** redirecting (catches a redirect loop or a home that is not in
+its own allowlist); **every** page in the role's allowlist opens without redirecting; and a page
+**outside** the allowlist redirects away.
+
+Result: **14 roles, 117 checks, 0 failures.**
+
+Two bugs in the harness itself were found and fixed while writing it, both worth recording because
+they are easy to repeat:
+
+1. It wrote `localStorage.mh_role` as a bare string. `HIS.store.get()` runs `JSON.parse`, so a bare
+   string parses as corrupt, returns the fallback, and **every role silently behaved as
+   superadmin** — the check reported 16 false failures against a product that was working. The role
+   must be written with `JSON.stringify`.
+2. It normalised URLs as `.replace(/\.html$/,'').split('?')[0]`, so `treatment.html?modal=pharmacy`
+   never matched `.html$` and resolved to `treatment.html`. Strip the query first.
+
+The product was not changed for either; both were test defects.
+
 `main` was never modified. All work is on `dev/autonomous-milestones`; nothing was merged or pushed
 to `main`, so the live site at `https://leequor.github.io/mediheal-his/` still serves `fd5bf9f`.
