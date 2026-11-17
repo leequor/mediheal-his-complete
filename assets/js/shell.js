@@ -1,20 +1,21 @@
-// Shared header + slide-in sidebar. Edit NAV once, every page updates.
+// Shared header + slide-in sidebar. Edit the nav in rbac.js (one place), every page updates.
 // Figma: header-bar 239:2978, Sidebar 211:1949 (430x1024). Staff (211:1953) links to Attendance (2002:369).
 // Fit-to-width (assets/js/fit.js v3, session 22) is loaded from here so every shell page gets it; index.html (sign-in) loads it itself. No effect at 1440px and wider.
+// M1: the drawer renders HIS.rbac.nav() (role-scoped) and the header identity comes from
+// HIS.rbac.person(). For the default role both are identical to the previous hardcoded values,
+// so the resting appearance is unchanged.
 (function () { var s = document.createElement('script'); s.src = 'assets/js/fit.js'; document.head.appendChild(s); })();
-const NAV = [
-  ['dashboard', 'Dashboard', 'grid'], ['registration', 'Registration', 'users'], ['appointments', 'Appointments', 'calendar-check'],
-  ['consultation', 'Consultation', 'clipboard-plus'], ['treatment', 'Treatment', 'bag'], ['nursing', 'Nursing', 'heart'],
-  ['pharmacy', 'Pharmacy', 'pill'], ['attendance', 'Staff', 'users'], ['personnel', 'Personnel', 'id'],
-  ['payroll', 'Payroll', 'peso'], ['departments', 'Departments', 'branches'], ['billing', 'Billing', 'receipt']
-];
 
 (function mountShell() {
   const page = document.body.dataset.page;
   if (!page) return;
+  // Page-level role guard (M1). Redirects out before anything renders when the active role
+  // cannot open this page. Demo-only: it is browser-side and not a security boundary.
+  if (window.HIS.rbac && !HIS.rbac.guard()) return;
   // favicon: stops the /favicon.ico 404 on every page (small logo PNG)
   if (!document.querySelector('link[rel~="icon"]')) document.head.insertAdjacentHTML('beforeend', "<link rel='icon' type='image/png' href='assets/img/logo-removebg-preview%201.png'>");
-  const u = HIS.user;
+  const u = HIS.rbac ? HIS.rbac.person() : HIS.user;
+  const navLinks = HIS.rbac ? HIS.rbac.nav() : NAV;
   const ini = u.name.replace('Dr. ', '').split(' ').map(s => s[0]).join('');
   document.body.insertAdjacentHTML('afterbegin',
     "<header class='header'><div class='hd'>" +
@@ -24,13 +25,14 @@ const NAV = [
     "<div class='hd-date'>" + svg('calendar', 18) + '<span>' + HIS.fmtShort(HIS.today) + '</span></div>' +
     "<button class='bell' aria-label='Notifications'>" + svg('bell', 20) + '<b>4</b></button>' +
     "<div class='sep'></div>" +
-    "<div class='profile'><span class='avatar'>" + ini + "<img src='assets/img/Avatar.png' alt='' data-hide></span><div><div class='nm'>" + u.name + '</div><small>' + u.role.toUpperCase() + '</small></div></div>' +
+    "<div class='profile' id='profile' role='button' tabindex='0' aria-haspopup='dialog' aria-expanded='false' aria-label='Account and demo role: " + u.name + ", " + u.title + "'>" +
+    "<span class='avatar'>" + ini + "<img src='assets/img/Avatar.png' alt='' data-hide></span><div><div class='nm'>" + u.name + '</div><small>' + u.title.toUpperCase() + '</small></div></div>' +
     '</div></header>' +
     "<div class='scrim' id='scrim'></div>" +
     "<aside class='drawer' aria-label='Main menu'><div class='dr-in'>" +
     "<span class='dr-brand'>MediHeal</span>" +
     "<a class='dr-exit' href='index.html' aria-label='Sign out'>" + svg('exit', 25) + '</a>' +
-    '<nav>' + NAV.map(n => "<a href='" + n[0] + ".html'>" + svg(n[2], 44) + n[1] + '</a>').join('') + '</nav>' +
+    '<nav>' + navLinks.map(n => "<a href='" + n[0] + ".html'>" + svg(n[2], 44) + n[1] + '</a>').join('') + '</nav>' +
     "<a class='dr-out' href='index.html'>Sign out</a>" +
     "<div class='dr-contact'>" + HIS.contact.email + '<br>' + HIS.contact.phone + '</div>' +
     '</div></aside>');
@@ -40,6 +42,80 @@ const NAV = [
   document.getElementById('burger').onclick = () => toggle(true);
   document.getElementById('scrim').onclick = () => toggle(false);
   document.addEventListener('keydown', e => e.key === 'Escape' && toggle(false));
+})();
+
+// ---- Demo role switcher (M1, Addition - not in Figma).
+// Opens from the existing header profile block, so no new element is added to the locked header:
+// the profile already shows the name and role it switches between. Panel geometry follows the
+// design format (white card, r14, 1px #c8dcea ring, Inter 13 body, Lexend 16 title).
+(function roleSwitcher() {
+  if (!window.HIS.rbac) return;
+  const prof = document.getElementById('profile');
+  if (!prof) return;
+  const hd = document.querySelector('.hd');
+  const css = document.createElement('style');
+  css.textContent =
+    '.profile{cursor:pointer}' +
+    '.profile:focus-visible{outline:2px solid #dff9ff;outline-offset:3px;border-radius:10px}' +
+    '.rb-m{position:absolute;top:74px;right:16px;width:372px;max-height:min(560px,calc(100vh - 96px));display:none;flex-direction:column;background:#fff;border-radius:14px;box-shadow:inset 0 0 0 1px #c8dcea,0 12px 32px rgba(15,30,46,.18);z-index:24;overflow:hidden;font-family:Inter,sans-serif}' +
+    '.rb-m.on{display:flex}' +
+    '.rb-m *{box-sizing:border-box}' +
+    '.rb-h{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:16px 20px 0}' +
+    '.rb-t{font:500 16px/20px Lexend,Inter,sans-serif;color:#1b4e6b}' +
+    '.rb-x{width:28px;height:28px;flex:none;border:0;border-radius:8px;background:#fff;box-shadow:inset 0 0 0 1px #c8dcea;color:#1b4e6b;font:500 14px/26px Inter,sans-serif;cursor:pointer;padding:0;text-align:center}' +
+    '.rb-x:hover{background:#e8f4fb}' +
+    '.rb-s{margin:4px 0 0;padding:0 20px 12px;font:400 12px/15.6px Inter,sans-serif;color:#6f8890}' +
+    '.rb-l{overflow-y:auto;border-top:1px solid #e3edf3}' +
+    '.rb-r{display:block;width:100%;padding:9px 20px;border:0;border-bottom:1px solid #f0f5f9;background:#fff;text-align:left;cursor:pointer;position:relative}' +
+    '.rb-r:hover{background:#e8f4fb}' +
+    '.rb-r.on{background:#f6fafd}' +
+    '.rb-r.on::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:#1c6d9c}' +
+    '.rb-n{display:block;font:600 13px/16px Inter,sans-serif;color:#1c2b30}' +
+    '.rb-r.on .rb-n{color:#15405a}' +
+    '.rb-d{display:block;margin-top:2px;font:400 11px/14.3px Inter,sans-serif;color:#6f8890;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}' +
+    '.rb-f{flex:none;padding:9px 20px;border-top:1px solid #e3edf3;background:#f6fafd;font:500 11px/14.3px Inter,sans-serif;color:#8a97a6}';
+  document.head.appendChild(css);
+
+  const panel = document.createElement('div');
+  panel.className = 'rb-m';
+  panel.setAttribute('role', 'dialog');
+  panel.setAttribute('aria-label', 'Switch demo role');
+  hd.appendChild(panel);
+
+  function render() {
+    const cur = HIS.rbac.key();
+    panel.innerHTML =
+      "<div class='rb-h'><span class='rb-t'>Switch role</span><button class='rb-x' data-act='close' aria-label='Close role switcher'>\u2715</button></div>" +
+      "<p class='rb-s'>Changes the navigation and what each screen allows. Frontend demonstration only \u2014 not a security boundary.</p>" +
+      "<div class='rb-l'>" + Object.keys(HIS.rbac.ROLES).map(k => {
+        const r = HIS.rbac.ROLES[k];
+        return "<button class='rb-r" + (k === cur ? ' on' : '') + "' data-role='" + k + "'" + (k === cur ? " aria-current='true'" : '') + ">" +
+          "<span class='rb-n'>" + HIS.kit.esc(r.label) + '</span>' +
+          "<span class='rb-d'>" + HIS.kit.esc(r.scope) + '</span></button>';
+      }).join('') + '</div>' +
+      "<div class='rb-f'>Demo environment \u00b7 synthetic data only</div>";
+  }
+  function setOpen(o) {
+    panel.classList.toggle('on', o);
+    prof.setAttribute('aria-expanded', o ? 'true' : 'false');
+    if (o) { render(); const first = panel.querySelector('.rb-r.on') || panel.querySelector('.rb-r'); if (first) first.focus(); }
+  }
+  prof.addEventListener('click', () => setOpen(!panel.classList.contains('on')));
+  prof.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setOpen(!panel.classList.contains('on')); } });
+  panel.addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    if (b.dataset.act === 'close') { setOpen(false); prof.focus(); return; }
+    const k = b.dataset.role; if (!k || k === HIS.rbac.key()) { setOpen(false); return; }
+    HIS.rbac.set(k);
+    // Land on a page the new role can open; the reload re-renders the drawer for that role.
+    location.href = HIS.rbac.home();
+  });
+  document.addEventListener('click', e => {
+    if (!panel.classList.contains('on')) return;
+    const path = e.composedPath ? e.composedPath() : [];
+    if (path.indexOf(panel) < 0 && path.indexOf(prof) < 0) setOpen(false);
+  });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && panel.classList.contains('on')) { setOpen(false); prof.focus(); } });
 })();
 
 // ---- Notifications panel (session 22). Figma: "Notifications panel" 2072:3499 (Dashboard "Notifications open" 2072:3112; the same panel is drawn on every page, e.g. overlay 2008:1064).

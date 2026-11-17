@@ -15,6 +15,9 @@
     notifRead: 'mh_notif_read',
     attendance: 'mh_attendance_state',
     audit: 'mh_audit',
+    // Active demo role (M1). Absent means `superadmin`, so an existing browser that has never
+    // used the switcher keeps the original single-identity behaviour.
+    role: 'mh_role',
     // Patient portal demo auth (addition, not in Figma). Client-only: accounts are a map
     // keyed by lower-case email, the reset request holds one pending 6-digit code.
     portalAccounts: 'mh_portal_accounts',
