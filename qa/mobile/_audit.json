@@ -1,0 +1,3139 @@
+{
+  "accounts": {
+    "390": {
+      "textCount": 151,
+      "min": 12,
+      "p10": 12,
+      "median": 12,
+      "belowSmall": 0,
+      "belowSmallSample": [],
+      "tinyTargets": 2,
+      "tinySample": [
+        {
+          "t": "A",
+          "w": 25,
+          "h": 25
+        },
+        {
+          "t": "INPUT",
+          "w": 270,
+          "h": 18
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    },
+    "800": {
+      "textCount": 153,
+      "min": 12,
+      "p10": 12,
+      "median": 12,
+      "belowSmall": 0,
+      "belowSmallSample": [],
+      "tinyTargets": 2,
+      "tinySample": [
+        {
+          "t": "A",
+          "w": 25,
+          "h": 25
+        },
+        {
+          "t": "INPUT",
+          "w": 660,
+          "h": 18
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    },
+    "1000": {
+      "textCount": 153,
+      "min": 12,
+      "p10": 12,
+      "median": 12,
+      "belowSmall": 0,
+      "belowSmallSample": [],
+      "tinyTargets": 2,
+      "tinySample": [
+        {
+          "t": "A",
+          "w": 25,
+          "h": 25
+        },
+        {
+          "t": "INPUT",
+          "w": 860,
+          "h": 18
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    },
+    "1200": {
+      "textCount": 153,
+      "min": 12,
+      "p10": 12,
+      "median": 12,
+      "belowSmall": 0,
+      "belowSmallSample": [],
+      "tinyTargets": 2,
+      "tinySample": [
+        {
+          "t": "A",
+          "w": 25,
+          "h": 25
+        },
+        {
+          "t": "INPUT",
+          "w": 1060,
+          "h": 18
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    },
+    "1440": {
+      "textCount": 159,
+      "min": 9.5,
+      "p10": 11,
+      "median": 13,
+      "belowSmall": 35,
+      "belowSmallSample": [
+        {
+          "t": "CHIEF PHYSICIAN",
+          "px": 10
+        },
+        {
+          "t": "Account",
+          "px": 11
+        },
+        {
+          "t": "Role",
+          "px": 11
+        },
+        {
+          "t": "Department",
+          "px": 11
+        }
+      ],
+      "tinyTargets": 17,
+      "tinySample": [
+        {
+          "t": "BUTTON",
+          "w": 30,
+          "h": 30
+        },
+        {
+          "t": "A",
+          "w": 25,
+          "h": 25
+        },
+        {
+          "t": "INPUT",
+          "w": 210,
+          "h": 18
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    }
+  },
+  "appointment-confirmed": {
+    "390": {
+      "textCount": 22,
+      "min": 13,
+      "p10": 16,
+      "median": 23.4,
+      "belowSmall": 0,
+      "belowSmallSample": [],
+      "tinyTargets": 1,
+      "tinySample": [
+        {
+          "t": "A",
+          "w": 25,
+          "h": 25
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    },
+    "800": {
+      "textCount": 24,
+      "min": 12,
+      "p10": 13,
+      "median": 23.4,
+      "belowSmall": 0,
+      "belowSmallSample": [],
+      "tinyTargets": 1,
+      "tinySample": [
+        {
+          "t": "A",
+          "w": 25,
+          "h": 25
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    },
+    "1000": {
+      "textCount": 24,
+      "min": 12,
+      "p10": 13,
+      "median": 23.4,
+      "belowSmall": 0,
+      "belowSmallSample": [],
+      "tinyTargets": 1,
+      "tinySample": [
+        {
+          "t": "A",
+          "w": 25,
+          "h": 25
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    },
+    "1200": {
+      "textCount": 24,
+      "min": 12,
+      "p10": 13,
+      "median": 23.4,
+      "belowSmall": 0,
+      "belowSmallSample": [],
+      "tinyTargets": 1,
+      "tinySample": [
+        {
+          "t": "A",
+          "w": 25,
+          "h": 25
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    },
+    "1440": {
+      "textCount": 25,
+      "min": 10,
+      "p10": 13,
+      "median": 23.4,
+      "belowSmall": 1,
+      "belowSmallSample": [
+        {
+          "t": "CHIEF PHYSICIAN",
+          "px": 10
+        }
+      ],
+      "tinyTargets": 2,
+      "tinySample": [
+        {
+          "t": "BUTTON",
+          "w": 30,
+          "h": 30
+        },
+        {
+          "t": "A",
+          "w": 25,
+          "h": 25
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    }
+  },
+  "appointment-form": {
+    "390": {
+      "textCount": 52,
+      "min": 12,
+      "p10": 12,
+      "median": 12,
+      "belowSmall": 0,
+      "belowSmallSample": [],
+      "tinyTargets": 7,
+      "tinySample": [
+        {
+          "t": "A",
+          "w": 25,
+          "h": 25
+        },
+        {
+          "t": "INPUT",
+          "w": 127,
+          "h": 25
+        },
+        {
+          "t": "INPUT",
+          "w": 129,
+          "h": 25
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    },
+    "800": {
+      "textCount": 54,
+      "min": 12,
+      "p10": 12,
+      "median": 12,
+      "belowSmall": 0,
+      "belowSmallSample": [],
+      "tinyTargets": 7,
+      "tinySample": [
+        {
+          "t": "A",
+          "w": 25,
+          "h": 25
+        },
+        {
+          "t": "INPUT",
+          "w": 127,
+          "h": 25
+        },
+        {
+          "t": "INPUT",
+          "w": 129,
+          "h": 25
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    },
+    "1000": {
+      "textCount": 54,
+      "min": 12,
+      "p10": 12,
+      "median": 12,
+      "belowSmall": 0,
+      "belowSmallSample": [],
+      "tinyTargets": 7,
+      "tinySample": [
+        {
+          "t": "A",
+          "w": 25,
+          "h": 25
+        },
+        {
+          "t": "INPUT",
+          "w": 127,
+          "h": 25
+        },
+        {
+          "t": "INPUT",
+          "w": 129,
+          "h": 25
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    },
+    "1200": {
+      "textCount": 54,
+      "min": 12,
+      "p10": 12,
+      "median": 12,
+      "belowSmall": 0,
+      "belowSmallSample": [],
+      "tinyTargets": 7,
+      "tinySample": [
+        {
+          "t": "A",
+          "w": 25,
+          "h": 25
+        },
+        {
+          "t": "INPUT",
+          "w": 127,
+          "h": 25
+        },
+        {
+          "t": "INPUT",
+          "w": 129,
+          "h": 25
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    },
+    "1440": {
+      "textCount": 55,
+      "min": 10,
+      "p10": 11,
+      "median": 12,
+      "belowSmall": 21,
+      "belowSmallSample": [
+        {
+          "t": "CHIEF PHYSICIAN",
+          "px": 10
+        },
+        {
+          "t": "Patient Name",
+          "px": 11
+        },
+        {
+          "t": "First Name",
+          "px": 11
+        },
+        {
+          "t": "Middle Initial",
+          "px": 11
+        }
+      ],
+      "tinyTargets": 8,
+      "tinySample": [
+        {
+          "t": "BUTTON",
+          "w": 30,
+          "h": 30
+        },
+        {
+          "t": "A",
+          "w": 25,
+          "h": 25
+        },
+        {
+          "t": "INPUT",
+          "w": 127,
+          "h": 25
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    }
+  },
+  "appointments": {
+    "390": {
+      "textCount": 71,
+      "min": 13,
+      "p10": 13,
+      "median": 15,
+      "belowSmall": 0,
+      "belowSmallSample": [],
+      "tinyTargets": 2,
+      "tinySample": [
+        {
+          "t": "A",
+          "w": 25,
+          "h": 25
+        },
+        {
+          "t": "INPUT",
+          "w": 215,
+          "h": 19
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    },
+    "800": {
+      "textCount": 73,
+      "min": 12,
+      "p10": 13,
+      "median": 15,
+      "belowSmall": 0,
+      "belowSmallSample": [],
+      "tinyTargets": 2,
+      "tinySample": [
+        {
+          "t": "A",
+          "w": 25,
+          "h": 25
+        },
+        {
+          "t": "INPUT",
+          "w": 215,
+          "h": 19
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    },
+    "1000": {
+      "textCount": 73,
+      "min": 12,
+      "p10": 13,
+      "median": 15,
+      "belowSmall": 0,
+      "belowSmallSample": [],
+      "tinyTargets": 2,
+      "tinySample": [
+        {
+          "t": "A",
+          "w": 25,
+          "h": 25
+        },
+        {
+          "t": "INPUT",
+          "w": 215,
+          "h": 19
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    },
+    "1200": {
+      "textCount": 73,
+      "min": 12,
+      "p10": 13,
+      "median": 15,
+      "belowSmall": 0,
+      "belowSmallSample": [],
+      "tinyTargets": 2,
+      "tinySample": [
+        {
+          "t": "A",
+          "w": 25,
+          "h": 25
+        },
+        {
+          "t": "INPUT",
+          "w": 215,
+          "h": 19
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    },
+    "1440": {
+      "textCount": 74,
+      "min": 10,
+      "p10": 13,
+      "median": 15,
+      "belowSmall": 1,
+      "belowSmallSample": [
+        {
+          "t": "CHIEF PHYSICIAN",
+          "px": 10
+        }
+      ],
+      "tinyTargets": 3,
+      "tinySample": [
+        {
+          "t": "BUTTON",
+          "w": 30,
+          "h": 30
+        },
+        {
+          "t": "A",
+          "w": 25,
+          "h": 25
+        },
+        {
+          "t": "INPUT",
+          "w": 215,
+          "h": 19
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    }
+  },
+  "attendance": {
+    "390": {
+      "textCount": 155,
+      "min": 12,
+      "p10": 12,
+      "median": 13,
+      "belowSmall": 0,
+      "belowSmallSample": [],
+      "tinyTargets": 22,
+      "tinySample": [
+        {
+          "t": "A",
+          "w": 25,
+          "h": 25
+        },
+        {
+          "t": "INPUT",
+          "w": 350,
+          "h": 16
+        },
+        {
+          "t": "BUTTON",
+          "w": 16,
+          "h": 16
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    },
+    "800": {
+      "textCount": 157,
+      "min": 12,
+      "p10": 12,
+      "median": 13,
+      "belowSmall": 0,
+      "belowSmallSample": [],
+      "tinyTargets": 22,
+      "tinySample": [
+        {
+          "t": "A",
+          "w": 25,
+          "h": 25
+        },
+        {
+          "t": "INPUT",
+          "w": 350,
+          "h": 16
+        },
+        {
+          "t": "BUTTON",
+          "w": 16,
+          "h": 16
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    },
+    "1000": {
+      "textCount": 157,
+      "min": 12,
+      "p10": 12,
+      "median": 13,
+      "belowSmall": 0,
+      "belowSmallSample": [],
+      "tinyTargets": 22,
+      "tinySample": [
+        {
+          "t": "A",
+          "w": 25,
+          "h": 25
+        },
+        {
+          "t": "INPUT",
+          "w": 350,
+          "h": 16
+        },
+        {
+          "t": "BUTTON",
+          "w": 16,
+          "h": 16
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    },
+    "1200": {
+      "textCount": 157,
+      "min": 12,
+      "p10": 12,
+      "median": 13,
+      "belowSmall": 0,
+      "belowSmallSample": [],
+      "tinyTargets": 22,
+      "tinySample": [
+        {
+          "t": "A",
+          "w": 25,
+          "h": 25
+        },
+        {
+          "t": "INPUT",
+          "w": 350,
+          "h": 16
+        },
+        {
+          "t": "BUTTON",
+          "w": 16,
+          "h": 16
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    },
+    "1440": {
+      "textCount": 159,
+      "min": 10,
+      "p10": 11,
+      "median": 13,
+      "belowSmall": 38,
+      "belowSmallSample": [
+        {
+          "t": "CHIEF PHYSICIAN",
+          "px": 10
+        },
+        {
+          "t": "ATTENDANCE DATE",
+          "px": 11
+        },
+        {
+          "t": "PAYROLL PERIOD",
+          "px": 11
+        },
+        {
+          "t": "Feeds Payroll · Semi-monthly",
+          "px": 11
+        }
+      ],
+      "tinyTargets": 23,
+      "tinySample": [
+        {
+          "t": "BUTTON",
+          "w": 30,
+          "h": 30
+        },
+        {
+          "t": "A",
+          "w": 25,
+          "h": 25
+        },
+        {
+          "t": "INPUT",
+          "w": 350,
+          "h": 16
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    }
+  },
+  "audit": {
+    "390": {
+      "textCount": 32,
+      "min": 12,
+      "p10": 12.5,
+      "median": 23.4,
+      "belowSmall": 0,
+      "belowSmallSample": [],
+      "tinyTargets": 2,
+      "tinySample": [
+        {
+          "t": "A",
+          "w": 25,
+          "h": 25
+        },
+        {
+          "t": "INPUT",
+          "w": 270,
+          "h": 18
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    },
+    "800": {
+      "textCount": 34,
+      "min": 12,
+      "p10": 12.5,
+      "median": 19,
+      "belowSmall": 0,
+      "belowSmallSample": [],
+      "tinyTargets": 2,
+      "tinySample": [
+        {
+          "t": "A",
+          "w": 25,
+          "h": 25
+        },
+        {
+          "t": "INPUT",
+          "w": 660,
+          "h": 18
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    },
+    "1000": {
+      "textCount": 34,
+      "min": 12,
+      "p10": 12.5,
+      "median": 19,
+      "belowSmall": 0,
+      "belowSmallSample": [],
+      "tinyTargets": 2,
+      "tinySample": [
+        {
+          "t": "A",
+          "w": 25,
+          "h": 25
+        },
+        {
+          "t": "INPUT",
+          "w": 860,
+          "h": 18
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    },
+    "1200": {
+      "textCount": 34,
+      "min": 12,
+      "p10": 12.5,
+      "median": 19,
+      "belowSmall": 0,
+      "belowSmallSample": [],
+      "tinyTargets": 2,
+      "tinySample": [
+        {
+          "t": "A",
+          "w": 25,
+          "h": 25
+        },
+        {
+          "t": "INPUT",
+          "w": 1060,
+          "h": 18
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    },
+    "1440": {
+      "textCount": 40,
+      "min": 10,
+      "p10": 11,
+      "median": 18,
+      "belowSmall": 6,
+      "belowSmallSample": [
+        {
+          "t": "CHIEF PHYSICIAN",
+          "px": 10
+        },
+        {
+          "t": "When",
+          "px": 11
+        },
+        {
+          "t": "Who",
+          "px": 11
+        },
+        {
+          "t": "Role",
+          "px": 11
+        }
+      ],
+      "tinyTargets": 3,
+      "tinySample": [
+        {
+          "t": "BUTTON",
+          "w": 30,
+          "h": 30
+        },
+        {
+          "t": "A",
+          "w": 25,
+          "h": 25
+        },
+        {
+          "t": "INPUT",
+          "w": 210,
+          "h": 18
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    }
+  },
+  "billing": {
+    "390": {
+      "textCount": 77,
+      "min": 12,
+      "p10": 12,
+      "median": 13,
+      "belowSmall": 0,
+      "belowSmallSample": [],
+      "tinyTargets": 5,
+      "tinySample": [
+        {
+          "t": "A",
+          "w": 25,
+          "h": 25
+        },
+        {
+          "t": "INPUT",
+          "w": 220,
+          "h": 16
+        },
+        {
+          "t": "All",
+          "w": 56,
+          "h": 30
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    },
+    "800": {
+      "textCount": 79,
+      "min": 12,
+      "p10": 12,
+      "median": 13,
+      "belowSmall": 0,
+      "belowSmallSample": [],
+      "tinyTargets": 5,
+      "tinySample": [
+        {
+          "t": "A",
+          "w": 25,
+          "h": 25
+        },
+        {
+          "t": "INPUT",
+          "w": 220,
+          "h": 16
+        },
+        {
+          "t": "All",
+          "w": 56,
+          "h": 30
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    },
+    "1000": {
+      "textCount": 79,
+      "min": 12,
+      "p10": 12,
+      "median": 13,
+      "belowSmall": 0,
+      "belowSmallSample": [],
+      "tinyTargets": 5,
+      "tinySample": [
+        {
+          "t": "A",
+          "w": 25,
+          "h": 25
+        },
+        {
+          "t": "INPUT",
+          "w": 220,
+          "h": 16
+        },
+        {
+          "t": "All",
+          "w": 56,
+          "h": 30
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    },
+    "1200": {
+      "textCount": 79,
+      "min": 12,
+      "p10": 12,
+      "median": 13,
+      "belowSmall": 0,
+      "belowSmallSample": [],
+      "tinyTargets": 5,
+      "tinySample": [
+        {
+          "t": "A",
+          "w": 25,
+          "h": 25
+        },
+        {
+          "t": "INPUT",
+          "w": 220,
+          "h": 16
+        },
+        {
+          "t": "All",
+          "w": 56,
+          "h": 30
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    },
+    "1440": {
+      "textCount": 96,
+      "min": 10,
+      "p10": 11.5,
+      "median": 13,
+      "belowSmall": 19,
+      "belowSmallSample": [
+        {
+          "t": "CHIEF PHYSICIAN",
+          "px": 10
+        },
+        {
+          "t": "RECENT BILLS",
+          "px": 11.5
+        },
+        {
+          "t": "BL-8801 · PT-99213",
+          "px": 11.5
+        },
+        {
+          "t": "Cardiology · Aug 29, 2026",
+          "px": 11.5
+        }
+      ],
+      "tinyTargets": 6,
+      "tinySample": [
+        {
+          "t": "BUTTON",
+          "w": 30,
+          "h": 30
+        },
+        {
+          "t": "A",
+          "w": 25,
+          "h": 25
+        },
+        {
+          "t": "INPUT",
+          "w": 220,
+          "h": 16
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    }
+  },
+  "consultation": {
+    "390": {
+      "textCount": 116,
+      "min": 12,
+      "p10": 12,
+      "median": 13,
+      "belowSmall": 0,
+      "belowSmallSample": [],
+      "tinyTargets": 2,
+      "tinySample": [
+        {
+          "t": "A",
+          "w": 25,
+          "h": 25
+        },
+        {
+          "t": "INPUT",
+          "w": 350,
+          "h": 15
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    },
+    "800": {
+      "textCount": 118,
+      "min": 12,
+      "p10": 12,
+      "median": 13,
+      "belowSmall": 0,
+      "belowSmallSample": [],
+      "tinyTargets": 2,
+      "tinySample": [
+        {
+          "t": "A",
+          "w": 25,
+          "h": 25
+        },
+        {
+          "t": "INPUT",
+          "w": 350,
+          "h": 15
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    },
+    "1000": {
+      "textCount": 118,
+      "min": 12,
+      "p10": 12,
+      "median": 13,
+      "belowSmall": 0,
+      "belowSmallSample": [],
+      "tinyTargets": 2,
+      "tinySample": [
+        {
+          "t": "A",
+          "w": 25,
+          "h": 25
+        },
+        {
+          "t": "INPUT",
+          "w": 350,
+          "h": 15
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    },
+    "1200": {
+      "textCount": 118,
+      "min": 12,
+      "p10": 12,
+      "median": 13,
+      "belowSmall": 0,
+      "belowSmallSample": [],
+      "tinyTargets": 2,
+      "tinySample": [
+        {
+          "t": "A",
+          "w": 25,
+          "h": 25
+        },
+        {
+          "t": "INPUT",
+          "w": 350,
+          "h": 15
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    },
+    "1440": {
+      "textCount": 119,
+      "min": 10,
+      "p10": 11,
+      "median": 13,
+      "belowSmall": 46,
+      "belowSmallSample": [
+        {
+          "t": "CHIEF PHYSICIAN",
+          "px": 10
+        },
+        {
+          "t": "Consultation queue",
+          "px": 11
+        },
+        {
+          "t": "Vitals already recorded",
+          "px": 11
+        },
+        {
+          "t": "Updated Aug 31, 2026",
+          "px": 11
+        }
+      ],
+      "tinyTargets": 3,
+      "tinySample": [
+        {
+          "t": "BUTTON",
+          "w": 30,
+          "h": 30
+        },
+        {
+          "t": "A",
+          "w": 25,
+          "h": 25
+        },
+        {
+          "t": "INPUT",
+          "w": 350,
+          "h": 15
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    }
+  },
+  "dashboard": {
+    "390": {
+      "textCount": 71,
+      "min": 12,
+      "p10": 12,
+      "median": 13,
+      "belowSmall": 0,
+      "belowSmallSample": [],
+      "tinyTargets": 1,
+      "tinySample": [
+        {
+          "t": "A",
+          "w": 25,
+          "h": 25
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    },
+    "800": {
+      "textCount": 73,
+      "min": 12,
+      "p10": 12,
+      "median": 13,
+      "belowSmall": 0,
+      "belowSmallSample": [],
+      "tinyTargets": 1,
+      "tinySample": [
+        {
+          "t": "A",
+          "w": 25,
+          "h": 25
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    },
+    "1000": {
+      "textCount": 73,
+      "min": 12,
+      "p10": 12,
+      "median": 13,
+      "belowSmall": 0,
+      "belowSmallSample": [],
+      "tinyTargets": 1,
+      "tinySample": [
+        {
+          "t": "A",
+          "w": 25,
+          "h": 25
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    },
+    "1200": {
+      "textCount": 73,
+      "min": 12,
+      "p10": 12,
+      "median": 13,
+      "belowSmall": 0,
+      "belowSmallSample": [],
+      "tinyTargets": 1,
+      "tinySample": [
+        {
+          "t": "A",
+          "w": 25,
+          "h": 25
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    },
+    "1440": {
+      "textCount": 79,
+      "min": 10,
+      "p10": 12,
+      "median": 14,
+      "belowSmall": 7,
+      "belowSmallSample": [
+        {
+          "t": "CHIEF PHYSICIAN",
+          "px": 10
+        },
+        {
+          "t": "superadmin@mediheal.test",
+          "px": 11
+        },
+        {
+          "t": "admin@mediheal.test",
+          "px": 11
+        },
+        {
+          "t": "reception@mediheal.test",
+          "px": 11
+        }
+      ],
+      "tinyTargets": 2,
+      "tinySample": [
+        {
+          "t": "BUTTON",
+          "w": 30,
+          "h": 30
+        },
+        {
+          "t": "A",
+          "w": 25,
+          "h": 25
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    }
+  },
+  "departments": {
+    "390": {
+      "textCount": 172,
+      "min": 12,
+      "p10": 12,
+      "median": 12.5,
+      "belowSmall": 0,
+      "belowSmallSample": [],
+      "tinyTargets": 2,
+      "tinySample": [
+        {
+          "t": "A",
+          "w": 25,
+          "h": 25
+        },
+        {
+          "t": "INPUT",
+          "w": 220,
+          "h": 16
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    },
+    "800": {
+      "textCount": 174,
+      "min": 12,
+      "p10": 12,
+      "median": 12.5,
+      "belowSmall": 0,
+      "belowSmallSample": [],
+      "tinyTargets": 2,
+      "tinySample": [
+        {
+          "t": "A",
+          "w": 25,
+          "h": 25
+        },
+        {
+          "t": "INPUT",
+          "w": 220,
+          "h": 16
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    },
+    "1000": {
+      "textCount": 174,
+      "min": 12,
+      "p10": 12,
+      "median": 12.5,
+      "belowSmall": 0,
+      "belowSmallSample": [],
+      "tinyTargets": 2,
+      "tinySample": [
+        {
+          "t": "A",
+          "w": 25,
+          "h": 25
+        },
+        {
+          "t": "INPUT",
+          "w": 220,
+          "h": 16
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    },
+    "1200": {
+      "textCount": 174,
+      "min": 12,
+      "p10": 12,
+      "median": 12.5,
+      "belowSmall": 0,
+      "belowSmallSample": [],
+      "tinyTargets": 2,
+      "tinySample": [
+        {
+          "t": "A",
+          "w": 25,
+          "h": 25
+        },
+        {
+          "t": "INPUT",
+          "w": 220,
+          "h": 16
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    },
+    "1440": {
+      "textCount": 175,
+      "min": 10,
+      "p10": 11,
+      "median": 12.5,
+      "belowSmall": 85,
+      "belowSmallSample": [
+        {
+          "t": "CHIEF PHYSICIAN",
+          "px": 10
+        },
+        {
+          "t": "Departments listed",
+          "px": 11
+        },
+        {
+          "t": "Across 8 departments",
+          "px": 11
+        },
+        {
+          "t": "Across 8 departments",
+          "px": 11
+        }
+      ],
+      "tinyTargets": 3,
+      "tinySample": [
+        {
+          "t": "BUTTON",
+          "w": 30,
+          "h": 30
+        },
+        {
+          "t": "A",
+          "w": 25,
+          "h": 25
+        },
+        {
+          "t": "INPUT",
+          "w": 220,
+          "h": 16
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    }
+  },
+  "index": {
+    "390": {
+      "textCount": 19,
+      "min": 12.5,
+      "p10": 12.5,
+      "median": 14,
+      "belowSmall": 0,
+      "belowSmallSample": [],
+      "tinyTargets": 4,
+      "tinySample": [
+        {
+          "t": "",
+          "w": 32,
+          "h": 30
+        },
+        {
+          "t": "Forgot password?",
+          "w": 118,
+          "h": 28
+        },
+        {
+          "t": "New patient? Open the ",
+          "w": 390,
+          "h": 15
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    },
+    "800": {
+      "textCount": 19,
+      "min": 12.5,
+      "p10": 12.5,
+      "median": 14,
+      "belowSmall": 0,
+      "belowSmallSample": [],
+      "tinyTargets": 4,
+      "tinySample": [
+        {
+          "t": "",
+          "w": 32,
+          "h": 30
+        },
+        {
+          "t": "Forgot password?",
+          "w": 118,
+          "h": 28
+        },
+        {
+          "t": "New patient? Open the ",
+          "w": 800,
+          "h": 15
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    },
+    "1000": {
+      "textCount": 19,
+      "min": 12.5,
+      "p10": 12.5,
+      "median": 14,
+      "belowSmall": 0,
+      "belowSmallSample": [],
+      "tinyTargets": 4,
+      "tinySample": [
+        {
+          "t": "",
+          "w": 32,
+          "h": 30
+        },
+        {
+          "t": "Forgot password?",
+          "w": 118,
+          "h": 28
+        },
+        {
+          "t": "New patient? Open the ",
+          "w": 1000,
+          "h": 15
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    },
+    "1200": {
+      "textCount": 19,
+      "min": 12.5,
+      "p10": 12.5,
+      "median": 14,
+      "belowSmall": 0,
+      "belowSmallSample": [],
+      "tinyTargets": 4,
+      "tinySample": [
+        {
+          "t": "",
+          "w": 32,
+          "h": 30
+        },
+        {
+          "t": "Forgot password?",
+          "w": 118,
+          "h": 28
+        },
+        {
+          "t": "New patient? Open the ",
+          "w": 1200,
+          "h": 15
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    },
+    "1440": {
+      "textCount": 18,
+      "min": 12,
+      "p10": 12.5,
+      "median": 16,
+      "belowSmall": 0,
+      "belowSmallSample": [],
+      "tinyTargets": 3,
+      "tinySample": [
+        {
+          "t": "",
+          "w": 32,
+          "h": 30
+        },
+        {
+          "t": "Forgot password?",
+          "w": 130,
+          "h": 28
+        },
+        {
+          "t": "New patient? Open the ",
+          "w": 422,
+          "h": 15
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    }
+  },
+  "nursing": {
+    "390": {
+      "textCount": 118,
+      "min": 12,
+      "p10": 12,
+      "median": 13,
+      "belowSmall": 0,
+      "belowSmallSample": [],
+      "tinyTargets": 2,
+      "tinySample": [
+        {
+          "t": "A",
+          "w": 25,
+          "h": 25
+        },
+        {
+          "t": "INPUT",
+          "w": 350,
+          "h": 15
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    },
+    "800": {
+      "textCount": 120,
+      "min": 12,
+      "p10": 12,
+      "median": 13,
+      "belowSmall": 0,
+      "belowSmallSample": [],
+      "tinyTargets": 2,
+      "tinySample": [
+        {
+          "t": "A",
+          "w": 25,
+          "h": 25
+        },
+        {
+          "t": "INPUT",
+          "w": 350,
+          "h": 15
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    },
+    "1000": {
+      "textCount": 120,
+      "min": 12,
+      "p10": 12,
+      "median": 13,
+      "belowSmall": 0,
+      "belowSmallSample": [],
+      "tinyTargets": 2,
+      "tinySample": [
+        {
+          "t": "A",
+          "w": 25,
+          "h": 25
+        },
+        {
+          "t": "INPUT",
+          "w": 350,
+          "h": 15
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    },
+    "1200": {
+      "textCount": 120,
+      "min": 12,
+      "p10": 12,
+      "median": 13,
+      "belowSmall": 0,
+      "belowSmallSample": [],
+      "tinyTargets": 2,
+      "tinySample": [
+        {
+          "t": "A",
+          "w": 25,
+          "h": 25
+        },
+        {
+          "t": "INPUT",
+          "w": 350,
+          "h": 15
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    },
+    "1440": {
+      "textCount": 121,
+      "min": 10,
+      "p10": 11,
+      "median": 13,
+      "belowSmall": 46,
+      "belowSmallSample": [
+        {
+          "t": "CHIEF PHYSICIAN",
+          "px": 10
+        },
+        {
+          "t": "Your assigned wards",
+          "px": 11
+        },
+        {
+          "t": "Due in the next 2 hours",
+          "px": 11
+        },
+        {
+          "t": "Today, Aug 31, 2026",
+          "px": 11
+        }
+      ],
+      "tinyTargets": 3,
+      "tinySample": [
+        {
+          "t": "BUTTON",
+          "w": 30,
+          "h": 30
+        },
+        {
+          "t": "A",
+          "w": 25,
+          "h": 25
+        },
+        {
+          "t": "INPUT",
+          "w": 350,
+          "h": 15
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    }
+  },
+  "outpatient-form": {
+    "390": {
+      "textCount": 100,
+      "min": 12,
+      "p10": 12,
+      "median": 13,
+      "belowSmall": 0,
+      "belowSmallSample": [],
+      "tinyTargets": 2,
+      "tinySample": [
+        {
+          "t": "A",
+          "w": 25,
+          "h": 25
+        },
+        {
+          "t": "Back to Registry",
+          "w": 128,
+          "h": 18
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    },
+    "800": {
+      "textCount": 102,
+      "min": 12,
+      "p10": 12,
+      "median": 13,
+      "belowSmall": 0,
+      "belowSmallSample": [],
+      "tinyTargets": 2,
+      "tinySample": [
+        {
+          "t": "A",
+          "w": 25,
+          "h": 25
+        },
+        {
+          "t": "Back to Registry",
+          "w": 128,
+          "h": 18
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    },
+    "1000": {
+      "textCount": 102,
+      "min": 12,
+      "p10": 12,
+      "median": 13,
+      "belowSmall": 0,
+      "belowSmallSample": [],
+      "tinyTargets": 2,
+      "tinySample": [
+        {
+          "t": "A",
+          "w": 25,
+          "h": 25
+        },
+        {
+          "t": "Back to Registry",
+          "w": 128,
+          "h": 18
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    },
+    "1200": {
+      "textCount": 102,
+      "min": 12,
+      "p10": 12,
+      "median": 13,
+      "belowSmall": 0,
+      "belowSmallSample": [],
+      "tinyTargets": 2,
+      "tinySample": [
+        {
+          "t": "A",
+          "w": 25,
+          "h": 25
+        },
+        {
+          "t": "Back to Registry",
+          "w": 128,
+          "h": 18
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    },
+    "1440": {
+      "textCount": 103,
+      "min": 10,
+      "p10": 11.5,
+      "median": 13,
+      "belowSmall": 13,
+      "belowSmallSample": [
+        {
+          "t": "CHIEF PHYSICIAN",
+          "px": 10
+        },
+        {
+          "t": "Optional",
+          "px": 11.5
+        },
+        {
+          "t": "0/500",
+          "px": 11.5
+        },
+        {
+          "t": "Past illnesses, chronic cond",
+          "px": 11.5
+        }
+      ],
+      "tinyTargets": 3,
+      "tinySample": [
+        {
+          "t": "BUTTON",
+          "w": 30,
+          "h": 30
+        },
+        {
+          "t": "A",
+          "w": 25,
+          "h": 25
+        },
+        {
+          "t": "Back to Registry",
+          "w": 128,
+          "h": 18
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    }
+  },
+  "payroll": {
+    "390": {
+      "textCount": 144,
+      "min": 12,
+      "p10": 12,
+      "median": 13,
+      "belowSmall": 0,
+      "belowSmallSample": [],
+      "tinyTargets": 19,
+      "tinySample": [
+        {
+          "t": "A",
+          "w": 25,
+          "h": 25
+        },
+        {
+          "t": "INPUT",
+          "w": 350,
+          "h": 16
+        },
+        {
+          "t": "BUTTON",
+          "w": 16,
+          "h": 16
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    },
+    "800": {
+      "textCount": 146,
+      "min": 12,
+      "p10": 12,
+      "median": 13,
+      "belowSmall": 0,
+      "belowSmallSample": [],
+      "tinyTargets": 19,
+      "tinySample": [
+        {
+          "t": "A",
+          "w": 25,
+          "h": 25
+        },
+        {
+          "t": "INPUT",
+          "w": 350,
+          "h": 16
+        },
+        {
+          "t": "BUTTON",
+          "w": 16,
+          "h": 16
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    },
+    "1000": {
+      "textCount": 146,
+      "min": 12,
+      "p10": 12,
+      "median": 13,
+      "belowSmall": 0,
+      "belowSmallSample": [],
+      "tinyTargets": 19,
+      "tinySample": [
+        {
+          "t": "A",
+          "w": 25,
+          "h": 25
+        },
+        {
+          "t": "INPUT",
+          "w": 350,
+          "h": 16
+        },
+        {
+          "t": "BUTTON",
+          "w": 16,
+          "h": 16
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    },
+    "1200": {
+      "textCount": 146,
+      "min": 12,
+      "p10": 12,
+      "median": 13,
+      "belowSmall": 0,
+      "belowSmallSample": [],
+      "tinyTargets": 19,
+      "tinySample": [
+        {
+          "t": "A",
+          "w": 25,
+          "h": 25
+        },
+        {
+          "t": "INPUT",
+          "w": 350,
+          "h": 16
+        },
+        {
+          "t": "BUTTON",
+          "w": 16,
+          "h": 16
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    },
+    "1440": {
+      "textCount": 148,
+      "min": 10,
+      "p10": 11,
+      "median": 13,
+      "belowSmall": 34,
+      "belowSmallSample": [
+        {
+          "t": "CHIEF PHYSICIAN",
+          "px": 10
+        },
+        {
+          "t": "PAY PERIOD",
+          "px": 11
+        },
+        {
+          "t": "PAYMENT DATE",
+          "px": 11
+        },
+        {
+          "t": "Semi-monthly · Bank transfer",
+          "px": 11
+        }
+      ],
+      "tinyTargets": 20,
+      "tinySample": [
+        {
+          "t": "BUTTON",
+          "w": 30,
+          "h": 30
+        },
+        {
+          "t": "A",
+          "w": 25,
+          "h": 25
+        },
+        {
+          "t": "INPUT",
+          "w": 350,
+          "h": 16
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    }
+  },
+  "personnel": {
+    "390": {
+      "textCount": 116,
+      "min": 12,
+      "p10": 12,
+      "median": 13,
+      "belowSmall": 0,
+      "belowSmallSample": [],
+      "tinyTargets": 2,
+      "tinySample": [
+        {
+          "t": "A",
+          "w": 25,
+          "h": 25
+        },
+        {
+          "t": "INPUT",
+          "w": 350,
+          "h": 15
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    },
+    "800": {
+      "textCount": 118,
+      "min": 12,
+      "p10": 12,
+      "median": 13,
+      "belowSmall": 0,
+      "belowSmallSample": [],
+      "tinyTargets": 2,
+      "tinySample": [
+        {
+          "t": "A",
+          "w": 25,
+          "h": 25
+        },
+        {
+          "t": "INPUT",
+          "w": 350,
+          "h": 15
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    },
+    "1000": {
+      "textCount": 118,
+      "min": 12,
+      "p10": 12,
+      "median": 13,
+      "belowSmall": 0,
+      "belowSmallSample": [],
+      "tinyTargets": 2,
+      "tinySample": [
+        {
+          "t": "A",
+          "w": 25,
+          "h": 25
+        },
+        {
+          "t": "INPUT",
+          "w": 350,
+          "h": 15
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    },
+    "1200": {
+      "textCount": 118,
+      "min": 12,
+      "p10": 12,
+      "median": 13,
+      "belowSmall": 0,
+      "belowSmallSample": [],
+      "tinyTargets": 2,
+      "tinySample": [
+        {
+          "t": "A",
+          "w": 25,
+          "h": 25
+        },
+        {
+          "t": "INPUT",
+          "w": 350,
+          "h": 15
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    },
+    "1440": {
+      "textCount": 119,
+      "min": 10,
+      "p10": 11,
+      "median": 13,
+      "belowSmall": 46,
+      "belowSmallSample": [
+        {
+          "t": "CHIEF PHYSICIAN",
+          "px": 10
+        },
+        {
+          "t": "Hospital personnel directory",
+          "px": 11
+        },
+        {
+          "t": "Clinical and support teams",
+          "px": 11
+        },
+        {
+          "t": "Updated Aug 31, 2026",
+          "px": 11
+        }
+      ],
+      "tinyTargets": 3,
+      "tinySample": [
+        {
+          "t": "BUTTON",
+          "w": 30,
+          "h": 30
+        },
+        {
+          "t": "A",
+          "w": 25,
+          "h": 25
+        },
+        {
+          "t": "INPUT",
+          "w": 350,
+          "h": 15
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    }
+  },
+  "pharmacy": {
+    "390": {
+      "textCount": 134,
+      "min": 12,
+      "p10": 12,
+      "median": 13,
+      "belowSmall": 0,
+      "belowSmallSample": [],
+      "tinyTargets": 2,
+      "tinySample": [
+        {
+          "t": "A",
+          "w": 25,
+          "h": 25
+        },
+        {
+          "t": "INPUT",
+          "w": 350,
+          "h": 15
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    },
+    "800": {
+      "textCount": 136,
+      "min": 12,
+      "p10": 12,
+      "median": 13,
+      "belowSmall": 0,
+      "belowSmallSample": [],
+      "tinyTargets": 2,
+      "tinySample": [
+        {
+          "t": "A",
+          "w": 25,
+          "h": 25
+        },
+        {
+          "t": "INPUT",
+          "w": 350,
+          "h": 15
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    },
+    "1000": {
+      "textCount": 136,
+      "min": 12,
+      "p10": 12,
+      "median": 13,
+      "belowSmall": 0,
+      "belowSmallSample": [],
+      "tinyTargets": 2,
+      "tinySample": [
+        {
+          "t": "A",
+          "w": 25,
+          "h": 25
+        },
+        {
+          "t": "INPUT",
+          "w": 350,
+          "h": 15
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    },
+    "1200": {
+      "textCount": 136,
+      "min": 12,
+      "p10": 12,
+      "median": 13,
+      "belowSmall": 0,
+      "belowSmallSample": [],
+      "tinyTargets": 2,
+      "tinySample": [
+        {
+          "t": "A",
+          "w": 25,
+          "h": 25
+        },
+        {
+          "t": "INPUT",
+          "w": 350,
+          "h": 15
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    },
+    "1440": {
+      "textCount": 137,
+      "min": 10,
+      "p10": 11,
+      "median": 12,
+      "belowSmall": 46,
+      "belowSmallSample": [
+        {
+          "t": "CHIEF PHYSICIAN",
+          "px": 10
+        },
+        {
+          "t": "Treatment queue",
+          "px": 11
+        },
+        {
+          "t": "Reviews due this week",
+          "px": 11
+        },
+        {
+          "t": "Updated Aug 31, 2026",
+          "px": 11
+        }
+      ],
+      "tinyTargets": 3,
+      "tinySample": [
+        {
+          "t": "BUTTON",
+          "w": 30,
+          "h": 30
+        },
+        {
+          "t": "A",
+          "w": 25,
+          "h": 25
+        },
+        {
+          "t": "INPUT",
+          "w": 350,
+          "h": 15
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    }
+  },
+  "portal": {
+    "390": {
+      "textCount": 20,
+      "min": 12,
+      "p10": 12,
+      "median": 13,
+      "belowSmall": 0,
+      "belowSmallSample": [],
+      "tinyTargets": 0,
+      "tinySample": [],
+      "overflow": false,
+      "errors": 0
+    },
+    "800": {
+      "textCount": 20,
+      "min": 12,
+      "p10": 12,
+      "median": 13,
+      "belowSmall": 0,
+      "belowSmallSample": [],
+      "tinyTargets": 0,
+      "tinySample": [],
+      "overflow": false,
+      "errors": 0
+    },
+    "1000": {
+      "textCount": 20,
+      "min": 12,
+      "p10": 12,
+      "median": 13,
+      "belowSmall": 0,
+      "belowSmallSample": [],
+      "tinyTargets": 0,
+      "tinySample": [],
+      "overflow": false,
+      "errors": 0
+    },
+    "1200": {
+      "textCount": 20,
+      "min": 12,
+      "p10": 12,
+      "median": 13,
+      "belowSmall": 0,
+      "belowSmallSample": [],
+      "tinyTargets": 0,
+      "tinySample": [],
+      "overflow": false,
+      "errors": 0
+    },
+    "1440": {
+      "textCount": 20,
+      "min": 10,
+      "p10": 10,
+      "median": 13,
+      "belowSmall": 4,
+      "belowSmallSample": [
+        {
+          "t": "Admit a patient in under a m",
+          "px": 10
+        },
+        {
+          "t": "Know who's on duty at a glan",
+          "px": 10
+        },
+        {
+          "t": "See open doctor slots in rea",
+          "px": 10
+        },
+        {
+          "t": "Revenue and activity, always",
+          "px": 10
+        }
+      ],
+      "tinyTargets": 0,
+      "tinySample": [],
+      "overflow": false,
+      "errors": 0
+    }
+  },
+  "profile": {
+    "390": {
+      "textCount": 106,
+      "min": 12,
+      "p10": 12.5,
+      "median": 13,
+      "belowSmall": 0,
+      "belowSmallSample": [],
+      "tinyTargets": 2,
+      "tinySample": [
+        {
+          "t": "A",
+          "w": 25,
+          "h": 25
+        },
+        {
+          "t": "← Back to Registry",
+          "w": 122,
+          "h": 18
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    },
+    "800": {
+      "textCount": 108,
+      "min": 12,
+      "p10": 12.5,
+      "median": 13,
+      "belowSmall": 0,
+      "belowSmallSample": [],
+      "tinyTargets": 2,
+      "tinySample": [
+        {
+          "t": "A",
+          "w": 25,
+          "h": 25
+        },
+        {
+          "t": "← Back to Registry",
+          "w": 122,
+          "h": 18
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    },
+    "1000": {
+      "textCount": 108,
+      "min": 12,
+      "p10": 12.5,
+      "median": 13,
+      "belowSmall": 0,
+      "belowSmallSample": [],
+      "tinyTargets": 2,
+      "tinySample": [
+        {
+          "t": "A",
+          "w": 25,
+          "h": 25
+        },
+        {
+          "t": "← Back to Registry",
+          "w": 122,
+          "h": 18
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    },
+    "1200": {
+      "textCount": 108,
+      "min": 12,
+      "p10": 12.5,
+      "median": 13,
+      "belowSmall": 0,
+      "belowSmallSample": [],
+      "tinyTargets": 2,
+      "tinySample": [
+        {
+          "t": "A",
+          "w": 25,
+          "h": 25
+        },
+        {
+          "t": "← Back to Registry",
+          "w": 122,
+          "h": 18
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    },
+    "1440": {
+      "textCount": 109,
+      "min": 10,
+      "p10": 12.5,
+      "median": 13,
+      "belowSmall": 3,
+      "belowSmallSample": [
+        {
+          "t": "CHIEF PHYSICIAN",
+          "px": 10
+        },
+        {
+          "t": "Inpatient",
+          "px": 11.5
+        },
+        {
+          "t": "Admitted",
+          "px": 11.5
+        }
+      ],
+      "tinyTargets": 3,
+      "tinySample": [
+        {
+          "t": "BUTTON",
+          "w": 30,
+          "h": 30
+        },
+        {
+          "t": "A",
+          "w": 25,
+          "h": 25
+        },
+        {
+          "t": "← Back to Registry",
+          "w": 122,
+          "h": 18
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    }
+  },
+  "registration-form": {
+    "390": {
+      "textCount": 104,
+      "min": 12,
+      "p10": 12,
+      "median": 13,
+      "belowSmall": 0,
+      "belowSmallSample": [],
+      "tinyTargets": 2,
+      "tinySample": [
+        {
+          "t": "A",
+          "w": 25,
+          "h": 25
+        },
+        {
+          "t": "Back to Registry",
+          "w": 128,
+          "h": 18
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    },
+    "800": {
+      "textCount": 106,
+      "min": 12,
+      "p10": 12,
+      "median": 13,
+      "belowSmall": 0,
+      "belowSmallSample": [],
+      "tinyTargets": 2,
+      "tinySample": [
+        {
+          "t": "A",
+          "w": 25,
+          "h": 25
+        },
+        {
+          "t": "Back to Registry",
+          "w": 128,
+          "h": 18
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    },
+    "1000": {
+      "textCount": 106,
+      "min": 12,
+      "p10": 12,
+      "median": 13,
+      "belowSmall": 0,
+      "belowSmallSample": [],
+      "tinyTargets": 2,
+      "tinySample": [
+        {
+          "t": "A",
+          "w": 25,
+          "h": 25
+        },
+        {
+          "t": "Back to Registry",
+          "w": 128,
+          "h": 18
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    },
+    "1200": {
+      "textCount": 106,
+      "min": 12,
+      "p10": 12,
+      "median": 13,
+      "belowSmall": 0,
+      "belowSmallSample": [],
+      "tinyTargets": 2,
+      "tinySample": [
+        {
+          "t": "A",
+          "w": 25,
+          "h": 25
+        },
+        {
+          "t": "Back to Registry",
+          "w": 128,
+          "h": 18
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    },
+    "1440": {
+      "textCount": 107,
+      "min": 10,
+      "p10": 11.5,
+      "median": 13,
+      "belowSmall": 13,
+      "belowSmallSample": [
+        {
+          "t": "CHIEF PHYSICIAN",
+          "px": 10
+        },
+        {
+          "t": "Optional",
+          "px": 11.5
+        },
+        {
+          "t": "0/500",
+          "px": 11.5
+        },
+        {
+          "t": "Past illnesses, chronic cond",
+          "px": 11.5
+        }
+      ],
+      "tinyTargets": 3,
+      "tinySample": [
+        {
+          "t": "BUTTON",
+          "w": 30,
+          "h": 30
+        },
+        {
+          "t": "A",
+          "w": 25,
+          "h": 25
+        },
+        {
+          "t": "Back to Registry",
+          "w": 128,
+          "h": 18
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    }
+  },
+  "registration": {
+    "390": {
+      "textCount": 83,
+      "min": 12,
+      "p10": 12,
+      "median": 14,
+      "belowSmall": 0,
+      "belowSmallSample": [],
+      "tinyTargets": 7,
+      "tinySample": [
+        {
+          "t": "A",
+          "w": 25,
+          "h": 25
+        },
+        {
+          "t": "INPUT",
+          "w": 220,
+          "h": 19
+        },
+        {
+          "t": "BUTTON",
+          "w": 30,
+          "h": 30
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    },
+    "800": {
+      "textCount": 85,
+      "min": 12,
+      "p10": 12,
+      "median": 14,
+      "belowSmall": 0,
+      "belowSmallSample": [],
+      "tinyTargets": 7,
+      "tinySample": [
+        {
+          "t": "A",
+          "w": 25,
+          "h": 25
+        },
+        {
+          "t": "INPUT",
+          "w": 220,
+          "h": 19
+        },
+        {
+          "t": "BUTTON",
+          "w": 30,
+          "h": 30
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    },
+    "1000": {
+      "textCount": 85,
+      "min": 12,
+      "p10": 12,
+      "median": 14,
+      "belowSmall": 0,
+      "belowSmallSample": [],
+      "tinyTargets": 7,
+      "tinySample": [
+        {
+          "t": "A",
+          "w": 25,
+          "h": 25
+        },
+        {
+          "t": "INPUT",
+          "w": 220,
+          "h": 19
+        },
+        {
+          "t": "BUTTON",
+          "w": 30,
+          "h": 30
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    },
+    "1200": {
+      "textCount": 85,
+      "min": 12,
+      "p10": 12,
+      "median": 14,
+      "belowSmall": 0,
+      "belowSmallSample": [],
+      "tinyTargets": 7,
+      "tinySample": [
+        {
+          "t": "A",
+          "w": 25,
+          "h": 25
+        },
+        {
+          "t": "INPUT",
+          "w": 220,
+          "h": 19
+        },
+        {
+          "t": "BUTTON",
+          "w": 30,
+          "h": 30
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    },
+    "1440": {
+      "textCount": 86,
+      "min": 10,
+      "p10": 11,
+      "median": 14,
+      "belowSmall": 11,
+      "belowSmallSample": [
+        {
+          "t": "CHIEF PHYSICIAN",
+          "px": 10
+        },
+        {
+          "t": "IGV",
+          "px": 10
+        },
+        {
+          "t": "PT-99213 · 54 yrs",
+          "px": 11
+        },
+        {
+          "t": "RML",
+          "px": 10
+        }
+      ],
+      "tinyTargets": 8,
+      "tinySample": [
+        {
+          "t": "BUTTON",
+          "w": 30,
+          "h": 30
+        },
+        {
+          "t": "A",
+          "w": 25,
+          "h": 25
+        },
+        {
+          "t": "INPUT",
+          "w": 220,
+          "h": 19
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    }
+  },
+  "reports": {
+    "390": {
+      "textCount": 80,
+      "min": 12,
+      "p10": 12,
+      "median": 13,
+      "belowSmall": 0,
+      "belowSmallSample": [],
+      "tinyTargets": 1,
+      "tinySample": [
+        {
+          "t": "A",
+          "w": 25,
+          "h": 25
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    },
+    "800": {
+      "textCount": 82,
+      "min": 12,
+      "p10": 12,
+      "median": 13,
+      "belowSmall": 0,
+      "belowSmallSample": [],
+      "tinyTargets": 1,
+      "tinySample": [
+        {
+          "t": "A",
+          "w": 25,
+          "h": 25
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    },
+    "1000": {
+      "textCount": 82,
+      "min": 12,
+      "p10": 12,
+      "median": 13,
+      "belowSmall": 0,
+      "belowSmallSample": [],
+      "tinyTargets": 1,
+      "tinySample": [
+        {
+          "t": "A",
+          "w": 25,
+          "h": 25
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    },
+    "1200": {
+      "textCount": 82,
+      "min": 12,
+      "p10": 12,
+      "median": 13,
+      "belowSmall": 0,
+      "belowSmallSample": [],
+      "tinyTargets": 1,
+      "tinySample": [
+        {
+          "t": "A",
+          "w": 25,
+          "h": 25
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    },
+    "1440": {
+      "textCount": 95,
+      "min": 10,
+      "p10": 11,
+      "median": 13,
+      "belowSmall": 13,
+      "belowSmallSample": [
+        {
+          "t": "CHIEF PHYSICIAN",
+          "px": 10
+        },
+        {
+          "t": "Invoice",
+          "px": 11
+        },
+        {
+          "t": "Type",
+          "px": 11
+        },
+        {
+          "t": "Billed",
+          "px": 11
+        }
+      ],
+      "tinyTargets": 2,
+      "tinySample": [
+        {
+          "t": "BUTTON",
+          "w": 30,
+          "h": 30
+        },
+        {
+          "t": "A",
+          "w": 25,
+          "h": 25
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    }
+  },
+  "staff": {
+    "390": {
+      "textCount": 116,
+      "min": 12,
+      "p10": 12,
+      "median": 13,
+      "belowSmall": 0,
+      "belowSmallSample": [],
+      "tinyTargets": 2,
+      "tinySample": [
+        {
+          "t": "A",
+          "w": 25,
+          "h": 25
+        },
+        {
+          "t": "INPUT",
+          "w": 350,
+          "h": 15
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    },
+    "800": {
+      "textCount": 118,
+      "min": 12,
+      "p10": 12,
+      "median": 13,
+      "belowSmall": 0,
+      "belowSmallSample": [],
+      "tinyTargets": 2,
+      "tinySample": [
+        {
+          "t": "A",
+          "w": 25,
+          "h": 25
+        },
+        {
+          "t": "INPUT",
+          "w": 350,
+          "h": 15
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    },
+    "1000": {
+      "textCount": 118,
+      "min": 12,
+      "p10": 12,
+      "median": 13,
+      "belowSmall": 0,
+      "belowSmallSample": [],
+      "tinyTargets": 2,
+      "tinySample": [
+        {
+          "t": "A",
+          "w": 25,
+          "h": 25
+        },
+        {
+          "t": "INPUT",
+          "w": 350,
+          "h": 15
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    },
+    "1200": {
+      "textCount": 118,
+      "min": 12,
+      "p10": 12,
+      "median": 13,
+      "belowSmall": 0,
+      "belowSmallSample": [],
+      "tinyTargets": 2,
+      "tinySample": [
+        {
+          "t": "A",
+          "w": 25,
+          "h": 25
+        },
+        {
+          "t": "INPUT",
+          "w": 350,
+          "h": 15
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    },
+    "1440": {
+      "textCount": 119,
+      "min": 10,
+      "p10": 11,
+      "median": 13,
+      "belowSmall": 46,
+      "belowSmallSample": [
+        {
+          "t": "CHIEF PHYSICIAN",
+          "px": 10
+        },
+        {
+          "t": "Hospital personnel directory",
+          "px": 11
+        },
+        {
+          "t": "Clinical and support teams",
+          "px": 11
+        },
+        {
+          "t": "Updated Aug 31, 2026",
+          "px": 11
+        }
+      ],
+      "tinyTargets": 3,
+      "tinySample": [
+        {
+          "t": "BUTTON",
+          "w": 30,
+          "h": 30
+        },
+        {
+          "t": "A",
+          "w": 25,
+          "h": 25
+        },
+        {
+          "t": "INPUT",
+          "w": 350,
+          "h": 15
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    }
+  },
+  "treatment": {
+    "390": {
+      "textCount": 121,
+      "min": 12,
+      "p10": 12,
+      "median": 13,
+      "belowSmall": 0,
+      "belowSmallSample": [],
+      "tinyTargets": 2,
+      "tinySample": [
+        {
+          "t": "A",
+          "w": 25,
+          "h": 25
+        },
+        {
+          "t": "INPUT",
+          "w": 350,
+          "h": 15
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    },
+    "800": {
+      "textCount": 123,
+      "min": 12,
+      "p10": 12,
+      "median": 13,
+      "belowSmall": 0,
+      "belowSmallSample": [],
+      "tinyTargets": 2,
+      "tinySample": [
+        {
+          "t": "A",
+          "w": 25,
+          "h": 25
+        },
+        {
+          "t": "INPUT",
+          "w": 350,
+          "h": 15
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    },
+    "1000": {
+      "textCount": 123,
+      "min": 12,
+      "p10": 12,
+      "median": 13,
+      "belowSmall": 0,
+      "belowSmallSample": [],
+      "tinyTargets": 2,
+      "tinySample": [
+        {
+          "t": "A",
+          "w": 25,
+          "h": 25
+        },
+        {
+          "t": "INPUT",
+          "w": 350,
+          "h": 15
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    },
+    "1200": {
+      "textCount": 123,
+      "min": 12,
+      "p10": 12,
+      "median": 13,
+      "belowSmall": 0,
+      "belowSmallSample": [],
+      "tinyTargets": 2,
+      "tinySample": [
+        {
+          "t": "A",
+          "w": 25,
+          "h": 25
+        },
+        {
+          "t": "INPUT",
+          "w": 350,
+          "h": 15
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    },
+    "1440": {
+      "textCount": 124,
+      "min": 10,
+      "p10": 11,
+      "median": 13,
+      "belowSmall": 46,
+      "belowSmallSample": [
+        {
+          "t": "CHIEF PHYSICIAN",
+          "px": 10
+        },
+        {
+          "t": "Treatment queue",
+          "px": 11
+        },
+        {
+          "t": "Reviews due this week",
+          "px": 11
+        },
+        {
+          "t": "Updated Aug 31, 2026",
+          "px": 11
+        }
+      ],
+      "tinyTargets": 3,
+      "tinySample": [
+        {
+          "t": "BUTTON",
+          "w": 30,
+          "h": 30
+        },
+        {
+          "t": "A",
+          "w": 25,
+          "h": 25
+        },
+        {
+          "t": "INPUT",
+          "w": 350,
+          "h": 15
+        }
+      ],
+      "overflow": false,
+      "errors": 0
+    }
+  }
+}
