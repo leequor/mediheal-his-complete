@@ -11,3 +11,11 @@ qa/tmp/
 qa/mobile/
 qa/audit-out.txt
 qa/matrix.txt
+
+# M9.2 inspection output. Regenerate with:
+#   node scripts/inspect-shots.mjs   (page screenshots, portrait + landscape)
+#   node scripts/inspect-region.mjs  (single band at full resolution)
+#   node scripts/inspect-modal.mjs   (dialogs)
+#   node scripts/a11y-check.mjs      (axe + manual checks)
+qa/inspect/
+qa/*.txt

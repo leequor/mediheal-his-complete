@@ -335,3 +335,57 @@ pixels. Both defaults exist because text antialiasing varies slightly between br
 - PNG bytes are not a reliable identity check across sessions — the same pixels can encode to
   different bytes. `baseline-manifest-1440.json` stores a `sha256` for reference, but the
   **pixel diff is authoritative**, not the hash.
+
+---
+
+## 12. Responsive layer and the decisions it forced (M9.2)
+
+`assets/css/responsive.css` is **the only stylesheet allowed to override the Figma geometry**, and
+nothing in it applies at ≥1440px. It is appended to in dated sections rather than rewritten, so the
+reasoning behind each override stays next to it.
+
+### The two places a colour value changed
+
+Both are documented here because §1 of this document forbids substituting the palette.
+
+| Location | From | To | Why |
+|---|---|---|---|
+| `--muted-pt` (portal local token) | `#6b7c8f` | `#607081` | 3.85:1 on `#f3f3f3` at 12px; needs 4.5:1. Same hue, 10% darker, now 4.58:1. Reported **serious** by axe. |
+| Mobile sign-in brand text | `#fff` (on a panel that no longer exists below 1440) | `#1b4e6b` | White on `rgb(246,250,255)` is unreadable. `#1b4e6b` is the existing `--section` token. |
+
+No brand colour, gradient or component surface was replaced.
+
+### Deliberate mobile omissions
+
+- **Sign-in marketing block** (`.si-h`, `.si-p`, `.si-ft`, `.si-fd`). The feature list was already
+  hidden below 1440 in M9.1; the headline and paragraph followed in M9.2 because they were white text
+  with no panel behind them. A compact brand line replaces them. Sign-in, demo credentials, password
+  help and the patient-portal link all remain.
+- **Table column headers** below 1440. Each row carries its own captions instead (`SHIFT`, `TIME IN`,
+  `BASIC`, `NET PAY`, …), because a header that scrolls away is worse than a label on every row.
+
+### Specificity rules to know before editing
+
+1. `#tpc *`, `#prc *`, `#pec *`, `#atc *` set `position:static !important` on every descendant. At
+   (1,0,0) this beats **any** single-class rule regardless of `!important`. Override with a
+   wrapper-scoped selector (`#prc .pr-modal`), not another single class.
+2. Never hide a header with `.X-th{display:none}` and then add a later `.X-a{display:block}` — if the
+   element carries both classes the later rule wins. Hide with `.stage .X-th` instead. This exact bug
+   shipped three times.
+3. `position:static` discards `top` but **not** an inline `height`. Rows that carry inline Figma
+   heights must also get `height:auto`.
+4. Converting an absolutely positioned `<span>` to `static` makes it **inline** — label and value
+   collapse onto one line. Force `display:block` on reflowed card children.
+
+### Verification contract, extended
+
+- [ ] `mobile-audit.mjs` → 0 failures, 0 undersized targets below 1440.
+- [ ] `overflow-probe.mjs` → 0 elements whose content exceeds their box.
+- [ ] `inspect-shots.mjs` → 0 console errors; **screenshots actually looked at**.
+- [ ] `inspect-modal.mjs` → every dialog fits and every action is reachable.
+- [ ] `a11y-check.mjs` → 0 axe violations, focus ring present, Escape closes, focus restored.
+- [ ] `visual-check.mjs --check` → all pages match baseline.
+
+**The last one is necessary but never sufficient.** Three separate defects in this project passed every
+automated check and were only found by looking at a screenshot. Measurement proves no regression;
+inspection proves it works.

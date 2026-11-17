@@ -3,7 +3,7 @@
    fonts and the shared colours. base.css is intentionally NOT loaded here: it pins a 1440px
    min-width for the fixed Figma stage, and this public page is responsive. */
 .pt{
-  --navy:#0f1b2d;--deep:#1b4f72;--blue:#2e8bc0;--sky:#eaf4fb;--ink:#12233a;--muted-pt:#6b7c8f;
+  --navy:#0f1b2d;--deep:#1b4f72;--blue:#2e8bc0;--sky:#eaf4fb;--ink:#12233a;--muted-pt:#607081;
   --line-pt:#cfe0ee;--ok:#1f7a4d;--err:#c0392b;--r:10px;
   margin:0;min-height:100vh;font:15px/1.55 var(--font-inter);color:var(--ink);
   background:linear-gradient(160deg,#f4f9fd,#dcecf7 60%,#f4f9fd)

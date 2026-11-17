@@ -21,7 +21,7 @@ import http from 'node:http';
 import { readFile, readdir, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const BASE = (process.env.BASE || 'http://127.0.0.1:8788').replace(/\/$/, '');
@@ -33,7 +33,12 @@ const SEL = 'button, [role="button"], [data-act], input[type="checkbox"], input[
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.png': 'image/png', '.jpg': 'image/jpeg', '.svg': 'image/svg+xml', '.json': 'application/json', '.woff2': 'font/woff2' };
 
 let chromium;
-try { ({ chromium } = await import(PW)); } catch {
+try {
+  const spec = PW.startsWith('/') || /^[A-Za-z]:[\\/]/.test(PW) ? pathToFileURL(PW).href : PW;
+  const mod = await import(spec);
+  chromium = mod.chromium || (mod.default && mod.default.chromium);
+  if (!chromium) throw new Error('no chromium export');
+} catch {
   console.error(`Cannot import playwright-core (tried "${PW}"). Set PW to its index.js.`);
   process.exit(2);
 }
@@ -54,7 +59,10 @@ if (/127\.0\.0\.1|localhost/.test(BASE)) {
 }
 
 const pages = (await readdir(ROOT)).filter(f => f.endsWith('.html') && (!ONLY || f.indexOf(ONLY) > -1)).sort();
-const browser = await chromium.connectOverCDP(CDP);
+const browser = await (async () => {
+  try { return await chromium.connectOverCDP(CDP); }
+  catch { return await chromium.launch({ channel: process.env.CHANNEL || 'chrome' }); }
+})();
 let ctx;
 try { ctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, acceptDownloads: true }); }
 catch { ctx = browser.contexts()[0]; }

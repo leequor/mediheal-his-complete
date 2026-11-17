@@ -516,7 +516,10 @@
   .a-new { width: 100% !important; height: 46px !important; }
   .a-table { position: static !important; width: auto !important; min-height: 0 !important; overflow: visible !important; }
   .a-th { display: none !important; }
-  .a-row, .a-grid {
+  /* .a-th is ALSO .a-grid, so listing .a-grid here re-showed the header it was meant to hide:
+     equal specificity, both !important, this rule comes later and wins. Every row carries
+     .a-row too, so .a-row alone is sufficient. Same bug class as .ad-th/.ac-g above. */
+  .a-row {
     display: block !important;
     height: auto !important;
     padding: 12px 14px !important;
@@ -835,4 +838,796 @@
   /* #bllist / #blinv are 0x0 positioning wrappers; once their children become static they
      need real dimensions or the whole list collapses. Same pattern as #tpc/#prc/#pec/#atc. */
   #bllist, #blinv { position: static !important; width: auto !important; height: auto !important; display: block !important; }
+}
+
+/* ============================================================================
+   M9.2 — defects found by inspecting rendered screenshots, not by the audit.
+
+   1. Table headers re-appearing.
+      `.a-th` is also `.a-grid`, `.at-th` is also `.at-a`, `.pr-th` is also `.pr-a`.
+      Each was hidden with `.X-th{display:none!important}` and then re-shown by a later
+      `.X-a{display:block!important}` of EQUAL specificity — later rule wins. This bit the
+      same way three times (ad-th in M9.1, a-th and now at-th/pr-th). Prefixing with `.stage`
+      raises specificity to 0,2,0 so no single-class rule can override it, whatever the order.
+
+   2. Inline Figma heights surviving the reflow.
+      Setting `position:static` discards `top`, but an INLINE `height:35.07px` still applies.
+      Wrapped content then overflows the fixed box and paints on top of the next row.
+      Affected: profile treatment history (rows overlapped), attendance rows, payroll totals
+      and footer, and both registration forms (three stacked fields clipped into one row's
+      height — the form was unusable).
+
+   3. Form controls placed by absolute offset.
+      `.rf-ctl` sits at `top:25.6px` inside a `position:relative` `.rf-f`, so `.rf-f` measures
+      only the label's 18px. Once the field stack is one column, the control has to flow.
+   ============================================================================ */
+@media (max-width: 1439px) {
+  /* 1 — headers stay hidden */
+  .stage .a-th, .stage .ad-th, .stage .at-th, .stage .pr-th,
+  .stage .pe-th, .stage .thead, .stage .bl-tr.h { display: none !important; }
+
+  /* 2 — rows grow to fit their content */
+  .pf-row, .pf-row.last,
+  .at-r, .at-ft, .at-card, .at-reg,
+  .pr-r, .pr-ft, .pr-tot, .pr-card, .pr-reg,
+  .rf-row, .rf-row.c1, .rf-row.c2, .rf-row.c3,
+  .rf-sec, .rf-f, .rf-sum { height: auto !important; min-height: 0 !important; }
+
+  /* profile rows: label above value, never side-by-side collision */
+  .pf-row { display: block !important; padding: 10px 0 !important; align-items: flex-start !important; }
+  .pf-l, .pf-v {
+    display: block !important;
+    position: static !important;
+    width: auto !important;
+    max-width: 100% !important;
+    height: auto !important;
+    white-space: normal !important;
+    text-align: left !important;
+    overflow: visible !important;
+  }
+  .pf-v { margin-top: 2px !important; }
+  .pf-th .pf-row, .pf-th .pf-v { width: auto !important; right: auto !important; }
+
+  /* 3 — form controls flow under their label */
+  .rf-ctl {
+    position: static !important;
+    left: auto !important;
+    top: auto !important;
+    display: block !important;
+    width: 100% !important;
+  }
+  input.rf-ctl { padding: 0 13px !important; }
+  .rf-f { display: block !important; }
+  .rf-l { display: block !important; height: auto !important; white-space: normal !important; margin-bottom: 6px !important; }
+  .rf-row { margin-bottom: 16px !important; }
+
+  /* attendance / payroll rows: children already flow, the box just needs to follow */
+  .at-r, .pr-r { padding: 10px 0 !important; }
+  .at-ft, .pr-ft, .pr-tot { display: block !important; }
+}
+
+/* ---- M9.2 form adornments ------------------------------------------------
+   The 0/500 counter and the field hint are absolutely positioned BELOW the control
+   (`top:149.6px` / `77.6px`), so they fall outside the field's box and the next field
+   paints on top of them. On mobile they must flow. The calendar glyph is decorative and
+   belongs inside the input, so it is re-anchored rather than removed. */
+@media (max-width: 1439px) {
+  .rf-hint, .rf-hint.t, .rf-cc {
+    position: static !important;
+    left: auto !important;
+    right: auto !important;
+    top: auto !important;
+    display: block !important;
+    white-space: normal !important;
+    margin-top: 4px !important;
+    font-size: 12px !important;
+    line-height: 16px !important;
+  }
+  .rf-cc { text-align: right !important; }
+
+  /* label 18 + 6 margin = control top at 24px; glyph centred in the 46px control */
+  .rf-cal { top: 38px !important; left: 13px !important; }
+
+  /* select trigger: the desktop padding reserves 24px at the bottom for the Figma label
+     position, which on mobile just pushes the value to the top of the box */
+  .rf-sb {
+    height: 46px !important;
+    padding: 0 34px 0 13px !important;
+    display: flex !important;
+    align-items: center !important;
+    font-size: 15px !important;
+    white-space: normal !important;
+  }
+  .rf-sb svg { top: 17px !important; }
+}
+
+/* ============================================================================
+   M9.2 — ATTENDANCE + PAYROLL rows as real mobile cards.
+
+   These two tables place every cell with an absolute `left`. The earlier blanket
+   `#atc * / #prc * { position: static }` did neutralise those offsets, but the cells then
+   collapsed into one inline run — "Dr. Elsie ChenEMP-001 · Chief PhysicianAdministration 8 AM…"
+   — and the status pill stretched to the full card width. Neutralising the offset is only
+   half the job; the cells still need a layout.
+
+   Each row becomes a wrapping flex card:
+     [✓] Name ……………………………………… [pill]
+         ID · role
+         Department
+         Shift / Time in / Time out / Hours   (each with its own caption, since the
+         column header is hidden on mobile)
+         [Details]
+   ============================================================================ */
+@media (max-width: 1439px) {
+  /* containers take the full column instead of their Figma width */
+  .at-reg, .pr-reg, .at-ac, .pr-ac, .at-card, .pr-card, .at-m, .pr-m, .at-tot, .pr-tot {
+    width: auto !important;
+    max-width: 100% !important;
+  }
+
+  /* --- KPI metric cards: icon, label, value, sub-line --- */
+  .at-m, .pr-m {
+    display: block !important;
+    height: auto !important;
+    padding: 14px 16px !important;
+    margin: 0 0 12px !important;
+    white-space: normal !important;
+  }
+  .at-m > .ic, .pr-m > .ic { display: block !important; margin: 0 0 8px !important; }
+  .at-m > .l, .pr-m > .l {
+    display: block !important;
+    font: 600 13px/17px Inter, sans-serif !important;
+    color: #1c2b30 !important;
+  }
+  .at-m > .n, .pr-m > .n {
+    display: block !important;
+    font: 700 26px/32px Lexend, sans-serif !important;
+    color: #1b4e6b !important;
+    margin-top: 2px !important;
+  }
+  .at-m > .s, .pr-m > .s {
+    display: block !important;
+    font: 400 12px/16px Inter, sans-serif !important;
+    color: #6f8890 !important;
+    margin-top: 2px !important;
+    white-space: normal !important;
+  }
+
+  /* --- card titles --- */
+  .at-st, .pr-st {
+    display: block !important;
+    font-size: 17px !important;
+    line-height: 22px !important;
+    margin: 0 0 4px !important;
+    white-space: normal !important;
+  }
+  .at-ex, .pr-ex {
+    display: block !important;
+    font-size: 12.5px !important;
+    line-height: 18px !important;
+    margin: 0 0 12px !important;
+    white-space: normal !important;
+  }
+
+  /* --- employee rows --- */
+  .at-r, .pr-r {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    align-items: flex-start !important;
+    gap: 3px 10px !important;
+    padding: 12px 14px !important;
+    height: auto !important;
+    white-space: normal !important;
+    overflow: visible !important;
+  }
+  .at-r > *, .pr-r > * { position: static !important; white-space: normal !important; }
+
+  .at-r > .at-cb, .pr-r > .pr-cb { order: 0; flex: 0 0 24px; }
+  .at-r > .nm, .pr-r > .nm {
+    order: 1; flex: 1 1 auto; min-width: 0;
+    font: 600 14px/18px Inter, sans-serif !important;
+    color: #1c2b30 !important;
+  }
+  .at-r > .at-p, .pr-r > .pr-p { order: 2; flex: 0 0 auto; }
+  .at-r > .mt, .pr-r > .mt {
+    order: 3; flex: 1 1 100%;
+    font: 400 12px/16px Inter, sans-serif !important;
+    color: #6f8890 !important;
+  }
+  .at-r > .dp, .pr-r > .dp {
+    order: 4; flex: 1 1 100%;
+    font: 400 12px/16px Inter, sans-serif !important;
+    color: #6f8890 !important;
+  }
+  .pr-r > .dh {
+    order: 5; flex: 1 1 100%;
+    font: 400 12px/16px Inter, sans-serif !important;
+    color: #6f8890 !important;
+  }
+  .at-r > .at-ps, .pr-r > .pr-ps { order: 7; flex: 1 1 100%; margin-top: 8px !important; }
+
+  /* --- value cells: each carries its own caption --- */
+  .at-r > .c, .pr-r > .am {
+    order: 6;
+    flex: 1 1 44%;
+    min-width: 0;
+    text-align: left !important;
+    font: 600 13px/17px Inter, sans-serif !important;
+    color: #1c2b30 !important;
+    margin-top: 6px !important;
+  }
+  .at-r > .c::before, .pr-r > .am::before {
+    display: block;
+    font: 600 10.5px/14px Inter, sans-serif;
+    color: #8a97a6;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    margin-bottom: 1px;
+  }
+  .at-r > .c.sh::before { content: 'Shift'; }
+  .at-r > .c.ti::before { content: 'Time in'; }
+  .at-r > .c.to::before { content: 'Time out'; }
+  .at-r > .c.hr::before { content: 'Hours'; }
+  /* payroll cells carry no distinguishing class; they are spans 5-8 of the row
+     (nm, mt, dp, dh, basic, allowance, deductions, net, pill) */
+  .pr-r > .am:nth-of-type(5)::before { content: 'Basic'; }
+  .pr-r > .am:nth-of-type(6)::before { content: 'Allowance'; }
+  .pr-r > .am:nth-of-type(7)::before { content: 'Deductions'; }
+  .pr-r > .am:nth-of-type(8)::before { content: 'Net pay'; color: #1b4e6b; }
+  .pr-r > .am.net { color: #1b4e6b !important; font-weight: 700 !important; }
+
+  /* status pills keep their pill shape instead of stretching */
+  .at-r > .at-p, .pr-r > .pr-p {
+    display: inline-flex !important;
+    align-items: center !important;
+    height: 26px !important;
+    padding: 0 10px !important;
+    border-radius: 999px !important;
+    align-self: center !important;
+  }
+  .at-p i, .pr-p i { position: static !important; margin-right: 6px !important; flex: none !important; }
+  .pr-p .lb { position: static !important; top: auto !important; font-size: 11px !important; }
+
+  /* --- day / period total --- */
+  .at-tot, .pr-tot {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    align-items: baseline !important;
+    gap: 4px 14px !important;
+    padding: 12px 14px !important;
+    height: auto !important;
+  }
+  .at-tot > .tl, .pr-tot > .tl { flex: 1 1 100%; font-size: 13px !important; }
+  .at-tot > .c, .pr-tot > .c, .pr-tot > .am {
+    position: static !important;
+    flex: 0 0 auto !important;
+    text-align: left !important;
+    font-size: 12.5px !important;
+  }
+
+  /* --- footer (pagination + note) --- */
+  .at-ft, .pr-ft {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
+    gap: 10px !important;
+    padding: 12px 14px !important;
+    height: auto !important;
+  }
+  .at-ft > *, .pr-ft > * { position: static !important; white-space: normal !important; }
+}
+
+/* ---- M9.2 action buttons in the attendance / payroll header ---------------
+   `.pr-btn` / `.at-btn` are `position:absolute` with an INLINE width (146/172/174px), so
+   neutralising the offset still left 492px of buttons in a 390px column: the third button
+   was cut off by the wrapper's overflow clip. They stack full width instead, and the icon
+   is put back into flow so it stops sitting on top of its label. */
+@media (max-width: 1439px) {
+  .pr-btn, .at-btn, .at-cbtn, .pr-cbtn {
+    position: static !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 8px !important;
+    width: 100% !important;
+    height: 44px !important;
+    margin: 0 0 8px !important;
+    padding: 0 14px !important;
+    text-align: center !important;
+    box-sizing: border-box !important;
+  }
+  .pr-btn svg, .pr-btn span,
+  .at-btn svg, .at-btn span,
+  .at-cbtn svg, .at-cbtn span,
+  .pr-cbtn svg, .pr-cbtn span {
+    position: static !important;
+    left: auto !important;
+    top: auto !important;
+    right: auto !important;
+  }
+
+  /* row actions: icon + label in flow, with a real gap */
+  .at-ps, .pr-ps {
+    position: static !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 6px !important;
+    height: 40px !important;
+    padding: 0 14px !important;
+    width: auto !important;
+  }
+  .at-ps svg, .at-ps span, .pr-ps svg, .pr-ps span {
+    position: static !important;
+    left: auto !important;
+    top: auto !important;
+  }
+}
+
+/* ---- M9.2 container sizing for attendance / payroll ----------------------
+   `#atc *` / `#prc *` (specificity 1,0,0) sets position:static on every descendant, which
+   wins over any single-class rule regardless of !important. That is deliberate - it is what
+   kills the Figma offsets - but it means sizing must be handled separately, because those
+   wrappers do NOT declare width/height.
+
+   `.at-a` / `.pr-a` blocks carry INLINE width and height (e.g. the payroll button row is
+   `height:100px`). Once the buttons stack, 100px clips the third one away. The containers
+   must grow; the few controls whose children are still absolutely placed keep an explicit
+   box and become flex rows so their contents centre. */
+@media (max-width: 1439px) {
+  .at-a, .pr-a {
+    width: auto !important;
+    max-width: 100% !important;
+    height: auto !important;
+    white-space: normal !important;
+    box-sizing: border-box !important;
+  }
+
+  /* search field: icon + input as a centred flex row */
+  .at-search {
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    width: 100% !important;
+    height: 46px !important;
+    padding: 0 14px !important;
+    margin: 0 0 10px !important;
+  }
+  .at-search svg { flex: none !important; }
+  .at-search input {
+    flex: 1 1 auto !important;
+    width: auto !important;
+    height: auto !important;
+    font-size: 14px !important;
+  }
+
+  /* filter triggers */
+  .at-flt {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    width: 100% !important;
+    height: 46px !important;
+    padding: 0 14px !important;
+    margin: 0 0 8px !important;
+    font-size: 14px !important;
+  }
+  .at-flt .v { font-size: 14px !important; }
+
+  /* pay-period select: its glyphs are inline-absolute, so !important is required */
+  .pr-sel {
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    width: 100% !important;
+    height: 46px !important;
+    padding: 0 14px !important;
+    margin: 0 0 10px !important;
+    font-size: 14px !important;
+  }
+  .pr-sel svg { position: static !important; left: auto !important; top: auto !important; right: auto !important; }
+  .pr-sel .v { position: static !important; flex: 1 1 auto !important; font-size: 14px !important; }
+
+  /* section labels above the header controls */
+  .pr-lbl, .at-lbl { display: block !important; margin: 12px 0 4px !important; }
+  .pr-date, .pr-meth { display: block !important; }
+  .pr-div { display: none !important; }
+}
+
+/* status pill labels were 11px, below the 12px floor (caught by mobile-audit at every width) */
+@media (max-width: 1439px) {
+  .pr-p .lb, .at-p { font-size: 12px !important; line-height: 15px !important; }
+}
+
+/* ---- M9.2 appointment confirmation ---------------------------------------
+   `.c-card` is an EMPTY decorative panel that sits behind the icon, title and button on
+   desktop, positioned independently. Once everything became static it rendered as a stray
+   white pill above the content, and the button stretched edge-to-edge with its label pushed
+   to the far left (inline `display:grid` lost to `display:block`).
+   Here the card is given a real height and pulled back over the content with a negative
+   margin, so the success state keeps its card. */
+@media (max-width: 1439px) {
+  .c-card {
+    position: static !important;
+    left: auto !important;
+    top: auto !important;
+    width: auto !important;
+    height: 330px !important;
+    margin: 20px 16px -330px !important;
+    padding: 0 !important;
+    border-radius: 24px !important;
+  }
+  .c-ok {
+    position: static !important;
+    display: block !important;
+    width: 84px !important;
+    height: 84px !important;
+    margin: 56px auto 18px !important;
+  }
+  .c-title {
+    position: static !important;
+    width: auto !important;
+    margin: 0 24px 22px !important;
+    font-size: 26px !important;
+    line-height: 34px !important;
+    text-align: center !important;
+  }
+  .c-btn {
+    position: static !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: min(280px, calc(100% - 72px)) !important;
+    height: 48px !important;
+    margin: 0 auto 24px !important;
+    font-size: 18px !important;
+  }
+}
+
+/* ============================================================================
+   M9.2 — DIALOGS.
+
+   Every Figma dialog (appointments, attendance, payroll, treatment) is a box with a FIXED
+   pixel size and an absolutely positioned internal layout, placed at desktop coordinates:
+   `.pr-modal` is 680px wide at left:380, `.tp-modal` 680x664 at left:380, `.ap-modal`
+   680x568 at left:380. In a 390px viewport that is almost entirely off-screen, and in a
+   390px-TALL landscape viewport the action buttons sit below the fold.
+
+   They all share the same internal vocabulary (close, title, subtitle, divider, label,
+   value, cancel, confirm), so one reflow serves all four: the shell becomes a centred,
+   viewport-capped scroll container and the internals stack in DOM order.
+   ============================================================================ */
+@media (max-width: 1439px) {
+  .ap-modal, .at-modal, .pr-modal, .tp-modal {
+    position: fixed !important;
+    left: 50% !important;
+    top: 50% !important;
+    right: auto !important;
+    bottom: auto !important;
+    transform: translate(-50%, -50%) !important;
+    margin: 0 !important;
+    width: min(520px, calc(100vw - 28px)) !important;
+    max-width: calc(100vw - 28px) !important;
+    height: auto !important;
+    max-height: calc(100vh - 28px) !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    padding: 18px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 3px !important;
+    box-sizing: border-box !important;
+    z-index: 1400 !important;
+  }
+  .ap-modal > *, .at-modal > *, .pr-modal > *, .tp-modal > * {
+    position: static !important;
+    left: auto !important;
+    top: auto !important;
+    right: auto !important;
+    width: auto !important;
+    max-width: 100% !important;
+    white-space: normal !important;
+    box-sizing: border-box !important;
+  }
+  .ap-x, .at-m-x, .pr-m-x, .tp-m-x { align-self: flex-end !important; margin: 0 !important; }
+  .ap-t, .at-m-t, .pr-m-t, .tp-m-t { font-size: 19px !important; line-height: 24px !important; margin: 2px 0 0 !important; }
+  .ap-s, .at-m-s, .pr-m-s, .tp-m-s { font-size: 12.5px !important; line-height: 17px !important; }
+  .ap-d, .at-m-d, .pr-m-d, .tp-m-d { margin: 12px 0 4px !important; height: 1px !important; }
+  .ap-l, .at-m-l, .pr-m-l, .tp-m-l { font-size: 12px !important; line-height: 16px !important; margin-top: 10px !important; }
+  .ap-i, .at-m-i, .pr-m-i, .tp-m-i { font-size: 14px !important; line-height: 19px !important; }
+  .ap-c, .ap-ok, .at-m-c, .at-m-ok, .pr-m-c, .pr-m-ok, .tp-m-c, .tp-m-ok {
+    position: static !important;
+    width: 100% !important;
+    height: 44px !important;
+    margin: 8px 0 0 !important;
+  }
+
+  /* row action menus: fixed 220-408px panels anchored to a row that no longer exists */
+  .at-menu, .pr-menu, .tp-menu, .bl-menu, .a-menu {
+    position: fixed !important;
+    left: 50% !important;
+    top: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    margin: 0 !important;
+    width: min(320px, calc(100vw - 40px)) !important;
+    height: auto !important;
+    max-height: min(70vh, 420px) !important;
+    overflow-y: auto !important;
+    z-index: 1300 !important;
+  }
+}
+
+/* ---- M9.2 dialog placement, wrapper-scoped ------------------------------
+   `#prc *` / `#atc *` / `#tpc *` (specificity 1,0,0) set position:static on EVERY
+   descendant, including the dialog itself, which silently beat the `.pr-modal{position:fixed}`
+   rule above (specificity 0,1,0) and left the dialog 4000px down the page in normal flow.
+   Prefixing with the wrapper id (1,1,0) wins that contest. Width, max-height, padding,
+   overflow and the internal stacking from the rule above are untouched by the wrapper. */
+@media (max-width: 1439px) {
+  #prc .pr-modal, #atc .at-modal, #tpc .tp-modal, #pec .tp-modal,
+  #tpc .pr-modal, #atc .pr-modal, #tpc .at-modal, #prc .at-modal,
+  #prc .pr-menu, #atc .at-menu, #tpc .tp-menu, #pec .tp-menu,
+  #prc .at-menu, #atc .pr-menu, #tpc .pr-menu, #pec .at-menu {
+    position: fixed !important;
+    left: 50% !important;
+    top: 50% !important;
+    right: auto !important;
+    bottom: auto !important;
+  }
+}
+
+/* ---- M9.2 billing dialogs (.bl-modal) ------------------------------------
+   A fifth variant with the same vocabulary, plus real <input>/<textarea> fields placed by
+   inline top/left/width. Fields must go full width or they stay 300px wide inside a 362px
+   dialog with their labels offset. */
+@media (max-width: 1439px) {
+  .bl-modal {
+    position: fixed !important;
+    left: 50% !important;
+    top: 50% !important;
+    right: auto !important;
+    bottom: auto !important;
+    transform: translate(-50%, -50%) !important;
+    margin: 0 !important;
+    width: min(520px, calc(100vw - 28px)) !important;
+    max-width: calc(100vw - 28px) !important;
+    height: auto !important;
+    max-height: calc(100vh - 28px) !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    padding: 18px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 3px !important;
+    box-sizing: border-box !important;
+    z-index: 1400 !important;
+  }
+  .bl-modal > * {
+    position: static !important;
+    left: auto !important;
+    top: auto !important;
+    right: auto !important;
+    width: auto !important;
+    max-width: 100% !important;
+    white-space: normal !important;
+    box-sizing: border-box !important;
+  }
+  .bl-m-x { align-self: flex-end !important; margin: 0 !important; }
+  .bl-m-t { font-size: 19px !important; line-height: 24px !important; margin: 2px 0 0 !important; }
+  .bl-m-s { font-size: 12.5px !important; line-height: 17px !important; }
+  .bl-m-d { margin: 12px 0 4px !important; height: 1px !important; }
+  .bl-m-l { font-size: 12px !important; line-height: 16px !important; margin-top: 10px !important; }
+  .bl-m-i {
+    font-size: 14px !important;
+    line-height: 19px !important;
+    height: 42px !important;
+    min-height: 42px !important;
+    padding: 0 12px !important;
+    border: 1px solid #c8dcea !important;
+    border-radius: 9px !important;
+    background: #fff !important;
+  }
+  .bl-m-ta { height: 96px !important; padding: 10px 12px !important; }
+  .bl-m-c, .bl-m-ok {
+    position: static !important;
+    width: 100% !important;
+    height: 44px !important;
+    margin: 8px 0 0 !important;
+  }
+}
+
+/* ============================================================================
+   M9.2 — SIGN IN, mobile.
+
+   1. White text with nothing behind it.
+      `.si-brand`, `.si-h` and `.si-p` are `color:#fff` because on desktop they sit on
+      `.si-panel`'s navy-to-white gradient. On mobile `.si-panel` became `height:100%` of an
+      auto-height parent, i.e. 68px, and `.si-bleed` is hidden — so the copy rendered white
+      on the page's near-white background. Measured: white text at y=153/197/275 over
+      rgb(246,250,255). Unreadable.
+
+      The feature list (`.si-ft`/`.si-fd`) was already hidden below 1440 in M9.1, so the
+      marketing block was already reduced. It is now dropped entirely on mobile and replaced
+      with a compact, legible brand line; the sign-in task is the only job on this screen.
+
+   2. Password toggle in flow.
+      `.si-eye` rendered BELOW the password field (measured y=700, field ended at 668) because
+      it never received a positioning context. It is now overlaid on the right edge of the
+      field using a negative margin inside a flex column, which does not depend on how much
+      content precedes the form.
+   ============================================================================ */
+@media (max-width: 1439px) {
+  .si-h, .si-p, .si-ic, .si-ft, .si-fd, .si-panel, .si-bleed { display: none !important; }
+
+  .si { background: #f6fafd !important; padding-bottom: 28px !important; }
+
+  .si-logo {
+    position: static !important;
+    display: block !important;
+    width: 54px !important;
+    height: 54px !important;
+    margin: 22px 0 0 20px !important;
+  }
+  .si-brand {
+    position: static !important;
+    display: block !important;
+    margin: 6px 0 0 20px !important;
+    color: #1b4e6b !important;
+    font-size: 20px !important;
+    line-height: 26px !important;
+  }
+
+  /* form becomes a column so the eye can be pulled back over the password field */
+  #sif { display: flex !important; flex-direction: column !important; }
+  .si-i { width: 100% !important; }
+  .si-i.pw { padding-right: 52px !important; }
+  .si-eye {
+    position: static !important;
+    align-self: flex-end !important;
+    width: 44px !important;
+    height: 44px !important;
+    margin: -44px 6px 8px 0 !important;
+    z-index: 2 !important;
+  }
+
+  /* full-height fields: the inner <input> was 24px tall inside a 46px wrapper, so taps on
+     the wrapper padding missed the field entirely */
+  .at-search input, .pr-search input,
+  .ac-q input, .ad-q input, .bl-search input, .dp-search input, .a-search input, .sbox input {
+    height: 100% !important;
+    min-height: 44px !important;
+  }
+
+  /* dense-table checkbox: keep the 24px square, give it a 44px usable target */
+  #atc .at-cb, #prc .pr-cb { position: relative !important; }
+  #atc .at-cb::before, #prc .pr-cb::before {
+    content: '' !important;
+    position: absolute !important;
+    inset: -10px !important;
+  }
+}
+
+/* The demo-credentials button was styled for the navy panel (white text, translucent white
+   fill). With the panel gone it became white-on-white. It is the only way to discover the
+   demo password, so it must be legible: dark text, white fill, hairline ring. */
+@media (max-width: 1439px) {
+  .si-demo {
+    position: static !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 8px !important;
+    width: auto !important;
+    height: 44px !important;
+    margin: 10px 0 4px 20px !important;
+    padding: 0 16px !important;
+    border: 1px solid #c8dcea !important;
+    border-radius: 10px !important;
+    background: #fff !important;
+    color: #1b4e6b !important;
+    font-size: 13px !important;
+  }
+  .si-demo svg { color: #1c6d9c !important; }
+  .si-tip, .si-msg { position: static !important; }
+}
+
+/* ---- M9.2 remaining touch targets ---------------------------------------
+   Search fields whose <input> kept the Figma `height:15px` while its wrapper grew, so the
+   field was 15px tall inside a 46px box. Wrapper becomes a flex row and the input fills it.
+   Back links and the two sign-in text links were 15-28px tall; they get a 44px row. */
+@media (max-width: 1439px) {
+  .tp-search, .pe-search, .ad-search {
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    width: 100% !important;
+    height: 46px !important;
+    padding: 0 14px !important;
+    margin: 0 0 10px !important;
+    box-sizing: border-box !important;
+  }
+  .tp-search input, .pe-search input, .ad-search input {
+    position: static !important;
+    flex: 1 1 auto !important;
+    width: auto !important;
+    height: 44px !important;
+    font-size: 14px !important;
+    border: 0 !important;
+    background: transparent !important;
+    padding: 0 !important;
+    outline: 0 !important;
+  }
+  .tp-search svg, .pe-search svg, .ad-search svg { flex: none !important; }
+
+  /* text links used as navigation */
+  .pf-back, .rf-back, .si-f, .si-pt {
+    display: inline-flex !important;
+    align-items: center !important;
+    min-height: 44px !important;
+    padding: 0 2px !important;
+    box-sizing: border-box !important;
+  }
+  .si-pt { width: 100% !important; }
+
+  /* small in-card actions */
+  .at-va, .bl-pill, .tp-flt, .pe-flt {
+    min-height: 32px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+  }
+}
+
+/* ---- M9.2 last three targets ------------------------------------------- */
+@media (max-width: 1439px) {
+  /* in-card actions: 34px and 26px tall */
+  .at-cbtn, .pr-cbtn { min-height: 40px !important; }
+  .at-rv, .pr-rv { min-height: 32px !important; min-width: 44px !important; }
+
+  /* dialog close: the glyph alone was 12x32 */
+  .ap-x, .at-m-x, .pr-m-x, .tp-m-x, .bl-m-x, .tp-x, .pr-x, .at-x {
+    width: 44px !important;
+    height: 44px !important;
+    min-width: 44px !important;
+    display: inline-grid !important;
+    place-items: center !important;
+    padding: 0 !important;
+  }
+}
+@media (max-width: 1439px) { .at-nr { min-height: 40px !important; } }
+
+/* ---- M9.2 row checkbox: a real 44px target ------------------------------
+   The ::before expansion above did not take clicks (the row's own box won the hit test), so
+   the button itself is now 44x44 and the 24px square is drawn by ::after. The visual is
+   unchanged; the target is genuinely 44px and measurable. */
+@media (max-width: 1439px) {
+  #atc .at-cb, #prc .pr-cb {
+    width: 44px !important;
+    height: 44px !important;
+    min-width: 44px !important;
+    flex: 0 0 44px !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    display: grid !important;
+    place-items: center !important;
+    position: relative !important;
+  }
+  #atc .at-cb::after, #prc .pr-cb::after {
+    content: '' !important;
+    position: absolute !important;
+    left: 10px !important;
+    top: 10px !important;
+    width: 24px !important;
+    height: 24px !important;
+    border-radius: 3px !important;
+    background: #fff !important;
+    box-shadow: inset 0 0 0 1px #c8dcea !important;
+  }
+  #atc .at-cb.on::after, #prc .pr-cb.on::after {
+    background: #1c6d9c !important;
+    box-shadow: inset 0 0 0 1px #1c6d9c !important;
+  }
+  #atc .at-cb svg, #prc .pr-cb svg { position: relative !important; z-index: 1 !important; }
+  /* the old ::before expander is superseded */
+  #atc .at-cb::before, #prc .pr-cb::before { content: none !important; }
 }

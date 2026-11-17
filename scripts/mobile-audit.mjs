@@ -99,7 +99,28 @@ for (const name of pages) {
           let box = r;
           const lab = el.closest('label');
           if (lab && (el.type === 'checkbox' || el.type === 'radio')) box = lab.getBoundingClientRect();
-          if (box.width < 32 || box.height < 32) tinyTargets.push({ t: (el.textContent || el.tagName).trim().slice(0, 22), w: Math.round(box.width), h: Math.round(box.height) });
+          // A control may legitimately extend its hit area with an absolutely positioned
+          // ::before/::after overlay that reaches outside its own box (the usual way to give a
+          // 24px checkbox in a dense table row a 44px target without enlarging the visual).
+          // Measure that, rather than the painted box.
+          let L = box.left, T = box.top, R = box.right, B = box.bottom;
+          for (const pe of ['::before', '::after']) {
+            const p = getComputedStyle(el, pe);
+            if (p.content === 'none' || p.position !== 'absolute') continue;
+            const num = v => parseFloat(v) || 0;
+            const t = p.top === 'auto' ? 0 : num(p.top);
+            const l = p.left === 'auto' ? 0 : num(p.left);
+            const rr = p.right === 'auto' ? 0 : num(p.right);
+            const bb = p.bottom === 'auto' ? 0 : num(p.bottom);
+            if (t < 0 || l < 0 || rr < 0 || bb < 0) {
+              L = Math.min(L, box.left + l);
+              T = Math.min(T, box.top + t);
+              R = Math.max(R, box.right - rr);
+              B = Math.max(B, box.bottom - bb);
+            }
+          }
+          const hw = R - L, hh = B - T;
+          if (hw < 32 || hh < 32) tinyTargets.push({ t: (el.textContent || el.tagName).trim().slice(0, 22), w: Math.round(hw), h: Math.round(hh) });
         }
       });
       sizes.sort((a, b) => a - b);
