@@ -5,43 +5,11 @@
 <link href='https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lexend:wght@300;400;500;600;700&family=Outfit:wght@700&display=swap' rel='stylesheet'>
 <link rel='stylesheet' href='assets/css/tokens.css'><link rel='stylesheet' href='assets/css/base.css'><link rel='stylesheet' href='assets/css/components.css'><link rel='stylesheet' href='assets/css/pages.css'>
 </head><body data-page='dashboard'>
-<!-- Figma: Dashboard 211:59 (frame origin 1600,34000). Positions below = Figma abs coords minus origin. -->
-<div class='stage'>
-  <h1 class='dash-title' id='welcome'></h1>
-  <div id='kpis'></div>
-  <section class='card-lg' style='left:38px;top:405px;width:873px;min-height:627px;padding-top:163px;padding-bottom:20px'>
-    <h2 class='card-h' style='left:23px;top:20px'>Recent Registrations</h2>
-    <p class='card-sub' style='left:23px;top:62px'>Latest patients registered at the front desk</p>
-    <div class='dhead'>
-      <span style='left:20px;width:85px'>PATIENT</span><span style='left:151px;width:85px'>TYPE</span><span style='left:283px;width:125px'>DEPARTMENT</span>
-      <span style='left:440px;width:85px'>DOCTOR</span><span style='left:591px;width:85px'>TIME</span><span style='left:712px;width:85px'>STATUS</span>
-    </div>
-    <div id='regs'></div>
-  </section>
-  <section class='card-lg' style='left:991px;top:405px;width:424px;min-height:562px'>
-    <h2 class='card-h' style='left:22px;top:20px'>Today’s Schedule</h2>
-    <p class='card-sub' style='left:22px;top:62px'>Upcoming appointments</p>
-    <div class='sched-ic'><span id='sic'></span></div>
-    <div id='sched'></div>
-  </section>
-</div>
-<script src='assets/js/data.js'></script><script src='assets/js/store.js'></script><script src='assets/js/audit.js'></script><script src='assets/js/kit.js'></script><script src='assets/js/icons.js'></script><script src='assets/js/accounts.js'></script><script src='assets/js/auth.js'></script><script src='assets/js/rbac.js'></script><script src='assets/js/shell.js'></script>
-<script>
-const $ = id => document.getElementById(id);
-$('welcome').textContent = 'Welcome back, Dr. ' + HIS.user.first + '!';
-$('sic').innerHTML = svg('calendar-check', 24);
-$('kpis').innerHTML = HIS.stats.map((s, i) =>
-  "<div class='kpi' style='left:" + (24 + 355 * i) + "px;top:195px'><div class='ic'>" + svg(s.icon, 36) + "</div><div class='tx'><div class='l'>" + s.label + "</div><div class='v'>" + s.value + "</div><div class='d'>" + s.delta + '</div></div></div>').join('');
-$('regs').innerHTML = HIS.registrations.map(r =>
-  "<div class='dr'><div class='who'><b>" + r.name + '</b><small>' + r.id + ' \u00b7 ' + r.age + ' yrs</small></div>' +
-  "<span class='badge " + HIS.statusClass[r.type] + "' style='left:151px'>" + r.type + '</span>' +
-  "<span class='c' style='left:284px'>" + r.dept + '</span>' +
-  "<span class='c' style='left:424px'>" + r.doctor + '</span>' +
-  "<span class='c' style='left:611px'>" + r.time + '</span>' +
-  "<span class='badge " + HIS.statusClass[r.status] + "' style='left:720px'>" + r.status + '</span></div>').join('');
-const tops = [129, 237, 337, 441], btops = [138, 250, 362, 466];
-$('sched').innerHTML = "<i class='tl'></i>" + HIS.schedule.map((s, i) =>
-  "<i class='dot' style='top:" + (tops[i] + 4) + "px'></i><div class='si' style='top:" + tops[i] + "px'><div class='t'>" + s.time + '</div><b>' + s.name + '</b><small>' + s.what + '</small><small>' + s.doctor + '</small></div>' +
-  "<span class='badge sched-badge " + HIS.statusClass[s.status] + "' style='left:" + (s.status === 'In Progress' ? 276 : 283) + 'px;top:' + btops[i] + "px'>" + s.status + '</span>').join('');
-</script>
+<!-- Figma: Dashboard 211:59 (frame origin 1600,34000). The visual grammar below is the Figma frame
+     unchanged: greeting (Outfit 45 at 81,105), four KPI cards at (24+355i,195), a 873px table panel
+     and a 424px feed panel, both at y405, using the Figma .card-h/.card-sub/.dhead/.dr/.si/.dot/.tl
+     components. M4 makes the CONTENT role-specific (Addition - not in Figma); see
+     assets/js/dashboards.js for the per-role configuration and the data each figure is derived from. -->
+<div class='stage'></div>
+<script src='assets/js/data.js'></script><script src='assets/js/store.js'></script><script src='assets/js/audit.js'></script><script src='assets/js/kit.js'></script><script src='assets/js/data-records.js'></script><script src='assets/js/data-departments.js'></script><script src='assets/js/data-billing.js'></script><script src='assets/js/data-payroll.js'></script><script src='assets/js/data-personnel.js'></script><script src='assets/js/data-nursing.js'></script><script src='assets/js/data-treatment.js'></script><script src='assets/js/icons.js'></script><script src='assets/js/accounts.js'></script><script src='assets/js/auth.js'></script><script src='assets/js/rbac.js'></script><script src='assets/js/shell.js'></script><script src='assets/js/dashboards.js'></script>
 </body></html>

@@ -124,3 +124,99 @@ a threshold that a real change (0.591%) clears six times over.
 - **No email.** Password recovery is an administrator action; the UI says so.
 - **Dashboards are still identical for every role** (M4).
 - The patient account carries a `patientId` but the portal still has its own separate demo auth (M5).
+
+---
+
+## M4 — Fourteen distinct role dashboards
+
+### The gap this closes
+
+M1–M3 changed identity, navigation and page access, but every role still landed on the same
+dashboard. The brief is explicit that this is not sufficient.
+
+### Approach: vary the content, never the grammar
+
+`dashboard.html` is now a thin shell. `assets/js/dashboards.js` holds one configuration per role and
+renders it through the **existing Figma components**:
+
+| Element | Geometry | Unchanged? |
+|---|---|---|
+| Greeting | `.dash-title`, Outfit 700 45 at (81,105) | yes |
+| KPI cards | `.kpi` at `(24 + 355i, 195)`, 336×160, r12, `#c8dcea` | yes |
+| Panel A | `.card-lg` at (38,405), 873 wide, `.dhead` + `.dr` rows | yes |
+| Panel B | `.card-lg` at (991,405), 424 wide, `.tl`/`.dot`/`.si` timeline | yes |
+| Pills | `.badge` `.ok`/`.in`/`.off`/`.red` | yes |
+
+Only the *content* changes: greeting text, four KPI figures, the table columns and rows, and the
+timeline items. No new colour, font, radius, shadow or spacing value was introduced.
+
+### Per-role content
+
+| Role | Greeting | Panel A | Panel B |
+|---|---|---|---|
+| Super Administrator | System overview | Accounts by role | Recent activity |
+| Hospital Administrator | Hospital overview | Departments (beds, occupancy, revenue) | Operational activity |
+| Receptionist | Welcome back, Maricel! | Appointments today | Upcoming check-ins |
+| Registration | Welcome back, Joel! | Recent registrations | Admission queue |
+| Doctor | Welcome back, Dr. Laurice! | Consultation queue | Today's schedule |
+| Nurse | Welcome back, Sofia! | Assigned patients (ward, bed, next vitals) | Medication schedule |
+| Pharmacist | Welcome back, Miguel! | Dispensing queue | Stock watch |
+| Laboratory | Welcome back, Daniel! | Test orders | Specimens |
+| Cashier | Welcome back, Aileen! | Invoices to settle | Collection notes |
+| Finance | Financial overview | Collection by invoice type | Reconciliation |
+| HR | Welcome back, Carmela! | Employees + payroll status | Payroll actions |
+| Department Head | Welcome back, Dr. Marc! | Department staff | Department workload |
+| Auditor | Compliance overview | Recent activity | Change trail (before → after) |
+| Patient | — | routed to `portal.html` (no staff dashboard by design) | — |
+
+### Where the numbers come from
+
+Every figure is derived at render time from the demo stores — `HIS.patients`, `HIS.appointments`,
+`HIS.billing.bills`, `HIS.payroll.emps`, `HIS.personnel.emps`, `HIS.nursing.pts`,
+`HIS.treatment.plans`, `HIS.departments`, `HIS.accounts`, `HIS.audit`. Nothing is hardcoded.
+
+Examples verified on screen: Finance shows ₱160,860 billed / ₱100,700 collected / ₱60,160
+outstanding / ₱40,215 average — the same ledger the Billing and Reports screens read. HR shows
+8 headcount, 8 payroll records, 4 paid. Cashier shows 2 open invoices and 1 partial payment.
+Department Head scopes to the signed-in head's own department (Orthopedics) and shows its 85%
+occupancy.
+
+**The Figma placeholder statistics (12,480 patients / 133 inpatients / 1,046 visits / 87
+appointments) are no longer displayed anywhere.** They were sample data in the frame, not figures
+from the store. This is a deliberate, documented change: the brief forbids hardcoded unrelated
+statistics.
+
+### Honest gaps inside the dashboards
+
+Laboratory and Pharmacy have **no order or inventory store yet** (that is M6). Their dashboards
+derive what genuinely exists — procedures and medications from `HIS.treatment.plans` — and their
+fourth KPI reads `—` with the delta *"Not modelled yet (M6)"*. Their feed panel says the same in
+words instead of inventing stock levels or specimen counts.
+
+### Defects found by screenshot inspection and fixed
+
+1. **Role cells rendered as grey pills.** The renderer treats any array cell as `[label, kind]`; a
+   single-element array was silently becoming a badge. Role is now a plain string.
+2. **Long values overflowed the 873px panel** (Laboratory: `scrollWidth` 1476 vs 1440). Two causes:
+   `.dr .c` has `white-space:nowrap`, and `.kpi .d` is nowrap in a 200px box. Fixed with a
+   `.dc-clamp` ellipsis class scoped to the new cells, per-column max widths, and shorter KPI deltas.
+3. **Names wrapped** because `.dr .who` is a fixed 100px. Now set per column via inline width.
+4. **`LAST SIGN-IN` header wrapped onto two lines** and collided with the first row → `LAST LOGIN`.
+5. **`Registration & Admissions` truncated into the next column** → the account table uses the
+   registry's `short` label.
+
+### Verified
+
+- `scripts/dashboard-shots.mjs` (new): signs in as each of the 14 accounts in its own context,
+  screenshots the dashboard, and asserts no console error, no horizontal overflow, and a non-empty
+  greeting. **14/14 pass, 0 console errors, 0 overflow.**
+- `scripts/auth-check.mjs`: **25/25**.
+- `scripts/roles-check.mjs`: **119 checks, 0 failures**.
+- `scripts/visual-check.mjs`: re-baselined to 23 pages, **`--check` clean on all 23**.
+
+### NOT done in M4
+
+- Patient dashboard content lives in `portal.html`, which still uses its own separate demo auth.
+  Unifying the two identity systems is M5.
+- No dashboard period selector, no per-department drill-down from a KPI card.
+- Laboratory and Pharmacy dashboards remain partly placeholder until M6.
