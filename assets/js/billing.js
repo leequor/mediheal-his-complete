@@ -19,19 +19,35 @@
 
   function shell() {
     var h = "<h1 class='bl-title'>Billing</h1><div class='bl-sub'>Monday, August 31, 2026</div><div class='bl-search'>" + SEARCH + "<input id='blq' placeholder='Search records...' aria-label='Search'></div>";
-    B.stats.forEach(function (s, i) { h += "<div class='bl-stat' style='left:" + [32, 380.5, 729, 1077.5][i] + "px'><span class='l'>" + s[0] + "</span><span class='n " + s[2] + "'>" + s[1] + '</span></div>'; });
+    // M7: the KPI strip is DERIVED from the ledger, not from the Figma sample text.
+    // The frame's placeholder figures (482K / 395K / 87K / 12) had no relationship to the four
+    // invoices underneath them — the invoices total 160,860. Every figure here comes from
+    // HIS.ledger.totals(), which sums the same invoice rows and the same transactions that
+    // Reports, Finance and the patient portal read.
+    var t = HIS.ledger.totals();
+    var stats = [
+      ['Total billed (Aug)', peso(t.billed), ''],
+      ['Collected', peso(t.collected), 'g'],
+      ['Outstanding', peso(t.outstanding), 'r'],
+      // "Bills today" was Figma sample data (12). No invoice is dated Aug 31 in the demo ledger,
+      // so the label now describes what the number actually counts.
+      ['Invoices on file', String(t.invoices), '']
+    ];
+    stats.forEach(function (s, i) { h += "<div class='bl-stat' style='left:" + [32, 380.5, 729, 1077.5][i] + "px'><span class='l'>" + s[0] + "</span><span class='n " + s[2] + "'>" + s[1] + '</span></div>'; });
     h += "<div class='bl-lab'>RECENT BILLS</div>";
-    [['All', 32, 56], ['Inpatient', 96, 92], ['Outpatient', 196, 100]].forEach(function (t) { h += "<button class='bl-tab' data-tab='" + t[0] + "' style='left:" + t[1] + 'px;width:' + t[2] + "px'>" + t[0] + '</button>'; });
+    [['All', 32, 56], ['Inpatient', 96, 92], ['Outpatient', 196, 100]].forEach(function (t2) { h += "<button class='bl-tab' data-tab='" + t2[0] + "' style='left:" + t2[1] + 'px;width:' + t2[2] + "px'>" + t2[0] + '</button>'; });
     h += "<button class='bl-flt' id='blst' style='left:32px;width:150px'></button><button class='bl-flt' id='bldt' style='left:190px;width:190px'></button>";
     h += "<div id='bllist'></div><div id='blinv'></div><div id='blmenu'></div>";
     stage.innerHTML = h;
   }
 
   function daysAgo(s) { return Math.round((TODAY - new Date(s)) / 864e5); }
+  // Status is derived from the transaction ledger so a filter can never disagree with the totals.
+  function statusOf(b) { return HIS.ledger.statusOf(b); }
   function visible() {
     return B.bills.filter(function (b) {
       var d = daysAgo(b.date);
-      return (st.tab === 'All' || b.type === st.tab) && (st.status === 'All' || b.status === st.status) &&
+      return (st.tab === 'All' || b.type === st.tab) && (st.status === 'All' || statusOf(b) === st.status) &&
         (st.date === 'Any time' || (st.date === 'Today' ? d === 0 : (d >= 0 && d < 7))) &&
         (!st.q || (b.name + ' ' + b.full + ' ' + b.id + ' ' + b.pt + ' ' + b.dept).toLowerCase().indexOf(st.q) > -1);
     });
@@ -55,7 +71,7 @@
     document.getElementById('bldt').textContent = 'Date: ' + st.date + '  \u25be';
     var h = '';
     v.forEach(function (b, i) {
-      h += "<div class='bl-row" + (b.id === st.sel ? ' on' : '') + "' data-id='" + b.id + "' style='top:" + (430 + 93.6 * i).toFixed(1) + "px' tabindex='0'><span class='nm'>" + esc(b.name) + "</span><span class='m1'>" + b.id + ' \u00b7 ' + b.pt + "</span><span class='m2'>" + esc(b.dept) + ' \u00b7 ' + b.date + "</span><span class='bp'>" + pill(b.status) + "</span><span class='am'>" + peso(b.amount) + '</span></div>';
+      h += "<div class='bl-row" + (b.id === st.sel ? ' on' : '') + "' data-id='" + b.id + "' style='top:" + (430 + 93.6 * i).toFixed(1) + "px' tabindex='0'><span class='nm'>" + esc(b.name) + "</span><span class='m1'>" + b.id + ' \u00b7 ' + b.pt + "</span><span class='m2'>" + esc(b.dept) + ' \u00b7 ' + b.date + "</span><span class='bp'>" + pill(statusOf(b)) + "</span><span class='am'>" + peso(b.amount) + '</span></div>';
     });
     if (!v.length) h = "<div class='bl-none'>No bills match</div>";
     document.getElementById('bllist').innerHTML = h;
@@ -66,15 +82,17 @@
   function invoice(b) {
     var el = document.getElementById('blinv');
     if (!b) { el.innerHTML = ''; return; }
-    var items = b.items, sub, vat, total = b.amount, paid;
-    // b.paid is written by the payment modal for both itemised and summary bills; only fall back to the status.
-    paid = b.paid != null ? b.paid : (b.status === 'Paid' ? total : 0);
+    var items = b.items, sub, vat, total = b.amount;
+    // M7: paid and balance come from the transaction ledger (HIS.ledger), never from a stored
+    // field on the invoice. `b.paid` is still written by the payment modal for backwards
+    // compatibility but is no longer read for display.
+    var paid = HIS.ledger.paidOf(b), bal = HIS.ledger.balanceOf(b), status = HIS.ledger.statusOf(b);
     if (items) { sub = b.subtotal; vat = b.vat; } else { sub = Math.round(total / 1.12); vat = total - sub; }
-    var h = "<section class='bl-inv'><div class='bl-ih'><span class='t'>Invoice " + b.id + "</span><span class='m'>" + esc(b.full) + ' \u00b7 ' + b.pt + ' \u00b7 ' + esc(b.dept) + "</span><span class='d'>" + b.date + "</span><span class='bp'>" + pill(b.status) + '</span></div>';
+    var h = "<section class='bl-inv'><div class='bl-ih'><span class='t'>Invoice " + b.id + "</span><span class='m'>" + esc(b.full) + ' \u00b7 ' + b.pt + ' \u00b7 ' + esc(b.dept) + "</span><span class='d'>" + b.date + "</span><span class='bp'>" + pill(status) + '</span></div>';
     h += "<div class='bl-tb'><div class='bl-tr h'><span class='c1'>Description \u00b7 charge source</span><span class='c2'>Qty</span><span class='c3'>Rate (\u20b1)</span><span class='c4'>Amount</span></div>";
     if (items) items.forEach(function (r) { h += "<div class='bl-tr'><span class='c1'>" + esc(r[0]) + "</span><span class='c2'>" + r[1] + "</span><span class='c3'>" + num(r[2]) + "</span><span class='c4'>" + num(r[3]) + '</span></div>'; });
     else h += "<div class='bl-tr'><span class='c1' style='color:#8a97a6'>Line items for this bill are not in the main Figma frame (estimated summary)</span><span class='c2'>1</span><span class='c3'>" + num(sub) + "</span><span class='c4'>" + num(sub) + '</span></div>';
-    h += "</div><div class='bl-tot'><div><span>Subtotal</span><b>" + peso(sub) + "</b></div><div><span>VAT (12%)</span><b>" + peso(vat) + "</b></div><div class='gt'><span>Grand total</span><b>" + peso(total) + "</b></div><div class='pd'><span>Paid</span><b>" + peso(paid) + "</b></div><div class='bd'><span>Balance due</span><b>" + peso(total - paid) + '</b></div></div>';
+    h += "</div><div class='bl-tot'><div><span>Subtotal</span><b>" + peso(sub) + "</b></div><div><span>VAT (12%)</span><b>" + peso(vat) + "</b></div><div class='gt'><span>Grand total</span><b>" + peso(total) + "</b></div><div class='pd'><span>Paid</span><b>" + peso(paid) + "</b></div><div class='bd'><span>Balance due</span><b>" + peso(bal) + '</b></div></div>';
     h += "<div class='bl-act'><button class='bl-btn' data-act='dl' style='left:0'>" + DL + "Download</button><button class='bl-btn' data-modal='pay' style='left:228px'>Record payment</button><button class='bl-btn' data-modal='cov' style='left:456px'>Coverage and discounts</button><button class='bl-btn' data-modal='fin' style='left:684px'>Final statement</button></div></section>";
     el.innerHTML = h;
   }

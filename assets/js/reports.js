@@ -9,18 +9,11 @@
   var stage = document.getElementById('stage');
   var esc = HIS.kit.esc;
 
-  // Amount actually collected for a bill: an explicit `paid` field wins; otherwise a Paid invoice
-  // is settled in full and anything else has collected nothing yet.
-  function paidOf(b) {
-    if (typeof b.paid === 'number') return b.paid;
-    return b.status === 'Paid' ? b.amount : 0;
-  }
-  function statusOf(b) {
-    var p = paidOf(b);
-    if (p >= b.amount) return 'Paid';
-    if (p > 0) return 'Partial';
-    return 'Pending';
-  }
+  // M7: collected and status come from the transaction ledger (HIS.ledger), the single record of
+  // money moving. This file used to re-derive them from a `paid` field on the invoice, which is
+  // how Reports and Billing could disagree.
+  function paidOf(b) { return HIS.ledger.paidOf(b); }
+  function statusOf(b) { return HIS.ledger.statusOf(b); }
   var PILL = { Paid: 'ok', Partial: 'in', Pending: 'off' };
 
   var peso = function (n) {

@@ -7,7 +7,8 @@
   var peso = function (n) { return '\u20b1' + n.toLocaleString('en-US'); };
   var p2 = function (n) { return '\u20b1' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); };
   var bill = function () { return B.bills.filter(function (b) { return b.id === HIS.blState.sel; })[0]; };
-  var paidOf = function (b) { return b.items ? b.paid : (b.status === 'Paid' ? b.amount : (b.paid || 0)); };
+  // M7: money is read from the transaction ledger, not from a number stored on the invoice.
+  var paidOf = function (b) { return HIS.ledger.paidOf(b); };
   var is01 = function (b) { return b.id === 'BL-8801'; };
   // Figma shows "Isabel G. Ramos" (middle name abbreviated) in the Record payment and Final statement subtitles; Coverage uses the full name.
   var short = function (n) { var w = String(n).split(' '); return (w.length === 3 && w[1].length > 2) ? w[0] + ' ' + w[1][0] + '. ' + w[2] : n; };
@@ -17,8 +18,11 @@
     if (kind === 'pay') return {
       title: 'Record payment', sub: short(b.name) + ' \u00b7 ' + b.pt + ' \u00b7 Invoice ' + b.id + ' \u00b7 Balance due ' + peso(bal), ok: 'Record payment',
       l: ['Invoice', 'Payment method', 'Amount received', 'Reference number', 'Received by', 'Notes'],
-      v: [b.id + ' (' + b.status + ')', 'GCash', p2(bal), is01(b) ? 'GC-2026-083112' : '', 'Billing clerk on duty \u00b7 Aug 31, 2026', is01(b) ? 'Full settlement of the remaining balance. Official receipt issued to the patient.' : ''],
-      bt: 'Payment check', bx: bal > 0 ? peso(bal) + ' clears the balance. Invoice ' + b.id + ' will change from ' + b.status + ' to Paid.' : 'Nothing due on this invoice.' };
+      // M7: the method is a real list of the seven Philippine channels. An electronic method
+      // cannot be recorded without the provider reference it will later be reconciled against.
+      v: [b.id + ' (' + HIS.ledger.statusOf(b) + ')', 'Cash', bal > 0 ? p2(bal) : '', '', 'Billing clerk on duty \u00b7 Aug 31, 2026', ''],
+      bt: 'Payment check', bx: bal > 0 ? peso(bal) + ' clears the balance. Invoice ' + b.id + ' will change from ' + HIS.ledger.statusOf(b) + ' to Paid.' : 'Nothing due on this invoice.',
+      methods: HIS.ledger.METHODS };
     if (kind === 'cov') return {
       title: 'Coverage and discounts', sub: b.full + ' \u00b7 ' + b.pt + ' \u00b7 Invoice ' + b.id + ' \u00b7 Total ' + peso(total), ok: 'Apply to invoice',
       l: ['PhilHealth ID', 'PhilHealth case rate', 'HMO / letter of authorization', 'HMO coverage', 'Senior / PWD discount', 'Notes'],
@@ -32,7 +36,7 @@
     if (kind === 'dlok') return {
       title: 'Invoice downloaded', sub: 'Invoice ' + b.id + ' \u00b7 ' + short(b.name) + ' \u00b7 ' + b.pt + ' \u00b7 status unchanged', ok: 'Close',
       l: ['File name', 'Format', 'Invoice total', 'Downloaded', 'Previous status'],
-      v: [b.id + '_invoice.pdf', 'PDF', p2(b.amount), 'Aug 31, 2026', b.status] };
+      v: [b.id + '_invoice.pdf', 'PDF', p2(b.amount), 'Aug 31, 2026', HIS.ledger.statusOf(b)] };
     return {
       title: 'Final statement', sub: short(b.name) + ' \u00b7 ' + b.pt + ' \u00b7 ' + b.dept + ' \u00b7 discharge billing', ok: 'Issue statement',
       l: ['Invoice', 'Statement date', 'Total charges (incl. 12% VAT)', 'Less PhilHealth, HMO and discount', 'Less payments received', 'Discharge note'],
@@ -58,7 +62,7 @@
     t('MediHeal - Hospital Information System', 15, 22);
     t('Invoice ' + b.id + ' - ' + b.full, 11, 17);
     t(b.pt + ' - ' + b.dept + ' - ' + b.date, 10, 15);
-    t('Status: ' + b.status, 10, 24);
+    t('Status: ' + HIS.ledger.statusOf(b), 10, 24);
     t('Description / charge source                 Qty     Rate            Amount', 10, 16);
     var items = b.items || [];
     if (items.length) items.forEach(function (r) { t(String(r[0]).slice(0, 46) + '    ' + r[1] + '    ' + String(r[2]) + '    ' + String(r[3]), 10, 14); });
@@ -83,6 +87,8 @@
     (compact ? POS2 : POS).forEach(function (p, i) {
       h += "<div class='bl-m-l' style='top:" + p[0] + 'px;left:' + p[2] + "px'>" + esc(s.l[i]) + '</div>';
       if (i === 5) h += "<textarea class='bl-m-i bl-m-ta' data-i='" + i + "' style='top:" + p[1] + 'px;left:' + p[2] + 'px;width:' + p[3] + "px'>" + esc(s.v[i]) + '</textarea>';
+      else if (i === 1 && s.methods) h += "<select class='bl-m-i' data-i='" + i + "' style='top:" + p[1] + 'px;left:' + p[2] + 'px;width:' + p[3] + "px'>" +
+        s.methods.map(function (m) { return "<option" + (m === s.v[i] ? ' selected' : '') + '>' + esc(m) + '</option>'; }).join('') + '</select>';
       else h += "<input class='bl-m-i' data-i='" + i + "' value='" + esc(s.v[i]) + "' style='top:" + p[1] + 'px;left:' + p[2] + 'px;width:' + p[3] + "px'>";
     });
     if (compact) h += "<button class='bl-m-c' data-mclose='1'>Back to billing</button><button class='bl-m-ok' id='blok'>Close</button>";
@@ -99,14 +105,30 @@
     if (cur.kind === 'dlok') { close(); return; }
     if (cur.kind === 'dl') { saveInvoicePdf(b); open('dlok'); return; }
     if (cur.kind === 'pay') {
-      var inp = w.querySelector('[data-i="2"]'), bal = b.amount - paidOf(b);
+      var w = document.getElementById('blmodal');
+      var inp = w.querySelector('[data-i="2"]'), bal = HIS.ledger.balanceOf(b);
       var amt = parseFloat(String(inp.value).replace(/[^0-9.]/g, ''));
       var bad = !(amt > 0) || amt > bal + 0.001;
       inp.classList.toggle('err', bad);
       if (bad) { toast(bal > 0 ? 'Enter an amount between \u20b10.01 and ' + p2(bal) : 'Nothing due on this invoice'); return; }
-      var np = Math.min(b.amount, paidOf(b) + amt);
-      b.paid = np; b.status = np >= b.amount ? 'Paid' : 'Partial';
-      close(); document.dispatchEvent(new CustomEvent('bl:refresh')); toast('Payment recorded: ' + p2(amt) + ' (in memory only)'); return;
+
+      // M7: the payment is a ledger transaction, not an overwrite of a number on the invoice.
+      var method = w.querySelector('[data-i="1"]').value;
+      var ref = w.querySelector('[data-i="3"]').value;
+      var notes = w.querySelector('[data-i="5"]').value;
+      var r = HIS.ledger.recordPayment({ invoiceId: b.id, amount: amt, method: method, reference: ref, notes: notes });
+      if (!r.ok) {
+        var refEl = w.querySelector('[data-i="3"]');
+        refEl.classList.toggle('err', true);
+        toast(r.error);
+        return;
+      }
+      close();
+      document.dispatchEvent(new CustomEvent('bl:refresh'));
+      toast(HIS.ledger.ELECTRONIC.indexOf(method) > -1
+        ? 'Recorded ' + p2(amt) + ' via ' + method + ' \u2014 awaiting provider confirmation'
+        : 'Payment recorded: ' + p2(amt) + ' (' + method + ')');
+      return;
     }
     close(); toast((cur ? '' : '') + (b.id) + ': saved in memory only (demo)');
   }
@@ -119,7 +141,7 @@
   stage.addEventListener('input', function (e) {
     if (!cur || cur.kind !== 'pay' || e.target.getAttribute('data-i') !== '2') return;
     var b = cur.b, bal = b.amount - paidOf(b), a = parseFloat(String(e.target.value).replace(/[^0-9.]/g, '')) || 0, el = document.getElementById('blbx');
-    el.textContent = a >= bal && bal > 0 ? peso(bal) + ' clears the balance. Invoice ' + b.id + ' will change from ' + b.status + ' to Paid.' : (a > 0 ? 'Balance after this payment: ' + peso(Math.max(0, Math.round((bal - a) * 100) / 100)) + '. Invoice ' + b.id + ' stays ' + (b.status === 'Pending' ? 'Partial after payment' : b.status) + '.' : 'Enter the amount received.');
+    el.textContent = a >= bal && bal > 0 ? peso(bal) + ' clears the balance. Invoice ' + b.id + ' will change from ' + HIS.ledger.statusOf(b) + ' to Paid.' : (a > 0 ? 'Balance after this payment: ' + peso(Math.max(0, Math.round((bal - a) * 100) / 100)) + '. Invoice ' + b.id + ' stays ' + (HIS.ledger.statusOf(b) === 'Pending' ? 'Partial after payment' : HIS.ledger.statusOf(b)) + '.' : 'Enter the amount received.');
   });
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && cur) close(); });
 })();

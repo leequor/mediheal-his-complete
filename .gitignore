@@ -19,3 +19,7 @@ qa/matrix.txt
 #   node scripts/a11y-check.mjs      (axe + manual checks)
 qa/inspect/
 qa/*.txt
+
+# Ad-hoc debugging scripts written while investigating a specific defect. Anything worth keeping
+# belongs in scripts/ with a name that says what it proves.
+qa/*.mjs

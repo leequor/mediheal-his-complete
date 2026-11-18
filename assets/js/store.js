@@ -18,11 +18,13 @@
     // M3: the active role is no longer stored — it is resolved from the signed-in account record
     // in `mh_accounts` (see assets/js/auth.js). `mh_role` from M1 is intentionally not read any more.
     accounts: 'mh_accounts',
-    // Patient portal demo auth (addition, not in Figma). Client-only: accounts are a map
-    // keyed by lower-case email, the reset request holds one pending 6-digit code.
-    portalAccounts: 'mh_portal_accounts',
-    portalReset: 'mh_portal_reset',
-    portalSession: 'mh_portal_session'
+    // M5: the portal's private account store, reset code and session are GONE. The portal signs in
+    // through HIS.auth against `mh_accounts` like every other screen, and resolves the patient
+    // through `account.patientId`. The old keys are deleted on first portal load (see portal.js).
+    patients: 'mh_patients',
+    guardians: 'mh_guardians',
+    transactions: 'mh_tx',
+    profileRequests: 'mh_profile_requests'
   };
   var VERSION = 1;
   var subs = {};

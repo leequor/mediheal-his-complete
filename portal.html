@@ -7,8 +7,9 @@
 <link rel='stylesheet' href='assets/css/tokens.css'><link rel='stylesheet' href='assets/css/portal.css'>
 <link rel='stylesheet' href='assets/css/responsive.css'></head><body class='pt'>
 <!-- Addition (not in Figma): public patient portal. Design supplied by the owner from the emailed
-     prototype; the signed-in card replaces that prototype's alert() stubs. Staff sign-in stays at
-     index.html, unchanged apart from the link at the bottom of the form. -->
+     prototype. M5 replaced the prototype's placeholder "you're signed in" card with a real
+     patient experience that reads the SHARED hospital records through HIS.registry — the same
+     patient row Registration, Consultation, Billing and the laboratory see. -->
 
 <!-- LANDING -->
 <section class='pt-view' id='landing'>
@@ -68,7 +69,7 @@
           <select class='pt-select' name='facility'><option>MediHeal Medical Center</option><option>MediHeal Annex</option></select>
         </label>
       </div>
-      <p class='pt-muted pt-small'>We'll match your name and birthdate, then verify the contact on your hospital record. New patient? Choose "I don't have a patient ID" at registration.</p>
+      <p class='pt-muted pt-small'>We match your name and birthdate against the hospital record before linking it. New patient? Untick the box above and a record is created for you.</p>
     </fieldset>
 
     <h3>Your privacy matters</h3>
@@ -106,20 +107,8 @@
     <p class='pt-error' id='pt-signin-error' role='alert'></p>
     <button class='pt-btn full' type='submit'>Sign in &rarr;</button>
     <p class='pt-muted pt-small'>New patient? <a class='pt-link small' href='#signup'>Create an account</a></p>
+    <p class='pt-demo' style='margin-top:12px'>Demo patient account &mdash; <b>patient@mediheal.test</b> &middot; password <b>MediHeal2026!</b></p>
   </form>
-
-  <!-- Signed-in state: replaces the emailed prototype's alert() (Addition, not in Figma). -->
-  <div class='pt-panel' id='pt-session' hidden>
-    <div class='pt-session'>
-      <h2>You're signed in</h2>
-      <p class='pt-muted'>This demo keeps the session in your browser only &mdash; no server is involved.</p>
-      <p><b id='pt-session-name'></b><br><span class='pt-muted' id='pt-session-email'></span></p>
-      <div class='pt-actions'>
-        <button class='pt-btn' type='button' id='pt-signout'>Sign out</button>
-        <a class='pt-btn' href='#landing' style='background:#1c6d9c'>Back to home</a>
-      </div>
-    </div>
-  </div>
 </section>
 
 <!-- FORGOT PASSWORD (3 steps) -->
@@ -165,9 +154,40 @@
   </div>
 </section>
 
+<!-- ============================ SIGNED-IN APP ============================ -->
+<section class='pt-view' id='app'>
+  <div class='pt-app'>
+    <header class='pt-appbar'>
+      <a class='pt-brand' href='#home'><span class='pt-logo'>M</span>MediHeal</a>
+      <nav class='pt-nav' aria-label='Patient portal'>
+        <a href='#home' data-nav='home'>Overview</a>
+        <a href='#appts' data-nav='appts'>Appointments</a>
+        <a href='#medical' data-nav='medical'>Medical record</a>
+        <a href='#billing' data-nav='billing'>Billing</a>
+        <a href='#docs' data-nav='docs'>Documents</a>
+        <a href='#me' data-nav='me'>My profile</a>
+      </nav>
+      <div class='pt-user'>
+        <span class='pt-av' id='pt-av'>--</span>
+        <div><b id='pt-who'>--</b><small id='pt-pid'>--</small></div>
+        <button class='pt-btn sm' type='button' id='pt-signout'>Sign out</button>
+      </div>
+    </header>
+    <div class='pt-wrap' id='pt-stage'><!-- rendered by portal.js --></div>
+  </div>
+</section>
+
 <script src='assets/js/data.js'></script>
 <script src='assets/js/store.js'></script>
 <script src='assets/js/audit.js'></script>
 <script src='assets/js/kit.js'></script>
-<script src='assets/js/portal.js'></script>
+<script src='assets/js/data-records.js'></script>
+<script src='assets/js/data-billing.js'></script><script src='assets/js/ledger.js'></script>
+<script src='assets/js/data-consultation.js'></script>
+<script src='assets/js/data-treatment.js'></script>
+<script src='assets/js/data-nursing.js'></script>
+<script src='assets/js/registry.js'></script>
+<script src='assets/js/accounts.js'></script>
+<script src='assets/js/auth.js'></script>
+<script src='assets/js/pdf.js'></script><script src='assets/js/portal.js'></script>
 </body></html>
