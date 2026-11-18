@@ -16,20 +16,22 @@
   // Test catalogue. `range` is the reference interval printed on the report; `critical` is the
   // interval outside which the laboratory must telephone the ordering physician. Both are demo
   // values for a synthetic hospital and must not be used clinically.
+  // `price` is a SYNTHETIC demo tariff in pesos, not a real hospital price list. It exists so an
+  // order can raise a billable charge; a real deployment would load a maintained charge master.
   var CATALOG = {
-    'CBC with platelet count': { category: 'Hematology', specimen: 'Whole blood (EDTA)', unit: '10^9/L', range: '4.0 - 11.0', critical: '< 2.0 or > 30.0' },
-    'Hemoglobin': { category: 'Hematology', specimen: 'Whole blood (EDTA)', unit: 'g/dL', range: '12.0 - 16.0', critical: '< 7.0' },
-    'Fasting blood sugar': { category: 'Chemistry', specimen: 'Serum (fasting)', unit: 'mg/dL', range: '70 - 99', critical: '< 40 or > 400' },
-    'Creatinine': { category: 'Chemistry', specimen: 'Serum', unit: 'mg/dL', range: '0.6 - 1.3', critical: '> 4.0' },
-    'Potassium': { category: 'Chemistry', specimen: 'Serum', unit: 'mmol/L', range: '3.5 - 5.1', critical: '< 2.5 or > 6.5' },
-    'Troponin I': { category: 'Chemistry', specimen: 'Serum', unit: 'ng/mL', range: '< 0.04', critical: '> 0.40' },
-    'Urinalysis': { category: 'Clinical microscopy', specimen: 'Midstream urine', unit: '', range: 'Normal', critical: '' },
-    'Dengue NS1 antigen': { category: 'Serology', specimen: 'Serum', unit: '', range: 'Negative', critical: '' },
-    'Chest X-ray PA': { category: 'Imaging', specimen: 'Radiograph', unit: '', range: 'No active finding', critical: '' },
-    'ECG 12-lead': { category: 'Cardiology', specimen: 'Tracing', unit: '', range: 'Sinus rhythm', critical: '' },
-    'Echocardiogram': { category: 'Cardiology', specimen: 'Study', unit: '', range: 'Normal wall motion', critical: '' },
-    'MRI brain': { category: 'Imaging', specimen: 'Study', unit: '', range: 'No acute finding', critical: '' },
-    'Coronary angiography': { category: 'Cardiology', specimen: 'Procedure', unit: '', range: 'No significant stenosis', critical: '' }
+    'CBC with platelet count': { price: 350, category: 'Hematology', specimen: 'Whole blood (EDTA)', unit: '10^9/L', range: '4.0 - 11.0', critical: '< 2.0 or > 30.0' },
+    'Hemoglobin': { price: 180, category: 'Hematology', specimen: 'Whole blood (EDTA)', unit: 'g/dL', range: '12.0 - 16.0', critical: '< 7.0' },
+    'Fasting blood sugar': { price: 220, category: 'Chemistry', specimen: 'Serum (fasting)', unit: 'mg/dL', range: '70 - 99', critical: '< 40 or > 400' },
+    'Creatinine': { price: 260, category: 'Chemistry', specimen: 'Serum', unit: 'mg/dL', range: '0.6 - 1.3', critical: '> 4.0' },
+    'Potassium': { price: 280, category: 'Chemistry', specimen: 'Serum', unit: 'mmol/L', range: '3.5 - 5.1', critical: '< 2.5 or > 6.5' },
+    'Troponin I': { price: 1800, category: 'Chemistry', specimen: 'Serum', unit: 'ng/mL', range: '< 0.04', critical: '> 0.40' },
+    'Urinalysis': { price: 180, category: 'Clinical microscopy', specimen: 'Midstream urine', unit: '', range: 'Normal', critical: '' },
+    'Dengue NS1 antigen': { price: 1200, category: 'Serology', specimen: 'Serum', unit: '', range: 'Negative', critical: '' },
+    'Chest X-ray PA': { price: 650, category: 'Imaging', specimen: 'Radiograph', unit: '', range: 'No active finding', critical: '' },
+    'ECG 12-lead': { price: 600, category: 'Cardiology', specimen: 'Tracing', unit: '', range: 'Sinus rhythm', critical: '' },
+    'Echocardiogram': { price: 3200, category: 'Cardiology', specimen: 'Study', unit: '', range: 'Normal wall motion', critical: '' },
+    'MRI brain': { price: 8500, category: 'Imaging', specimen: 'Study', unit: '', range: 'No acute finding', critical: '' },
+    'Coronary angiography': { price: 12000, category: 'Cardiology', specimen: 'Procedure', unit: '', range: 'No significant stenosis', critical: '' }
   };
 
   var STATUSES = ['Ordered', 'Collected', 'In Process', 'Resulted', 'Validated', 'Cancelled'];
@@ -175,6 +177,18 @@
       validatedBy: null, validatedAt: null, criticalAck: false,
       notes: String(input.notes || '').trim()
     };
+    // Raise the billable charge with the order. A charge is a price, not a payment: it raises what
+    // the patient owes and leaves the ledger's collected figure alone. `charges.add` is idempotent
+    // on (source, sourceId, code), so re-saving this order cannot bill it twice.
+    if (window.HIS.charges) {
+      var priced = HIS.charges.add({
+        patientId: o.patientId, source: 'laboratory', sourceId: o.id,
+        code: o.test, description: o.test + ' \u00b7 laboratory',
+        qty: 1, unitPrice: CATALOG[o.test].price
+      });
+      o.billing = priced.ok ? 'charged' : priced.error;
+      o.chargeId = priced.ok ? priced.charge.id : null;
+    }
     rows.push(o);
     save(rows);
     audit('Lab order created', o, null, 'Ordered');

@@ -231,7 +231,19 @@
 
     audit('Medication dispensed \u2014 ' + want + ' ' + b.unit + ' ' + b.drug + ' (batch ' + b.batch + ') on ' + r.id +
       ' \u00b7 stock ' + (b.qty + want) + ' \u2192 ' + b.qty, 'rx:' + r.id, String(b.qty + want), String(b.qty));
-    return { ok: true, prescription: r, batch: b, remaining: remaining(r) };
+
+    // Charge what actually left the shelf, at the batch's retail price. Keyed on the dispense event
+    // (prescription + sequence), so a partial dispense bills only its own quantity and a retry
+    // cannot bill it again.
+    var billing = null;
+    if (window.HIS.charges) {
+      billing = HIS.charges.add({
+        patientId: r.patientId, source: 'pharmacy', sourceId: r.id + '#' + r.dispensed.length,
+        code: b.drug, description: b.drug + ' \u00b7 ' + want + ' ' + b.unit,
+        qty: want, unitPrice: b.price
+      });
+    }
+    return { ok: true, prescription: r, batch: b, remaining: remaining(r), billing: billing };
   }
 
   // ---- inventory movement -------------------------------------------------------------------

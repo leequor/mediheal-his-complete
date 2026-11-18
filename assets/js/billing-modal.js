@@ -81,12 +81,17 @@
     var items = b.items || [];
     if (items.length) items.forEach(function (r) { t(String(r[0]).slice(0, 46) + '    ' + r[1] + '    ' + String(r[2]) + '    ' + String(r[3]), 10, 14); });
     else t('Estimated summary (line items are not in the main Figma frame)', 10, 14);
+    var charges = (window.HIS.charges ? HIS.charges.forInvoice(b.id) : []).filter(function (c) { return c.status !== 'void'; });
+    charges.forEach(function (c) {
+      t(String(c.description + ' - ' + c.sourceLabel).slice(0, 46) + '    ' + c.qty + '    ' + String(c.unitPrice) + '    ' + String(c.amount), 10, 14);
+    });
     t('', 10, 12);
     t('Subtotal: ' + peso(sub), 10, 15);
     t('VAT (12%): ' + peso(vat), 10, 15);
-    t('Grand total: ' + peso(b.amount), 12, 17);
+    if (charges.length) t('Charges raised: ' + peso(charges.reduce(function (a, c) { return a + c.amount; }, 0)), 10, 15);
+    t('Grand total: ' + peso(HIS.ledger.invoiceAmount(b)), 12, 17);
     t('Paid: ' + peso(paid), 10, 15);
-    t('Balance due: ' + peso(b.amount - paid), 12, 17);
+    t('Balance due: ' + peso(HIS.ledger.balanceOf(b)), 12, 17);
     t('', 10, 14);
     t('Generated Aug 31, 2026 by the billing desk.', 9, 13);
     return rows;

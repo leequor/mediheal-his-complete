@@ -52,6 +52,7 @@ before M7.
 | `mh_payroll_runs` | `{ runs[] }` | Payroll |
 | `mh_payroll_corrections` | `{ corrections[] }` | Payroll → corrections |
 | `mh_claims` | `{ claims[], version, seededAt }` | Claims |
+| `mh_charges` | `{ charges[], version }` | Laboratory, Pharmacy |
 
 `HIS.store.reset()` deliberately leaves `mh_regs_extra` and `mh_appts_extra` alone: they hold work
 the owner entered by hand.
@@ -149,6 +150,8 @@ The stores enforce these. Do not add a screen that can break one.
 15. A claim settlement posts at most the outstanding balance; the excess is `unappliedAmount`.
 16. A released payroll is never mutated. Corrections are separate records linked by `originalRunId`.
 17. A correction cannot be created twice from the same run, differences and reason (fingerprint).
+18. A charge is unique per (source, sourceId, code) and is never counted as money.
+19. An invoice total is its opening amount plus its active charges; a voided charge is excluded.
 
 ---
 
@@ -214,6 +217,15 @@ four hours divides by four. `payPolicy` names the effective-dated policy that su
 factor (261 today). `wage.locality` is used where an order splits by area rather than industry, as
 Region VII does. `wage.exemption` is only present when a lawful reason to sit below the floor exists,
 and it must carry a reference.
+
+### Charge (M11)
+```
+{ id:'CH-0001', key, invoiceId, patientId, source, sourceLabel, sourceId, code,
+  description, qty, unitPrice, amount, at, by, status:'active'|'void',
+  voidedAt, voidedBy, voidReason }
+```
+`key` is `source|sourceId|code` and is the duplicate guard. A charge is a price, not money: it raises
+`ledger.invoiceAmount(bill)` and never `collected`. See `docs/CHARGES.md`.
 
 ### Employer profile (M10.4)
 ```
