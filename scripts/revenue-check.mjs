@@ -406,6 +406,51 @@ for (const [file, needle] of [['admissions.html', 'Bed board'], ['charges.html',
   ok(file + ' does not overflow the 1440 stage', r.overflow <= 0, r.overflow);
 }
 
+// =================================================================================================
+// 9. THE CHARGE MASTER IS ADMINISTRABLE, AND A PRICE CHANGE DOES NOT MOVE HISTORY
+// =================================================================================================
+console.log('\n--- 9. configuration ---');
+await page.goto(BASE + '/settings.html', { waitUntil: 'load' });
+await page.waitForTimeout(300);
+{
+  const before = await page.evaluate(() => {
+    const t = HIS.tariffs.priceFor('CONS-MED', '2026-08-31');
+    const charge = HIS.charges.all().filter(c => c.source === 'consultation')[0];
+    return {
+      price: t.price, rows: HIS.tariffs.all().length,
+      chargeId: charge && charge.id, snap: charge && charge.priceSnapshot.unitPrice,
+      screen: document.getElementById('stage').innerText.indexOf('Service tariffs') > -1
+    };
+  });
+  ok('the configuration screen lists the charge master', before.screen === true);
+
+  // Change the price through the real dialog.
+  await page.click('#cfNew');
+  await page.waitForSelector('.ac-m');
+  await page.selectOption('#cfCode', 'CONS-MED');
+  await page.fill('#cfPrice', '1750');
+  await page.fill('#cfFrom', '2026-09-01');
+  await page.click('.ac-m button[type=submit]');
+  await page.waitForTimeout(350);
+
+  const after = await page.evaluate(() => {
+    const t = HIS.tariffs.priceFor('CONS-MED', '2026-08-31');
+    const t2 = HIS.tariffs.priceFor('CONS-MED', '2026-09-01');
+    const charge = HIS.charges.all().filter(c => c.source === 'consultation')[0];
+    return {
+      today: t && t.price, fromSept: t2 && t2.price,
+      rows: HIS.tariffs.all().length,
+      snap: charge && charge.priceSnapshot.unitPrice,
+      audit: HIS.audit.list().filter(x => /Tariff CONS-MED/.test(x.what)).length
+    };
+  });
+  ok('a new price row is appended, not edited in place', after.rows === before.rows + 1, after.rows);
+  ok('the price in force before the change is unchanged', after.today === 1600, after.today);
+  ok('the new price applies from its effective date', after.fromSept === 1750, after.fromSept);
+  ok('a charge raised earlier keeps its snapshot', after.snap === before.snap, after.snap);
+  ok('the change is written to the audit log', after.audit === 1, after.audit);
+}
+
 ok('the whole workflow ran with no console errors', errs.length === 0, errs[0]);
 
 await mkdir(path.join(ROOT, 'qa', 'audit'), { recursive: true });

@@ -44,7 +44,7 @@ const PAGES = [
   'registration-form', 'outpatient-form',
   // M12: laboratory and pharmacy were never in this list, and the two new screens had to be added
   // with them. A page that is not audited is a page where a violation can sit unnoticed.
-  'laboratory', 'pharmacy', 'admissions', 'charges'
+  'laboratory', 'pharmacy', 'admissions', 'charges', 'settings'
 ];
 
 const browser = await chromium.launch({ channel: process.env.CHANNEL || 'chrome' });

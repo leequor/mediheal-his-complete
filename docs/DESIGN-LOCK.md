@@ -457,9 +457,9 @@ than using one fixed height, because a one-line correction in a 560px box looked
 
 ## 15. M12 — Admissions and Charges, and two intended changes to existing pages
 
-### 15.1 Two new screens (additions, not in Figma)
+### 15.1 Three new screens (additions, not in Figma)
 
-`admissions.html` and `charges.html` have no Figma frame. They use the admin pattern established in
+`admissions.html`, `charges.html` and `settings.html` have no Figma frame. They use the admin pattern established in
 M2 and reused by Claims in M10 — nothing new is introduced:
 
 | Element | Reused from |
@@ -474,7 +474,7 @@ New rules, all composed from existing tokens (no new colour, radius, shadow or t
 
 | Rule | Purpose | Values |
 |---|---|---|
-| `.ad-g-adm`, `.ad-g-chg`, `.ad-g-enc` | grid tracks for the three new tables | existing `--line` row separators, existing 11px uppercase headers |
+| `.ad-g-adm`, `.ad-g-chg`, `.ad-g-enc`, `.ad-g-cfg` | grid tracks for the four new tables | existing `--line` row separators, existing 11px uppercase headers |
 | `.bd-grid` | bed board | `repeat(auto-fill,minmax(102px,1fr))`, 10px gap, 18/20px padding |
 | `.bd-bed` | one bed tile | 64px tall, radius 10, border `--line`, 13px label + 11px meta — the same two-line shape as `.ad-who` |
 | `.bd-bed.occupied` | occupied | `#e8f4fb` on `#9cc4dd`, the existing in-use tint from `.ad-btn:hover` |
@@ -507,7 +507,7 @@ an addition (there is no Figma frame for Reports), so this is a content change, 
 
 ### 15.4 Baselines
 
-Re-captured for all 27 pages at 1440 and, for the first time, at 1366. Every other page measured
+Re-captured for all 28 pages at 1440 and, for the first time, at 1366. Every other page measured
 **0.000%** against its pre-M12 baseline before the re-capture, so no existing page moved.
 
 ### 15.5 Known limitation, shared with every admin table

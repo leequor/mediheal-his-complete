@@ -12,7 +12,7 @@ onward has been deployed, and `main` has not moved since `fd5bf9f`.
 
 ## What it is
 
-A desktop-first demonstration of a Philippine hospital information system: **27 pages, 14 roles**,
+A desktop-first demonstration of a Philippine hospital information system: **28 pages, 14 roles**,
 one authoritative patient record, and a single money chain from a clinical service to an invoice.
 
 | Area | What works |
@@ -25,6 +25,8 @@ one authoritative patient record, and a single money chain from a clinical servi
 | Claims | 13-state lifecycle with partial approval and capped settlement |
 | HR | personnel, attendance, payroll with effective-dated statutory tables |
 | Portal | six patient views, own records only, released results only |
+| Configuration | charge master: effective-dated prices, per-code history, audit on every change |
+| Configuration | charge master with effective-dated prices and per-code history |
 
 Everything is synthetic and lives in `localStorage`. It does not synchronise between devices, and it
 is not a hospital database. Read `docs/PROJECT-STATUS.md` §3 before treating any figure as real.
@@ -44,7 +46,7 @@ set `PW` to its `index.js` if it is not resolvable from the repository root.
 
 ```
 export PW=/abs/path/to/playwright-core/index.js
-node scripts/smoke.mjs                  # 27 pages: console errors, overflow, clickable controls
+node scripts/smoke.mjs                  # 28 pages: console errors, overflow, clickable controls
 node scripts/visual-check.mjs --check   # pixel diff of all pages against qa/baseline @1440
 node scripts/visual-check.mjs --width 1366 --check
 node scripts/auth-check.mjs             # sign-in, session, expiry, reset, deactivation
@@ -62,8 +64,8 @@ node scripts/m10-1-audit.mjs            # Pag-IBIG tiers, wage floor, correction
 node scripts/m10-2-audit.mjs            # wage conversion factors and boundaries
 node scripts/m10-3-audit.mjs            # divisor policy per purpose, regional orders
 node scripts/m10-4-audit.mjs            # hour classification, absence basis, Article 83
-node scripts/a11y-check.mjs             # axe audit, 26 pages
-node scripts/responsive-check.mjs       # 27 pages × 5 widths, no overflow
+node scripts/a11y-check.mjs             # axe audit, 27 pages
+node scripts/responsive-check.mjs       # 28 pages × 5 widths, no overflow
 node scripts/buttons.mjs                # dead-control sweep
 node scripts/mobile-audit.mjs           # rendered text size and touch targets at 5 widths
 ```

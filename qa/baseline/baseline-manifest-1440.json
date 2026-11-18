@@ -128,8 +128,8 @@
   "profile": {
     "width": 1440,
     "height": 1332,
-    "bytes": 450955,
-    "sha256": "e4e8aa9bf868739b768981c25de281315980f8ad4066609beb1b2f2d108a61ed"
+    "bytes": 458084,
+    "sha256": "70133434814c83d76ffb02663e8fd396ba2f5bd8ce2c3af6d061ed81be284ac3"
   },
   "registration-form": {
     "width": 1440,
@@ -148,6 +148,12 @@
     "height": 1523,
     "bytes": 437528,
     "sha256": "93242a8977c18b982a60b1c0d343e0d398d055c711795333889ce23131f3c195"
+  },
+  "settings": {
+    "width": 1440,
+    "height": 1573,
+    "bytes": 462087,
+    "sha256": "5d00df6b533883f17a4679ef452b45e36d79809c3cbf6fca9bfcdcfa19e35d5c"
   },
   "staff": {
     "width": 1440,

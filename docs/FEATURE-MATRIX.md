@@ -146,7 +146,7 @@ M12, not from earlier milestone reports.
 | Credit notes | 7 | A reversal is a void, not a negative line |
 | VAT per charge line | 7 | Opening VAT only |
 | Payer-specific price tiers | 7 | One price per code |
-| Charge master administration screen | 5 | The store supports it; there is no screen |
+| Charge master administration screen | 1 | M12: `settings.html` — current price per code, new effective-dated row, per-code history |
 
 ## H. Claims
 
@@ -206,11 +206,11 @@ M12, not from earlier milestone reports.
 | Capability | Class | Note |
 |---|---|---|
 | User and role administration | 1 | Accounts screen |
-| Department configuration | 3 | Read from `data-departments.js`; editable only in code |
-| Laboratory catalogue | 3 | Read from `lab.js`; no screen |
+| Department configuration | 3 | Read from `data-departments.js`; listed read-only on Configuration |
+| Laboratory catalogue | 3 | Read from `lab.js`; listed read-only on Configuration |
 | Pharmacy stock administration | 1 | Receive / adjust / dispose |
-| Bed configuration | 3 | Read from `WARDS` in `admissions.js`; no screen |
-| Service and consultation tariffs | 3 | `tariffs.setPrice()` exists; no screen |
+| Bed configuration | 3 | Read from `WARDS` in `admissions.js`; listed read-only on Configuration |
+| Service and consultation tariffs | 1 | `settings.html`: append an effective-dated price, view history |
 | Payer and coverage configuration | 5 | Payer data lives on the patient record |
 | Audit log | 1 | Append-only in the UI; no delete control |
 
@@ -220,11 +220,11 @@ M12, not from earlier milestone reports.
 
 | Class | Count |
 |---|---|
-| 1 Verified | 107 |
+| 1 Verified | 109 |
 | 2 Under-tested | 0 |
-| 3 Partial | 13 |
+| 3 Partial | 12 |
 | 4 Presentational | 0 |
-| 5 Missing | 10 |
+| 5 Missing | 9 |
 | 6 Blocked | 4 |
 | 7 Deferred | 7 |
 | **Total** | **141** |

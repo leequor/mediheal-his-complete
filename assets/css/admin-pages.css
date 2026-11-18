@@ -233,3 +233,6 @@
 
 /* open-encounter table on the Charges screen */
 .ad-g-enc{grid-template-columns:104px 1.2fr 1.1fr 112px 1fr 96px 172px}
+
+/* configuration table on the Configuration screen */
+.ad-g-cfg{grid-template-columns:116px 2.1fr 96px 132px 96px 104px}
