@@ -50,6 +50,8 @@ node scripts/portal-check.mjs     # patient identity, scoping, guardians, docume
 node scripts/clinical-check.mjs   # laboratory and pharmacy rules, and their integration
 node scripts/finance-check.mjs    # one money chain across Billing, Reports and the portal
 node scripts/payroll-check.mjs    # payroll arithmetic against hand-calculated figures
+node scripts/claims-check.mjs     # claim state machine, role gates, settlement boundary
+node scripts/ledger-check.mjs     # payments, refunds, coverage, idempotency, invariants
 node scripts/mobile-audit.mjs     # rendered text size and touch targets at 5 widths
 ```
 

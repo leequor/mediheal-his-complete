@@ -24,7 +24,13 @@
     patients: 'mh_patients',
     guardians: 'mh_guardians',
     transactions: 'mh_tx',
-    profileRequests: 'mh_profile_requests'
+    profileRequests: 'mh_profile_requests',
+    // M10: the pay-period attendance register (one record per employee per day), the payroll runs
+    // (with version history), the claim lifecycle and the 13th-month register.
+    attendancePeriod: 'mh_attendance_period',
+    payrollRuns: 'mh_payroll_runs',
+    claims: 'mh_claims',
+    thirteenth: 'mh_thirteenth'
   };
   var VERSION = 1;
   var subs = {};

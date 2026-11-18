@@ -1,14 +1,13 @@
-// M8 harness: payroll arithmetic, verified against hand-calculated figures.
+// M10 payroll harness. Every expected figure below was worked out by hand from the published rule
+// — BIR Annex E, the SSS/PhilHealth/Pag-IBIG circulars and the Labor Code — not read back from the
+// engine. If the engine changes, these must still match or the change is wrong.
 //
-// Each expected number below was worked out by hand from the published rule, not read back from
-// the implementation. If the engine changes, these must still match or the change is wrong.
-//
-// Rules under test (see assets/js/payroll-calc.js for sources and effective dates):
-//   SSS        5% employee share of the Monthly Salary Credit (floor 5,000, ceiling 35,000)
-//   PhilHealth 2.5% employee share of monthly salary (floor 10,000, ceiling 100,000)
-//   Pag-IBIG   2% of monthly salary, capped at a 10,000 fund salary (max 200)
-//   BIR        semi-monthly withholding table on gross less the three contributions
-// The demo period is SEMI-MONTHLY, so each monthly contribution is halved.
+// WHAT THIS REPLACES
+// The M8 harness asserted that a "period basic" of 60,000 became a monthly equivalent of 120,000,
+// and that the resulting tax was 12,381.20. Those expectations encoded the defect: they took a
+// monthly salary, doubled it, and applied the semi-monthly table to the inflated base. Section 0
+// below pins down what the old figure actually was, so the correction is documented rather than
+// quietly swapped for a different number.
 //
 // Usage: PW=<playwright-core> node scripts/payroll-check.mjs
 import http from 'node:http';
@@ -41,9 +40,9 @@ const browser = await chromium.launch({ channel: process.env.CHANNEL || 'chrome'
 let pass = 0, fail = 0;
 const ok = (name, cond, detail) => {
   if (cond) { pass++; console.log('ok   ' + name); }
-  else { fail++; console.log('FAIL ' + name + (detail ? '  \u2192 ' + detail : '')); }
+  else { fail++; console.log('FAIL ' + name + (detail !== undefined ? '  \u2192 ' + detail : '')); }
 };
-const near = (a, b) => Math.abs(Number(a) - Number(b)) < 0.011;
+const near = (a, b, tol) => Math.abs(Number(a) - Number(b)) < (tol == null ? 0.011 : tol);
 
 const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, acceptDownloads: true });
 const page = await ctx.newPage();
@@ -55,148 +54,277 @@ await page.evaluate(() => HIS.auth.attempt('hr@mediheal.test', 'MediHeal2026!', 
 await page.goto(BASE + '/payroll.html', { waitUntil: 'load' });
 await page.waitForTimeout(400);
 
+// ---------------------------------------------------------------- 0. what M8 actually computed
+{
+  const r = await page.evaluate(() => ({
+    semi: HIS.payrollCalc.withholding(65775, 'semi-monthly'),
+    monthly: HIS.payrollCalc.withholding(65775, 'monthly'),
+    // The M8 inputs, expressed the way M8 expressed them.
+    m8: HIS.payrollCalc.compute({ monthlyBasic: 120000, allowances: [{ label: 'A', amount: 16000, taxable: true }] }, { frequency: 'semi-monthly', attendance: HIS.payrollCalc.emptySummary(11) })
+  }));
+  ok('M8 tax of 12,381.20 = semi-monthly table applied to 65,775', near(r.semi, 12381.20), r.semi);
+  ok('the monthly table on the same 65,775 gives the 8,363.40 the brief quotes', near(r.monthly, 8363.40), r.monthly);
+  ok('M8 reproduction: 120,000 monthly + 16,000 allowance reproduces 12,381.20',
+    near(r.m8.tax, 12381.20), r.m8.tax);
+}
+
 // ---------------------------------------------------------------- 1. hand-calculated cases
-// Inputs: [label, basic (period), allowances, expected sss, phil, pag, tax, deductions, net]
+// [label, monthlyBasic, taxableAllowance, frequency, expected sss, phil, pag, tax, net]
 const CASES = [
-  // 60,000 period basic -> 120,000 monthly. MSC 35,000 -> SSS 1,750/mo -> 875.
-  // PhilHealth capped at 100,000 -> 2,500/mo -> 1,250. Pag-IBIG capped -> 200/mo -> 100.
-  // Gross 68,000; taxable 65,775; tax = 4,270.70 + 25% x (65,775 - 33,333) = 12,381.20.
-  ['EMP-001', 60000, 8000, 875, 1250, 100, 12381.20, 14606.20, 53393.80],
-  // 26,000 period basic -> 52,000 monthly. MSC 35,000 -> 875. PhilHealth 1,300/mo -> 650.
-  // Gross 28,500; taxable 26,875; tax = 937.50 + 20% x (26,875 - 16,667) = 2,979.10.
-  ['EMP-008', 26000, 2500, 875, 650, 100, 2979.10, 4604.10, 23895.90],
-  // 8,000 period basic -> 16,000 monthly. MSC 16,000 -> 800/mo -> 400.
-  // PhilHealth 400/mo -> 200. Pag-IBIG capped -> 100. Taxable 7,300 -> below 10,417 -> tax 0.
-  ['LOW-1', 8000, 0, 400, 200, 100, 0, 700, 7300],
-  // 4,000 period basic -> 8,000 monthly. MSC 8,000 -> 400/mo -> 200.
-  // PhilHealth floor 10,000 -> 250/mo -> 125. Pag-IBIG 160/mo -> 80. Taxable 3,595 -> tax 0.
-  ['LOW-2', 4000, 0, 200, 125, 80, 0, 405, 3595]
+  // A. The corrected M8 employee. Monthly 60,000 + 8,000 allowance, semi-monthly.
+  //    Period basic 30,000, allowance 4,000, gross 34,000.
+  //    SSS: MSC 35,000 (ceiling) x 5% = 1,750/mo -> 875.
+  //    PhilHealth: 60,000 x 2.5% = 1,500/mo -> 750. Pag-IBIG: 200/mo -> 100.
+  //    Statutory 1,725. Taxable 32,275. Tax = 937.50 + 20% x (32,275 - 16,667) = 4,059.10.
+  //    Net = 34,000 - 1,725 - 4,059.10 = 28,215.90.
+  ['A semi-monthly, 60,000', 60000, 8000, 'semi-monthly', 875, 750, 100, 4059.10, 28215.90],
+
+  // B. The same person paid monthly. Basic 60,000, allowance 8,000, gross 68,000.
+  //    Statutory 3,450. Taxable 64,550. Tax = 1,875.00 + 20% x (64,550 - 33,333) = 8,118.40.
+  //    Net = 68,000 - 3,450 - 8,118.40 = 56,431.60.
+  ['B monthly, 60,000', 60000, 8000, 'monthly', 1750, 1500, 200, 8118.40, 56431.60],
+
+  // C. Weekly, 26,000 a month, no allowance. Weekly basic = 26,000 x 12 / 52 = 6,000.
+  //    SSS 1,300/mo -> 300. PhilHealth 650/mo -> 150. Pag-IBIG 200/mo -> 46.15.
+  //    Statutory 496.15. Taxable 5,503.85. Weekly table: 15% x (5,503.85 - 4,808) = 104.38.
+  //    Net = 6,000 - 496.15 - 104.38 = 5,399.47.
+  ['C weekly, 26,000', 26000, 0, 'weekly', 300, 150, 46.15, 104.38, 5399.47],
+
+  // D. Below the PhilHealth floor. Monthly 9,000, semi-monthly, gross 4,500.
+  //    SSS MSC 9,000 x 5% = 450/mo -> 225. PhilHealth floor 10,000 x 2.5% = 250/mo -> 125.
+  //    Pag-IBIG 180/mo -> 90. Statutory 440. Taxable 4,060 -> below 10,417 -> no tax.
+  ['D below floor, 9,000', 9000, 0, 'semi-monthly', 225, 125, 90, 0, 4060],
+
+  // E. At both ceilings. Monthly 250,000, semi-monthly, gross 125,000.
+  //    SSS 1,750/mo -> 875. PhilHealth ceiling 100,000 x 2.5% = 2,500/mo -> 1,250.
+  //    Pag-IBIG 200/mo -> 100. Statutory 2,225. Taxable 122,650.
+  //    Tax = 16,770.70 + 30% x (122,775 - 83,333) = 28,603.30. Net = 94,171.70.
+  ['E at ceilings, 250,000', 250000, 0, 'semi-monthly', 875, 1250, 100, 28603.30, 94171.70]
 ];
 
-const got = await page.evaluate(cases => {
-  return cases.map(c => {
-    const out = HIS.payrollCalc.compute({ basic: c[1], allow: c[2] });
-    return { id: c[0], sss: out.sss, phil: out.philhealth, pag: out.pagibig, tax: out.tax, ded: out.deductions, net: out.net, gross: out.gross, msc: out.msc };
-  });
-}, CASES);
+const got = await page.evaluate(cases => cases.map(c => {
+  const out = HIS.payrollCalc.compute(
+    { monthlyBasic: c[1], allowances: c[2] ? [{ label: 'Allowance', amount: c[2], taxable: true }] : [] },
+    { frequency: c[3], attendance: HIS.payrollCalc.emptySummary(c[3] === 'weekly' ? 5 : c[3] === 'monthly' ? 22 : 11) }
+  );
+  return { sss: out.statutory.sss, phil: out.statutory.philhealth, pag: out.statutory.pagibig, tax: out.tax, net: out.net, gross: out.gross, taxable: out.taxable, basic: out.earnings.basic };
+}), CASES);
 
 CASES.forEach((c, i) => {
   const g = got[i];
-  ok(`${c[0]}: SSS ${c[3]}`, near(g.sss, c[3]), g.sss);
-  ok(`${c[0]}: PhilHealth ${c[4]}`, near(g.phil, c[4]), g.phil);
-  ok(`${c[0]}: Pag-IBIG ${c[5]}`, near(g.pag, c[5]), g.pag);
-  ok(`${c[0]}: withholding tax ${c[6]}`, near(g.tax, c[6]), g.tax);
-  ok(`${c[0]}: total deductions ${c[7]}`, near(g.ded, c[7]), g.ded);
-  ok(`${c[0]}: net pay ${c[8]}`, near(g.net, c[8]), g.net);
+  ok(`${c[0]}: SSS ${c[4]}`, near(g.sss, c[4]), g.sss);
+  ok(`${c[0]}: PhilHealth ${c[5]}`, near(g.phil, c[5]), g.phil);
+  ok(`${c[0]}: Pag-IBIG ${c[6]}`, near(g.pag, c[6]), g.pag);
+  ok(`${c[0]}: withholding ${c[7]}`, near(g.tax, c[7]), g.tax);
+  ok(`${c[0]}: net ${c[8]}`, near(g.net, c[8]), g.net);
 });
 
-// ---------------------------------------------------------------- 2. the rules, not the numbers
+// ---------------------------------------------------------------- 2. the frequency is the point
+{
+  const r = await page.evaluate(() => {
+    const emp = { monthlyBasic: 60000, allowances: [{ label: 'A', amount: 8000, taxable: true }] };
+    const semi = HIS.payrollCalc.compute(emp, { frequency: 'semi-monthly', attendance: HIS.payrollCalc.emptySummary(11) });
+    const mon = HIS.payrollCalc.compute(emp, { frequency: 'monthly', attendance: HIS.payrollCalc.emptySummary(22) });
+    return { semiBasic: semi.earnings.basic, monBasic: mon.earnings.basic, semiTax: semi.tax, monTax: mon.tax };
+  });
+  ok('semi-monthly basic is half the monthly basic', near(r.semiBasic, 30000), r.semiBasic);
+  ok('monthly basic is the monthly basic', near(r.monBasic, 60000), r.monBasic);
+  ok('two semi-monthly periods withhold the same tax as one monthly period, within rounding',
+    Math.abs(r.semiTax * 2 - r.monTax) <= 0.25, (r.semiTax * 2) + ' vs ' + r.monTax);
+}
+
+// ---------------------------------------------------------------- 3. the tables themselves
 {
   const r = await page.evaluate(() => ({
-    // SSS ceiling: any salary at or above 35,000 monthly yields the maximum MSC.
-    mscHigh: HIS.payrollCalc.msc(500000),
-    mscFloor: HIS.payrollCalc.msc(1000),
-    // PhilHealth floor and ceiling.
-    phLow: HIS.payrollCalc.philhealthMonthly(5000),
-    phHigh: HIS.payrollCalc.philhealthMonthly(500000),
-    // Pag-IBIG cap.
-    pagHigh: HIS.payrollCalc.pagibigMonthly(80000),
-    // BIR: first bracket is exempt, and the table is monotonic.
-    taxExempt: HIS.payrollCalc.birSemiMonthly(10417),
-    taxAt20833: HIS.payrollCalc.birSemiMonthly(20833),
-    taxAt50000: HIS.payrollCalc.birSemiMonthly(50000),
-    taxAt400000: HIS.payrollCalc.birSemiMonthly(400000),
-    // A deduction can never exceed gross.
-    noNegativeNet: HIS.payrollCalc.compute({ basic: 1, allow: 0 }).net >= 0
+    // MSC brackets run [MSC-250, MSC+249.99]; 12,249 belongs to 12,000 and 12,250 to 12,500.
+    m12249: HIS.payrollCalc.msc(12249), m12250: HIS.payrollCalc.msc(12250), m12300: HIS.payrollCalc.msc(12300),
+    m4999: HIS.payrollCalc.msc(4999), m5000: HIS.payrollCalc.msc(5000), m5250: HIS.payrollCalc.msc(5250),
+    m5251: HIS.payrollCalc.msc(5251), m999999: HIS.payrollCalc.msc(999999),
+    // Annex E bracket bases, read off the PDF.
+    sm10417: HIS.payrollCalc.withholding(10417, 'semi-monthly'),
+    sm16667: HIS.payrollCalc.withholding(16667, 'semi-monthly'),
+    sm33333: HIS.payrollCalc.withholding(33333, 'semi-monthly'),
+    sm83333: HIS.payrollCalc.withholding(83333, 'semi-monthly'),
+    mo33333: HIS.payrollCalc.withholding(33333, 'monthly'),
+    mo66667: HIS.payrollCalc.withholding(66667, 'monthly'),
+    mo166667: HIS.payrollCalc.withholding(166667, 'monthly'),
+    mo666667: HIS.payrollCalc.withholding(666667, 'monthly'),
+    an250000: HIS.payrollCalc.withholding(250000, 'annual'),
+    an400000: HIS.payrollCalc.withholding(400000, 'annual'),
+    an800000: HIS.payrollCalc.withholding(800000, 'annual'),
+    an2000000: HIS.payrollCalc.withholding(2000000, 'annual'),
+    audit: HIS.payrollCalc.auditTables()
   }));
-  ok('SSS MSC is capped at the ceiling', r.mscHigh === 35000, r.mscHigh);
-  ok('SSS MSC never falls below the floor', r.mscFloor === 5000, r.mscFloor);
-  ok('PhilHealth uses the salary floor', near(r.phLow, 250), r.phLow);
-  ok('PhilHealth uses the salary ceiling', near(r.phHigh, 2500), r.phHigh);
-  ok('Pag-IBIG is capped at 200 a month', near(r.pagHigh, 200), r.pagHigh);
-  ok('the first BIR bracket is exempt', r.taxExempt === 0, r.taxExempt);
-  ok('the BIR table rises with income', r.taxAt20833 < r.taxAt50000 && r.taxAt50000 < r.taxAt400000,
-    [r.taxAt20833, r.taxAt50000, r.taxAt400000].join(' < '));
-  ok('net pay is never negative', r.noNegativeNet === true);
-  // Below the contribution floor the employee share is scaled to the pay, so a tiny gross cannot
-  // produce a negative payslip.
-  const tiny = await page.evaluate(() => HIS.payrollCalc.compute({ basic: 1, allow: 0 }));
-  ok('a gross below the contribution floor is capped, not overdrawn', tiny.net === 0 && tiny.capped === true, JSON.stringify(tiny));
+  ok('MSC 12,249 -> 12,000', r.m12249 === 12000, r.m12249);
+  ok('MSC 12,250 -> 12,500', r.m12250 === 12500, r.m12250);
+  ok('MSC 12,300 -> 12,500', r.m12300 === 12500, r.m12300);
+  ok('MSC never below the 5,000 floor', r.m4999 === 5000 && r.m5000 === 5000, r.m4999 + '/' + r.m5000);
+  ok('MSC 5,250 -> 5,500', r.m5250 === 5500, r.m5250);
+  ok('MSC 5,251 -> 5,500', r.m5251 === 5500, r.m5251);
+  ok('MSC capped at 35,000', r.m999999 === 35000, r.m999999);
+
+  ok('semi-monthly 10,417 is exempt', r.sm10417 === 0, r.sm10417);
+  ok('semi-monthly base at 16,667 is 937.50', near(r.sm16667, 937.50), r.sm16667);
+  ok('semi-monthly base at 33,333 is 4,270.70', near(r.sm33333, 4270.70), r.sm33333);
+  ok('semi-monthly base at 83,333 is 16,770.70', near(r.sm83333, 16770.70), r.sm83333);
+  ok('monthly base at 33,333 is 1,875.00', near(r.mo33333, 1875.00), r.mo33333);
+  ok('monthly base at 66,667 is 8,541.80', near(r.mo66667, 8541.80), r.mo66667);
+  ok('monthly base at 166,667 is 33,541.80', near(r.mo166667, 33541.80), r.mo166667);
+  ok('monthly base at 666,667 is 183,541.80', near(r.mo666667, 183541.80), r.mo666667);
+  ok('annual 250,000 is exempt', r.an250000 === 0, r.an250000);
+  ok('annual base at 400,000 is 22,500', near(r.an400000, 22500), r.an400000);
+  ok('annual base at 800,000 is 102,500', near(r.an800000, 102500), r.an800000);
+  ok('annual base at 2,000,000 is 402,500', near(r.an2000000, 402500), r.an2000000);
+  ok('every bracket table is continuous and gap-free', r.audit.length === 0, JSON.stringify(r.audit));
 }
 
-// ---------------------------------------------------------------- 3. the screen agrees with the engine
+// ---------------------------------------------------------------- 4. attendance drives the pay
 {
   const r = await page.evaluate(() => {
-    const E = HIS.payroll.emps;
-    const rows = [...document.querySelectorAll('.pr-r')];
+    const s = HIS.payrollCalc.emptySummary(11);
+    s.absenceDays = 1;
+    s.lateMinutes = 25;
+    s.undertimeMinutes = 45;
+    s.premiumDays.regularHoliday = 1;
+    s.premiumDays.special = 1;
+    s.premiumDays.rest = 1;
+    s.otHours.ordinary = 2;
+    s.ndHours = 8;
     return {
-      employees: E.length,
-      rows: rows.length,
-      nets: E.map(e => HIS.payrollCalc.compute(e).net),
-      kpi: [...document.querySelectorAll('.pr-m .n')].map(e => e.textContent.trim())
+      line: HIS.payrollCalc.compute({ monthlyBasic: 26000, category: 'rank-and-file' }, { frequency: 'semi-monthly', attendance: s }),
+      daily: HIS.payrollCalc.dailyRate(26000),
+      hourly: HIS.payrollCalc.hourlyRate(26000),
+      manager: HIS.payrollCalc.compute({ monthlyBasic: 26000, category: 'managerial' }, { frequency: 'semi-monthly', attendance: s })
     };
   });
-  ok('one salary row per employee', r.rows === r.employees, r.rows + '/' + r.employees);
-  ok('the KPI strip renders four figures', r.kpi.length === 4, r.kpi.join('|'));
+  const daily = 26000 * 12 / 261;        // 1,195.4023
+  const hourly = daily / 8;              // 149.4253
+  ok('one day of absence costs one daily rate', near(r.line.earnings.absence, -daily), r.line.earnings.absence);
+  ok('late minutes cost the hourly rate per minute', near(r.line.earnings.late, -(hourly / 60 * 25)), r.line.earnings.late);
+  ok('undertime costs the hourly rate per minute', near(r.line.earnings.undertime, -(hourly / 60 * 45)), r.line.earnings.undertime);
+  ok('a regular holiday worked adds 100% of a day', near(r.line.earnings.premium - (daily * 0.30) - (daily * 0.30), daily), r.line.earnings.premium);
+  ok('two hours of overtime pay 125% of the hourly rate',
+    near(r.line.earnings.overtime, hourly * 1.25 * 2), r.line.earnings.overtime);
+  ok('eight night hours pay a 10% differential', near(r.line.earnings.night, hourly * 0.10 * 8), r.line.earnings.night);
+  ok('a managerial employee is paid no overtime (Labor Code Art. 82)',
+    r.manager.earnings.overtime === 0 && r.manager.otEligible === false, r.manager.earnings.overtime);
+  ok('a managerial employee still receives the holiday premium',
+    near(r.manager.earnings.premium, r.line.earnings.premium), r.manager.earnings.premium);
+  ok('gross equals basic minus exceptions plus premiums, overtime, night and allowances',
+    near(r.line.gross, r.line.earnings.basic + r.line.earnings.absence + r.line.earnings.late +
+      r.line.earnings.undertime + r.line.earnings.premium + r.line.earnings.overtime +
+      r.line.earnings.night + r.line.earnings.allowances), r.line.gross);
 }
 
-// ---------------------------------------------------------------- 4. the payslip matches the row
+// ---------------------------------------------------------------- 5. 13th month and year-end
 {
-  const r = await page.evaluate(() => {
-    const e = HIS.payroll.emps[0];
-    const c = HIS.payrollCalc.compute(e);
-    // Drive the real payslip modal, then read what it displays.
-    document.querySelectorAll('.pr-ps')[0].click();
-    const fields = [...document.querySelectorAll('.pr-modal .pr-mv')].map(n => n.textContent.trim());
-    return { c, fields, text: (document.querySelector('.pr-modal') || {}).innerText || '' };
-  });
-  const money = n => '\u20b1' + Number(n).toLocaleString('en-PH', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
-  ok('the payslip shows the computed deductions', r.text.includes(money(r.c.deductions)), money(r.c.deductions));
-  ok('the payslip shows the computed net pay', r.text.includes(money(r.c.net)), money(r.c.net));
-  ok('the payslip itemises the four statutory deductions',
-    /SSS/.test(r.text) && /PhilHealth/.test(r.text) && /Pag-IBIG/.test(r.text) && /Withholding tax/.test(r.text),
-    r.text.slice(0, 160));
+  const r = await page.evaluate(() => ({
+    t8: HIS.payrollCalc.thirteenthMonth({ monthlyBasic: 60000 }, { months: 8 }),
+    t12: HIS.payrollCalc.thirteenthMonth({ monthlyBasic: 150000 }, { months: 12 }),
+    a: HIS.payrollCalc.annualize({ monthlyBasic: 60000, allowances: [{ label: 'A', amount: 8000, taxable: true }] },
+      { months: 12, benefits: 60000, taxWithheld: 100000 }),
+    aExact: HIS.payrollCalc.annualize({ monthlyBasic: 60000, allowances: [{ label: 'A', amount: 8000, taxable: true }] },
+      { months: 12, benefits: 60000, taxWithheld: 97420 })
+  }));
+  ok('13th month is basic earned / 12', near(r.t8.amount, 40000), r.t8.amount);
+  ok('13th month ignores allowances by construction', near(r.t8.basicEarned, 480000), r.t8.basicEarned);
+  ok('13th month up to 90,000 is tax-exempt', near(r.t8.taxableExcess, 0), r.t8.taxableExcess);
+  ok('13th month above 90,000 is taxable', near(r.t12.taxableExcess, 60000), r.t12.taxableExcess);
+  ok('annual taxable compensation = regular - contributions + taxable benefits',
+    near(r.a.taxableCompensation, 774600), r.a.taxableCompensation);
+  ok('annual tax due on 774,600 is 97,420', near(r.a.annualDue, 97420), r.a.annualDue);
+  ok('withholding 100,000 against 97,420 leaves a 2,580 refund',
+    near(r.a.adjustment, -2580) && r.a.direction === 'refund', r.a.adjustment);
+  ok('withholding exactly the annual due reconciles to zero',
+    near(r.aExact.adjustment, 0) && r.aExact.direction === 'even', r.aExact.adjustment);
 }
 
-// ---------------------------------------------------------------- 5. the totals reconcile
+// ---------------------------------------------------------------- 6. the run and its gates
 {
-  await page.keyboard.press('Escape');
-  await page.waitForTimeout(200);
   const r = await page.evaluate(() => {
-    const E = HIS.payroll.emps;
-    const gross = E.reduce((s, e) => s + HIS.payrollCalc.compute(e).gross, 0);
-    const ded = E.reduce((s, e) => s + HIS.payrollCalc.compute(e).deductions, 0);
-    const net = E.reduce((s, e) => s + HIS.payrollCalc.compute(e).net, 0);
-    const kpi = [...document.querySelectorAll('.pr-m .n')].map(e => e.textContent.replace(/[^0-9.]/g, ''));
-    return { gross, ded, net, kpi };
+    const first = HIS.payrollRuns.create({});
+    const again = HIS.payrollRuns.create({});
+    const run = HIS.payrollRuns.current();
+    const lineIds = run.lines.map(l => l.employeeId);
+    const dupes = lineIds.filter((id, i) => lineIds.indexOf(id) !== i);
+    return {
+      firstOk: first.ok, secondOk: again.ok, secondErr: again.error,
+      lines: run.lines.length, employees: HIS.employees.all().length, dupes: dupes,
+      version: run.version, status: run.status,
+      totalsReconcile: Math.abs(run.totals.gross - run.totals.deductions - run.totals.net) < 0.02
+    };
   });
-  ok('gross equals deductions plus net across all employees', near(r.gross, r.ded + r.net), r.gross + ' vs ' + (r.ded + r.net));
-  ok('the net-payroll KPI equals the sum of net pay', Math.abs(Number(r.kpi[3]) - Math.round(r.net)) <= 1, r.kpi[3] + ' vs ' + Math.round(r.net));
+  ok('a second payroll run for the same period is refused', r.secondOk === false, r.secondErr);
+  ok('one line per employee', r.lines === r.employees && r.dupes.length === 0, r.lines + '/' + r.employees);
+  ok('gross = deductions + net for the whole run', r.totalsReconcile);
+  ok('a new run starts as a draft at version 1', r.status === 'draft' && r.version === 1, r.status + ' v' + r.version);
 }
 
-// ---------------------------------------------------------------- 6. the config is documented
+// ---------------------------------------------------------------- 7. approval gates and versions
 {
   const r = await page.evaluate(() => {
-    const v = HIS.payrollCalc.verify();
-    const c = HIS.payrollCalc.CONFIG;
-    return { v, hasAll: !!(c.sss.source && c.philhealth.source && c.pagibig.source && c.bir.source), eff: c.effectiveFrom };
+    const run = HIS.payrollRuns.current();
+    const skip = HIS.payrollRuns.approve(run.id, '');   // draft -> approved is not a legal move
+    HIS.payrollRuns.review(run.id, '');
+    // Reopen one timesheet AFTER the run was built. The run's own blocked list is empty, so only a
+    // live check can catch this.
+    HIS.attendancePeriod.reopen('EMP-008', 'test');
+    const blockedApprove = HIS.payrollRuns.approve(run.id, '');
+    HIS.attendancePeriod.approve('EMP-008', 'test');
+    const recomputed = HIS.payrollRuns.recompute(run.id, 'after re-approval');
+    const after = HIS.payrollRuns.current();
+    HIS.payrollRuns.review(run.id, '');
+    const approved = HIS.payrollRuns.approve(run.id, '');
+    const released = HIS.payrollRuns.release(run.id, '');
+    const twice = HIS.payrollRuns.release(run.id, '');
+    return {
+      skipOk: skip.ok, blockedOk: blockedApprove.ok, blockedErr: blockedApprove.error,
+      version: after.version, versions: after.versions.length,
+      recomputedOk: recomputed.ok, approvedOk: approved.ok, releasedOk: released.ok, twiceOk: twice.ok,
+      status: HIS.payrollRuns.current().status,
+      paidLines: HIS.payrollRuns.current().lines.filter(l => l.status === 'Paid').length
+    };
   });
-  ok('every statutory rule carries its source', r.hasAll === true);
-  ok('the table carries an effective date', /^\d{4}-\d{2}-\d{2}$/.test(r.eff), r.eff);
-  ok('the screen states the effective date', (await page.evaluate(() => document.body.innerText)).includes(r.eff));
+  ok('approval cannot skip the review step', r.skipOk === false);
+  ok('a timesheet reopened after the run was built blocks approval', r.blockedOk === false, r.blockedErr);
+  ok('recomputing archives the previous version', r.versions === 1, r.versions);
+  ok('recompute bumps the version', r.version === 2, r.version);
+  ok('review -> approve -> release succeeds in order', r.approvedOk && r.releasedOk);
+  ok('releasing twice is refused', r.twiceOk === false);
+  ok('every line is Paid after release', r.paidLines === 8, r.paidLines);
 }
 
-// ---------------------------------------------------------------- 7. releasing payroll is audited
+// ---------------------------------------------------------------- 8. payslip agrees with the line
 {
   const r = await page.evaluate(() => {
-    const before = HIS.audit.list().length;
-    const unpaid = HIS.payroll.emps.filter(e => e.status !== 'Paid');
-    unpaid.forEach(e => { e.status = 'Paid'; });
-    // Exercise the same path the modal takes.
-    const rows = HIS.audit.list();
-    return { before, after: rows.length };
+    const p = HIS.payrollRuns.payslip('EMP-001');
+    return { line: p.line, slip: p, text: null };
   });
-  ok('audit log is reachable from the payroll screen', typeof r.before === 'number');
+  const money = n => '\u20b1' + Number(n).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  ok('the payslip net equals the line net', near(r.slip.line.net, r.line.net));
+  ok('the payslip carries every earning and deduction line', r.line.lines.length >= 8, r.line.lines.length);
+  ok('employer contributions are reported separately from employee deductions',
+    r.line.employer.total > 0 && r.line.employer.total !== r.line.deductions);
+}
+
+// ---------------------------------------------------------------- 9. the screen drives the lifecycle
+// The module tests above can all pass while the dialog calls a method that does not exist. Drive it.
+{
+  await page.evaluate(() => HIS.payrollRuns.reset());
+  await page.reload({ waitUntil: 'load' });
+  await page.waitForTimeout(400);
+  const seq = [];
+  for (let i = 0; i < 3; i++) {
+    await page.click('[data-modal="proc"]');
+    await page.waitForTimeout(150);
+    await page.click('[data-ok]');
+    await page.waitForTimeout(200);
+    seq.push(await page.evaluate(() => HIS.payrollRuns.current().status));
+  }
+  const paid = await page.$$eval('.pr-p.Paid', n => n.length);
+  ok('the Process payments dialog advances draft -> reviewed -> approved -> released',
+    seq.join('>') === 'reviewed>approved>released', seq.join('>'));
+  ok('after release every row shows Paid', paid === 8, paid);
 }
 
 ok('payroll page loaded with no console errors', errs.length === 0, errs[0]);

@@ -19,6 +19,10 @@ synthetic. Nothing here is a hospital database.
 | `HIS.ledger` (`assets/js/ledger.js`) | `mh_tx` — every movement of money | store a balance on an invoice |
 | `HIS.audit` (`assets/js/audit.js`) | `mh_audit` | accept a password |
 | `HIS.lab` (`assets/js/lab.js`) | `mh_lab` | invent a result |
+| `HIS.employees` (`assets/js/employees.js`) | the salary master (in code, not storage) | store a per-period amount |
+| `HIS.attendancePeriod` (`assets/js/attendance-period.js`) | `mh_attendance_period` — one record per employee per day, plus the timesheet status | compute money |
+| `HIS.payrollRuns` (`assets/js/payroll-runs.js`) | `mh_payroll_runs` — runs, versions, blocked lists | recompute statutory tables itself |
+| `HIS.claims` (`assets/js/claims.js`) | `mh_claims` — claim records and their history | post money; it asks the ledger |
 | `HIS.pharmacy` (`assets/js/pharmacy.js`) | `mh_rx`, `mh_stock` | dispense expired stock |
 
 Modules that only *read* another module's store must go through its API. Two files must never
@@ -42,6 +46,9 @@ before M7.
 | `mh_regs_extra`, `mh_appts_extra` | owner-entered rows | Registration / Appointments forms |
 | `mh_*_state` | module UI state | Attendance, Nursing, Consultation, Treatment |
 | `mh_profile_requests` | `ProfileRequest[]` | patient portal |
+| `mh_attendance_period` | `{ period, records[], timesheets{} }` | Attendance, Payroll → Timesheets |
+| `mh_payroll_runs` | `{ runs[] }` | Payroll |
+| `mh_claims` | `{ claims[], version, seededAt }` | Claims |
 
 `HIS.store.reset()` deliberately leaves `mh_regs_extra` and `mh_appts_extra` alone: they hold work
 the owner entered by hand.
@@ -127,6 +134,53 @@ The stores enforce these. Do not add a screen that can break one.
 6. Stock cannot go negative; an expired batch cannot be dispensed.
 7. A result cannot be validated before it is entered.
 8. Every mutation writes an audit row with before and after.
+9. One payroll run per pay period; one line per employee (`payrollRuns.create` refuses a second run).
+10. A payroll run cannot be approved while any timesheet is unapproved or any line's attendance
+    fingerprint differs from the live timesheet.
+11. A claim cannot be approved above the amount requested, and cannot be denied, partially approved
+    or closed without a reason.
+12. A settlement posts exactly one `coverage` row; the claim id is the ledger `sourceId`.
+13. An invoice satisfies `charge = collected + covered + outstanding` to the centavo, and no balance
+    is negative (`ledger.invariants()`).
+
+---
+
+### AttendanceRecord (M10)
+```
+{ id:'EMP-001:2026-08-16', empId, date, dayType:'regular'|'rest'|'regular-holiday'|'special',
+  holiday, shiftStart, shiftEnd, breakMinutes, timeIn, timeOut,
+  status:'present'|'late'|'undertime'|'absent'|'leave'|'rest'|'holiday',
+  leaveType, leaveApproved, otHours, ndHours, lateMinutes, undertimeMinutes, worked,
+  note, history:[{ at, by, before, after, reason }] }
+```
+Times are `HH:MM` in 24-hour form so payroll can subtract them; the screen formats them for display.
+A night shift crosses midnight, so `timeOut < timeIn` means "+1 day", not "negative hours".
+
+### Timesheet
+```
+{ status:'submitted'|'approved', submittedBy, submittedAt, approvedBy, approvedAt,
+  reopenedAt, history:[{ at, by, action, note }] }
+```
+Payroll's `summary(empId)` returns `null` unless `status === 'approved'`.
+
+### PayrollRun (M10)
+```
+{ id:'PR-2026-08-16-1', periodId, periodLabel, payDate, frequency,
+  version, status:'draft'|'reviewed'|'approved'|'released',
+  lines:[{ employeeId, monthlyBasic, periodBasic, earnings{}, statutory{}, employer{},
+           taxable, tax, other, deductions, net, days{}, lines[], attendanceFingerprint }],
+  blocked:[{ employeeId, name, reason }],
+  totals:{ headcount, gross, deductions, net, sss, philhealth, pagibig, tax, employerTotal },
+  createdAt, createdBy, history[], versions[] }
+```
+`versions[]` holds a deep copy of the lines and totals before each recompute, so an earlier
+calculation is never lost. `attendanceFingerprint` is compared with the live timesheet when the run
+is approved; a mismatch blocks approval until the run is recomputed.
+
+### Claim (M10)
+See `docs/CLAIMS.md` §1. The one field the ledger cares about is `settlement.transactionId`: a claim
+with a settlement cannot settle again, and the ledger refuses a second `coverage` row with the same
+`sourceId`.
 
 ---
 
@@ -148,4 +202,8 @@ while their provenance changed from "a number on the invoice" to "a row in the l
 - Server-side authentication (Argon2id) and a session cookie the browser cannot read.
 - An append-only audit table, not a localStorage array.
 - Per-tenant row-level security so a guardian link is enforced by the database, not by a UI filter.
-- Idempotency keys on payment recording.
+- Idempotency keys on payment recording (the demo already accepts `idempotencyKey` and `sourceId`).
+- A payroll run table with a unique constraint on `(period_id, employee_id)` and an approval record
+  that cannot be edited after release.
+- A claim table with a status-transition trigger, so an illegal transition is rejected by the
+  database rather than by a JavaScript guard.

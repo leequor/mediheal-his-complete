@@ -18,6 +18,7 @@ qa/matrix.txt
 #   node scripts/inspect-modal.mjs   (dialogs)
 #   node scripts/a11y-check.mjs      (axe + manual checks)
 qa/inspect/
+qa/m10/
 qa/*.txt
 
 # Ad-hoc debugging scripts written while investigating a specific defect. Anything worth keeping

@@ -39,7 +39,7 @@ const AUTH = arg('auth', 'superadmin');
 
 const PAGES = [
   'index', 'dashboard', 'registration', 'appointments', 'appointment-form', 'appointment-confirmed',
-  'billing', 'departments', 'profile', 'attendance', 'payroll', 'personnel', 'nursing',
+  'billing', 'claims', 'departments', 'profile', 'attendance', 'payroll', 'personnel', 'nursing',
   'consultation', 'treatment', 'audit', 'reports', 'accounts', 'portal',
   'registration-form', 'outpatient-form'
 ];

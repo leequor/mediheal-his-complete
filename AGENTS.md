@@ -15,6 +15,6 @@ Short version of the rules:
 
 7. **A record has exactly one owner.** `docs/DATA-MODEL.md` lists which module writes which key and the invariants the stores enforce. Do not compute a balance, a status or a total in a second place: `HIS.ledger` owns money, `HIS.registry` owns patients, `HIS.audit` owns history. If you find code reading `bill.paid` or `employee.ded`, it is a bug — both were retired because two screens disagreed.
 
-8. **Run the domain harness for the area you touched**, not just the visual one: `portal-check` for identity, `clinical-check` for laboratory/pharmacy, `finance-check` for money, `payroll-check` for HR. Each asserts rules, not rendering.
+8. **Run the domain harness for the area you touched**, not just the visual one: `portal-check` for identity, `clinical-check` for laboratory/pharmacy, `finance-check` for money, `payroll-check` for HR, `claims-check` for the payer workflow, `ledger-check` for money movement. Each asserts rules, not rendering.
 
 9. **Measurement is not inspection.** Three separate defects in this project passed every automated check and were only found by looking at a screenshot (a reports string bug, role cells rendering as pills, a registration form with three fields clipped into one row). Capture the screen and look at it before calling a change done.

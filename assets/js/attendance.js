@@ -309,12 +309,24 @@
     if (!b) return;
     var a = b.dataset.act, N = A.emps.length, ready = A.emps.filter(function (x) { return x.status !== 'Absent'; }).length, rev = A.emps.filter(function (x) { return x.status === 'Absent' && !x.reviewed; });
     if (a === 'export') { csv(); st.ok = { t: 'Attendance exported', m: 'The ' + A.date + ' daily register for ' + N + ' employees was exported as a spreadsheet.' }; st.modal = 'ok'; render(); }
-    else if (a === 'approve') { st.ok = { t: 'Timesheets approved', m: ready + ' of ' + N + ' timesheets for ' + A.date + ' are approved.' + (rev.length ? " " + rev[0].name + "'s absence stays flagged for review." : '') }; st.modal = 'ok'; render(); }
+    else if (a === 'approve') {
+      // M10: this button used to show a message and change nothing. It now approves the pay-period
+      // timesheets in HIS.attendancePeriod, which is what Payroll reads.
+      var ap = HIS.attendancePeriod.approveAll('Approved from the daily register');
+      st.ok = { t: 'Timesheets approved', m: ap.approved + ' of ' + HIS.employees.all().length + ' pay-period timesheets approved for ' + A.period + '.' + (ap.remaining ? ' ' + ap.remaining + ' still need review.' : ' Payroll can now be calculated.') };
+      st.modal = 'ok'; render();
+    }
     else if (a === 'sync') {
-      if (A.syncedCount === ready && !A.dirty) { tip('Already synced to payroll'); return; }
+      // M10: the sync is real. Payroll reads HIS.attendancePeriod.summary(); it refuses an employee
+      // whose timesheet is not approved, so this reports the gate instead of pretending.
+      var un = HIS.attendancePeriod.unapproved();
+      if (un.length) {
+        st.ok = { t: 'Not synced', m: un.length + ' timesheet' + (un.length === 1 ? '' : 's') + ' still need approval (' + un.map(function (x) { return x.name; }).join(', ') + '). Payroll will not pay an unapproved period.' };
+        st.modal = 'ok'; render(); return;
+      }
       A.synced = A.date + ' \u00b7 ' + nowTime();
       A.syncedCount = ready; A.dirty = false; save();
-      st.ok = { t: 'Synced to payroll', m: ready + ' attendance records now feed the ' + A.period + ' pay period.' + (rev.length ? ' ' + rev.length + ' absence still needs review.' : ' All records are in payroll.') }; st.modal = 'ok'; render();
+      st.ok = { t: 'Synced to payroll', m: ready + ' approved timesheets now feed the ' + A.period + ' pay period. Open Payroll to calculate the run.' }; st.modal = 'ok'; render();
     }
     else if (a === 'review') { st.emp = rev[0]; st.modal = 'review'; render(); }
     else if (a === 'reviewleave') { var rl = st.emp; A.leaves.push({ name: rl.name, type: 'Emergency leave', range: A.date, days: 1, status: 'Approved' }); rl.status = 'On leave'; rl.reviewed = true; A.dirty = true; save(); st.modal = ''; render(); tip('Leave approved for ' + rl.name); }

@@ -21,9 +21,9 @@
       pages: ['dashboard', 'registration', 'registration-form', 'outpatient-form', 'profile',
         'appointments', 'appointment-form', 'appointment-confirmed', 'consultation', 'treatment',
         'nursing', 'pharmacy', 'laboratory', 'attendance', 'personnel', 'payroll', 'departments', 'billing',
-        'reports', 'audit', 'accounts'],
+        'claims', 'reports', 'audit', 'accounts'],
       nav: ['dashboard', 'registration', 'appointments', 'consultation', 'treatment', 'nursing',
-        'pharmacy', 'laboratory', 'attendance', 'personnel', 'payroll', 'departments', 'billing', 'reports', 'audit', 'accounts'],
+        'pharmacy', 'laboratory', 'attendance', 'personnel', 'payroll', 'departments', 'billing', 'claims', 'reports', 'audit', 'accounts'],
       home: 'dashboard'
     },
     hospitaladmin: {
@@ -32,9 +32,9 @@
       scope: 'Operational oversight: admissions, occupancy, staffing, department performance and financial summaries.',
       pages: ['dashboard', 'registration', 'profile', 'appointments', 'consultation', 'treatment',
         'nursing', 'pharmacy', 'attendance', 'personnel', 'payroll', 'departments', 'billing',
-        'laboratory', 'reports', 'audit'],
+        'claims', 'laboratory', 'reports', 'audit'],
       nav: ['dashboard', 'registration', 'appointments', 'consultation', 'treatment', 'nursing',
-        'pharmacy', 'attendance', 'personnel', 'payroll', 'departments', 'billing', 'laboratory', 'reports', 'audit'],
+        'pharmacy', 'attendance', 'personnel', 'payroll', 'departments', 'billing', 'claims', 'laboratory', 'reports', 'audit'],
       home: 'dashboard'
     },
     receptionist: {
@@ -91,16 +91,16 @@
       label: 'Cashier / Billing', short: 'Cashier',
       person: { name: 'Aileen Ramos', title: 'Cashier' },
       scope: 'Invoices, charges, payments, deposits, outstanding balances, refunds and receipts.',
-      pages: ['dashboard', 'billing', 'profile'],
-      nav: ['dashboard', 'billing'],
+      pages: ['dashboard', 'billing', 'claims', 'profile'],
+      nav: ['dashboard', 'billing', 'claims'],
       home: 'billing'
     },
     finance: {
       label: 'Finance / Accounting', short: 'Finance',
       person: { name: 'Rowena Lim', title: 'Finance Officer' },
       scope: 'Collections, revenue, reconciliation, payer mix and financial reporting.',
-      pages: ['dashboard', 'billing', 'reports'],
-      nav: ['dashboard', 'billing', 'reports'],
+      pages: ['dashboard', 'billing', 'claims', 'reports'],
+      nav: ['dashboard', 'billing', 'claims', 'reports'],
       home: 'billing'
     },
     hr: {
@@ -123,8 +123,8 @@
       label: 'Auditor / Compliance', short: 'Auditor',
       person: { name: 'Ferdinand Yap', title: 'Compliance Auditor' },
       scope: 'Read-only access to the audit trail, payment history, payroll changes and administrative activity.',
-      pages: ['dashboard', 'billing', 'payroll', 'profile', 'audit', 'reports'],
-      nav: ['dashboard', 'billing', 'payroll', 'audit', 'reports'],
+      pages: ['dashboard', 'billing', 'claims', 'payroll', 'profile', 'audit', 'reports'],
+      nav: ['dashboard', 'billing', 'claims', 'payroll', 'audit', 'reports'],
       home: 'audit'
     },
     patient: {
@@ -150,6 +150,7 @@
     ['payroll', 'Payroll', 'peso'],
     ['departments', 'Departments', 'branches'],
     ['billing', 'Billing', 'receipt'],
+    ['claims', 'Claims', 'claim'],
     ['reports', 'Reports', 'chart'],
     ['audit', 'Audit log', 'shield'],
     ['accounts', 'Accounts', 'key']

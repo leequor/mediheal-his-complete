@@ -389,3 +389,45 @@ No brand colour, gradient or component surface was replaced.
 **The last one is necessary but never sufficient.** Three separate defects in this project passed every
 automated check and were only found by looking at a screenshot. Measurement proves no regression;
 inspection proves it works.
+
+---
+
+## 13. M10 — additions on the Payroll screen, and one baseline re-capture
+
+Two changes touch a Figma screen. Both are recorded here because §10 requires an addition to be
+written down, not because the visual language moved.
+
+### 13.1 The footer status link
+
+`payroll.html` gains one element in the register footer, at (250, 26):
+
+> Timesheets · 8 of 8 approved →
+
+It is a text button using the existing `.pr-meth` size and the existing `--primary` link colour
+(`#1c6d9c`), with no new background, border or icon. It opens the timesheet review dialog. Before
+M10 the footer said "Absences without approved leave are deducted in Payroll" and nothing was
+actually deducted; the link replaces a claim the screen could not keep with a control that works.
+
+Nothing else on the page moved: same card at (68,207), same KPI strip at y=331, same register, same
+columns, same 64px rows.
+
+### 13.2 Dialog heights
+
+The payslip and timesheet dialogs are taller than the Figma overlay frames (748px against 568px)
+because a payslip now itemises every earning and deduction instead of printing one line of
+"deduction breakdown". Width, radius, stroke, title size, field style and button geometry are
+unchanged. Dialogs are overlays, not the locked page; the 1440×1345 page geometry is untouched.
+
+While doing this, `.pr-modal` and `.pr-scrim` moved from `position:absolute` to `position:fixed`.
+They were absolutely positioned inside the 1345px stage, so a dialog opened from the footer scrolled
+the page and rendered off-screen. Fixed positioning keeps the overlay in the viewport; at scroll 0
+the dialogs land on the same pixels as before.
+
+### 13.3 Baseline re-capture
+
+`qa/baseline/payroll__1440.png` was re-captured. The diff was 2.145% inside the KPI and table region
+and is a **data** correction, not a layout change: M8 printed the monthly salary in a column headed
+"BASIC SALARY" for a semi-monthly period. The column now shows the amount actually earned in the
+period (₱30,000 for a ₱60,000 monthly salary). Same columns, same widths, same row heights.
+
+Every other page matches its baseline at 0.000%.

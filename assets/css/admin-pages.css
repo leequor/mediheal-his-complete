@@ -144,3 +144,51 @@
 .ad-g-lab{grid-template-columns:118px 1.15fr 1.3fr 74px 102px 128px 134px}
 .ad-g-rx{grid-template-columns:84px 1.15fr 1.5fr 116px 100px 128px 152px}
 .ad-g-stock{grid-template-columns:1.45fr 92px 120px 70px 116px 1fr 148px}
+
+/* ============================================================================
+   M10 — Claims. Reuses .ad-* for the page, KPI strip, toolbar and table. The
+   only new rules are the grid tracks and the claim detail dialog. Every value
+   is an existing token or an already-measured in-use value.
+   ============================================================================ */
+.ad-g-claims{grid-template-columns:118px 1.35fr .9fr 84px 96px 96px 132px 62px}
+.ad-tr.ad-g-claims{cursor:pointer}
+.ad-tr.ad-g-claims .badge{min-width:0;padding:0 12px;height:26px;font-size:11px}
+
+.cl-bg{position:fixed;inset:0;z-index:2500;background:var(--scrim);display:grid;place-items:center;padding:24px}
+.cl-card{width:840px;max-width:100%;max-height:90vh;overflow-y:auto;background:#fff;border-radius:16px;padding:26px 28px;box-shadow:0 20px 50px rgba(15,30,46,.25)}
+.cl-h{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
+.cl-h h3{margin:0;font:500 21px/26px var(--font-lexend);color:var(--section)}
+.cl-sub{margin:4px 0 0;font:400 12.5px/17px var(--font-inter);color:var(--muted)}
+.cl-h-r{display:flex;align-items:center;gap:12px;flex:none}
+.cl-x{width:30px;height:30px;border:0;border-radius:8px;background:#f6fafd;color:#5b8db8;font:400 18px/1 var(--font-inter);cursor:pointer}
+.cl-x:hover{background:#e8f4fb}
+.cl-kv{display:grid;grid-template-columns:repeat(3,1fr);gap:0 20px;margin-top:16px}
+.cl-f2{min-width:0;margin-bottom:10px}
+.cl-f2 .k{display:block;margin-bottom:1px;font:600 10.5px var(--font-inter);letter-spacing:.03em;text-transform:uppercase;color:var(--muted)}
+.cl-f2 .v{display:block;font:400 13px/18px var(--font-inter);color:var(--body);word-break:break-word}
+.cl-strip{margin-top:6px;padding:10px 14px;border-radius:10px;background:#f6fafd;border:1px solid #e3edf3;font:400 12.5px/18px var(--font-inter);color:var(--body)}
+.cl-strip b{color:var(--section)}
+.cl-sep{display:block;margin-top:2px;font-size:11.5px;color:var(--muted)}
+.cl-sect{margin-top:18px}
+.cl-sect h4{margin:0 0 8px;font:600 12px var(--font-inter);letter-spacing:.05em;text-transform:uppercase;color:#5b8db8}
+.cl-docs{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.cl-doc{display:flex;align-items:center;gap:9px;padding:8px 12px;border:1px solid var(--line);border-radius:9px;background:#fff;font:400 12.5px/17px var(--font-inter);color:var(--body);text-align:left;cursor:pointer}
+.cl-doc:hover{background:#f6fafd}
+.cl-doc .bx{width:16px;height:16px;flex:none;border-radius:4px;border:1px solid #c8dcea;display:grid;place-items:center;font-size:11px;color:#fff}
+.cl-doc.on{background:#f1f9f4;border-color:#bfe0cc}
+.cl-doc.on .bx{background:var(--ok-fg);border-color:var(--ok-fg)}
+.cl-note{margin-bottom:8px;padding:9px 12px;border-radius:9px;background:#f6fafd;font:400 12.5px/18px var(--font-inter);color:var(--body)}
+.cl-tl{margin-top:2px}
+.cl-tl-row{display:grid;grid-template-columns:132px 1fr;gap:14px;padding:7px 0;border-top:1px solid #eef4f9;font:400 12.5px/18px var(--font-inter);color:var(--body)}
+.cl-tl-row:first-child{border-top:0}
+.cl-tl-row .w{color:var(--muted);font-size:11.5px}
+.cl-tl-row .why{color:var(--muted)}
+.cl-actions{display:flex;flex-wrap:wrap;align-items:center;gap:9px;position:sticky;bottom:-26px;margin:20px -28px 0;padding:14px 28px 18px;background:#fff;border-top:1px solid #e3edf3}
+.cl-actions .ad-btn{height:36px}
+.cl-none{font:400 12.5px/18px var(--font-inter);color:var(--muted)}
+.cl-settled{margin-top:16px;padding:11px 14px;border-radius:10px;background:#f1f9f4;border:1px solid #bfe0cc;font:400 12.5px/18px var(--font-inter);color:var(--body)}
+.cl-settled b{color:var(--ok-fg)}
+.cl-f{display:block;margin-top:12px}
+.cl-f span{display:block;margin-bottom:5px;font:600 12px/16px var(--font-inter);color:var(--section)}
+.cl-f input,.cl-f select,.cl-f textarea{width:100%;border:1px solid var(--line);border-radius:8px;padding:9px 11px;background:#f6fafd;font:400 13px var(--font-inter);color:var(--body)}
+.cl-f input:focus,.cl-f select:focus,.cl-f textarea:focus{outline:2px solid var(--primary);outline-offset:-1px;background:#fff}
