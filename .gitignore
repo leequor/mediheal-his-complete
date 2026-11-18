@@ -25,3 +25,8 @@ qa/*.txt
 # Ad-hoc debugging scripts written while investigating a specific defect. Anything worth keeping
 # belongs in scripts/ with a name that says what it proves.
 qa/*.mjs
+
+# The previous accepted visual baseline (commit 69c9a63). Its manifest is committed so the two
+# baselines can be compared by hash; the images are regenerated on demand — see DESIGN-LOCK 17.4.
+qa/baseline-previous/*.png
+qa/prev/

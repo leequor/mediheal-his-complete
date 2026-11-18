@@ -1,0 +1,175 @@
+{
+  "_note": "Baseline captured from commit 69c9a63 — the state accepted before the final QA pass. Kept so the two baselines can be compared; the live baseline is qa/baseline. Regenerate the images with the commands in docs/DESIGN-LOCK.md 17.4.",
+  "_commit": "69c9a63",
+  "_width": 1440,
+  "pages": {
+    "accounts": {
+      "width": 1440,
+      "height": 1508,
+      "bytes": 449586,
+      "sha256": "e5dade079aeb06619ba80527bd32bfb170f2a460511c7815c920128c56132e75"
+    },
+    "admissions": {
+      "width": 1440,
+      "height": 1120,
+      "bytes": 427064,
+      "sha256": "664d7ca2b7aad24e0e665a0879ce50c3268492c2d3aabec74fb4242d135a99d3"
+    },
+    "appointment-confirmed": {
+      "width": 1440,
+      "height": 1120,
+      "bytes": 631201,
+      "sha256": "9e4d63f5a3bd26cada6a03d9078f6f72de3d249bd277e4f604643b96cc2a3b53"
+    },
+    "appointment-form": {
+      "width": 1440,
+      "height": 1120,
+      "bytes": 365219,
+      "sha256": "cfbb729ac7036e60048215aa36cb0ba613da9264fae283ad14fe4217eda2b23a"
+    },
+    "appointments": {
+      "width": 1440,
+      "height": 1120,
+      "bytes": 482437,
+      "sha256": "f4e4ebdf8880abdfa75090a72b9db69d3e9e7882050fd40c905ab94b07162970"
+    },
+    "attendance": {
+      "width": 1440,
+      "height": 1635,
+      "bytes": 477756,
+      "sha256": "044906bb4ee9e575d8e11574871b25d05a343e3efdf5712608ff3e834f56e70e"
+    },
+    "audit": {
+      "width": 1440,
+      "height": 1120,
+      "bytes": 577932,
+      "sha256": "8493489edc9096eaf2f97701362476d961f3cd7e0820e20e690a14e89ee9e03e"
+    },
+    "billing": {
+      "width": 1440,
+      "height": 1120,
+      "bytes": 454867,
+      "sha256": "ccaa3066c41a51e4c649bd98d45da22fc67d34539e572b3fdb655409c99b8c72"
+    },
+    "charges": {
+      "width": 1440,
+      "height": 1134,
+      "bytes": 392672,
+      "sha256": "50379111fcfa3bb38771c4369f3bf015cbd9abf67acfa14605a70e803d405074"
+    },
+    "claims": {
+      "width": 1440,
+      "height": 1181,
+      "bytes": 428700,
+      "sha256": "ea3689eccba4c5d4a65b01ff7a03246e325dc0d4139a8e63fda6ae7420606dc9"
+    },
+    "consultation": {
+      "width": 1440,
+      "height": 1262,
+      "bytes": 439446,
+      "sha256": "8903ab2789fff35cf8faa6813bc75a1025edf3929c09c16fdcb19bedfa413449"
+    },
+    "dashboard": {
+      "width": 1440,
+      "height": 1128,
+      "bytes": 358037,
+      "sha256": "4254f52ccdd26831ec00f26f3190413e5db2738c7af0ba00de742442460e32e6"
+    },
+    "departments": {
+      "width": 1440,
+      "height": 1420,
+      "bytes": 425063,
+      "sha256": "9feffc675987727b4a76494bb8d825ff6489d65dfa8205c3b25863e67cdd0e05"
+    },
+    "index": {
+      "width": 1440,
+      "height": 900,
+      "bytes": 704505,
+      "sha256": "51ecb4fa847fbfbf27818e9c2352c7cba5f61d68f3030f72e0674901abc895f1"
+    },
+    "laboratory": {
+      "width": 1440,
+      "height": 1120,
+      "bytes": 454767,
+      "sha256": "3e6119d641c8f25cd17feced4ee167659e6224c06f7d5f9be1603982297ad6c4"
+    },
+    "nursing": {
+      "width": 1440,
+      "height": 1262,
+      "bytes": 455131,
+      "sha256": "96c23ba0c53cf3c3686325a32db596426f6b0f9453c24a70f616ab629b6ec096"
+    },
+    "outpatient-form": {
+      "width": 1440,
+      "height": 2676,
+      "bytes": 625362,
+      "sha256": "8a4fdafd5d4564cbf1bc7908f0c52620539007a79d6c563682e246cb0fddb608"
+    },
+    "payroll": {
+      "width": 1440,
+      "height": 1345,
+      "bytes": 473095,
+      "sha256": "5fa57328adcc884ca1d55ddbfefd7fa938725708ade775f942315fc10d839e94"
+    },
+    "personnel": {
+      "width": 1440,
+      "height": 1262,
+      "bytes": 436732,
+      "sha256": "08691ad0cc634d2ad3af1e11181f2a37c2dff2b526a0b614126b13527c5e7e96"
+    },
+    "pharmacy": {
+      "width": 1440,
+      "height": 1120,
+      "bytes": 533161,
+      "sha256": "9e9afefd882050701c3309c7fb619dff36181e82ed9c69949312a6e318c525f6"
+    },
+    "portal": {
+      "width": 1440,
+      "height": 900,
+      "bytes": 271241,
+      "sha256": "f5391fe0bc63d1cd4457e56ad1ec79aecb8adb5ad24ccffd2bf29a245b6659ac"
+    },
+    "profile": {
+      "width": 1440,
+      "height": 1332,
+      "bytes": 458083,
+      "sha256": "1e92af1b4f3bfebc690702b73e679f1ed2ac1dcb080ff6c63c38bbc33592878f"
+    },
+    "registration-form": {
+      "width": 1440,
+      "height": 2789,
+      "bytes": 632984,
+      "sha256": "88ec14bb9e417eab359fb39cfa19a6aacdd8ed35691ab0e497f962ed06c2e849"
+    },
+    "registration": {
+      "width": 1440,
+      "height": 1228,
+      "bytes": 379476,
+      "sha256": "4af7691308007eaa445de269d2c44048c347ff205edfaea100403fcd23c54f98"
+    },
+    "reports": {
+      "width": 1440,
+      "height": 1523,
+      "bytes": 437528,
+      "sha256": "93242a8977c18b982a60b1c0d343e0d398d055c711795333889ce23131f3c195"
+    },
+    "settings": {
+      "width": 1440,
+      "height": 1554,
+      "bytes": 463215,
+      "sha256": "17314ecbb9ed67b4cce020f553ae7f32e94b322ea482d58899c5bcc8ae596fd9"
+    },
+    "staff": {
+      "width": 1440,
+      "height": 1262,
+      "bytes": 436732,
+      "sha256": "08691ad0cc634d2ad3af1e11181f2a37c2dff2b526a0b614126b13527c5e7e96"
+    },
+    "treatment": {
+      "width": 1440,
+      "height": 1262,
+      "bytes": 448052,
+      "sha256": "332b6175748501144fa6e852e9d7ae3d93b2027f78e11afb908eea688486330c"
+    }
+  }
+}

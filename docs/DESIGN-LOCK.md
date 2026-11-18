@@ -610,7 +610,7 @@ pre-pass baseline, all for reasons a visitor can see:
 
 | Page | 1440 | 1366 | Cause |
 |---|---|---|---|
-| Admissions | 11.692% | 17.340% | The bed board is capped to two visible rows and scrolls. A 40-bed ward used to push the admission records and every action below the fold. |
+| Admissions | 11.692% | 17.379% | The bed board is capped to two visible rows and scrolls. A 40-bed ward used to push the admission records and every action below the fold. |
 | Appointments | 0.462% | 1.978% | KPI values now count the records, and the fifth card reads **Completed** instead of a walk-in count the data cannot support. |
 | Settings | 0.146% | — | One note sentence reworded. |
 | Audit | — | 0.126% | Header identity and the bell's real unread count. |
@@ -620,9 +620,10 @@ pre-pass baseline, all for reasons a visitor can see:
 The diff metric counts pixels whose channel delta is ≥128. Two intended changes sit below that:
 
 1. **The header avatar.** Every page now draws initials on a tint keyed to the account, replacing one
-   photograph that every account shared. `#dff9ff` → the palette's first tint differs by less than 128
-   per channel, so the sweep reports 0.000% on 24 pages that did in fact change. Do not read "all
-   pages match baseline" as "the header is untouched".
+   photograph that every account shared. The tint differs by less than 128 per channel, so the sweep
+   reports 0.000% on 24 pages that did in fact change. Compared by SHA-256, **only `index` is
+   byte-identical** at both widths; the other 27 differ, and page height is unchanged at 1440 on all
+   28 pages. Do not read "all pages match baseline" as "the header is untouched".
 2. **The bed field on the registration form.** A text input became a dependent select. Placeholder
    grey and label grey are close enough that the sweep does not flag it.
 
@@ -641,3 +642,39 @@ unchanged. This is the only geometry change in the pass and it exists to make a 
 breakpoints. Six tints, chosen by hashing the account email, so one person keeps one colour and no two
 accounts share a face. Colour is never the only signal: the initials themselves identify the person,
 and the disc carries an `aria-label` with the full name.
+
+### 17.4 Two baselines, both kept
+
+A baseline that is only ever overwritten cannot prove anything. Both states are now preserved:
+
+| Baseline | Where | State |
+|---|---|---|
+| **Previous, accepted** | `qa/baseline-previous/baseline-manifest-1440.json` and `-1366.json` | commit `69c9a63`, the build accepted before this pass |
+| **Current, approved** | `qa/baseline/baseline-manifest-1440.json` and `-1366.json` | `c7ec7ce`, the build this pass ends on |
+
+Both manifests are committed. The PNGs are not — they are ~9 MB each — so each set is regenerated on
+demand, and the manifest hash tells you whether the images you regenerated are the ones that were
+reviewed:
+
+```
+# previous accepted baseline
+git worktree add ../qa-prev 69c9a63
+cd ../qa-prev && PW=… node scripts/visual-check.mjs --capture --out qa/prev
+cd ../qa-prev && PW=… node scripts/visual-check.mjs --width 1366 --capture --out qa/prev
+
+# diff the current build against it
+cd - && PW=… node scripts/visual-check.mjs --check --out ../qa-prev/qa/prev
+cd - && PW=… node scripts/visual-check.mjs --width 1366 --check --out ../qa-prev/qa/prev
+
+# current approved baseline
+PW=… node scripts/visual-check.mjs --capture
+PW=… node scripts/visual-check.mjs --width 1366 --capture
+```
+
+Note `--out`, not `--baseline`: in check mode the harness reads the images from `OUT`.
+
+**The intentional differences, complete:** Admissions (bed board capped to two visible rows),
+Appointments (KPI values counted from the records, fifth card relabelled Completed), Settings (one
+reworded note), and Audit at 1366 only (header identity and the bell's real unread count). Everything
+else is 0.000% at both widths, and the two sub-threshold changes in 17.1 are listed there so they are
+not mistaken for regressions later.
