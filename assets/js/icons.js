@@ -28,6 +28,7 @@ const ICON_PATHS = {
   'branches': "<circle cx='12' cy='5' r='2'/><circle cx='5' cy='19' r='2'/><circle cx='19' cy='19' r='2'/><path d='M12 7v5M5 17v-3a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v3'/>",
   'receipt': "<path d='M5 3h14v18l-3-2-2 2-2-2-2 2-2-2-3 2zM8 8h8M8 12h8'/>",
   'claim': "<path d='M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8zM14 3v5h5'/><path d='m9 15 2 2 4-4'/>",
+  'sliders': "<path d='M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0'/><circle cx='16' cy='6' r='2'/><circle cx='10' cy='12' r='2'/><circle cx='18' cy='18' r='2'/>",
   'tag': "<path d='M20.6 13.4 12 22l-9-9V4a1 1 0 0 1 1-1h9z'/><circle cx='7.5' cy='7.5' r='1.5'/>",
   'chart': "<path d='M3 3v18h18'/><path d='M7 16v-5M12 16V7M17 16v-9'/>",
   'shield': "<path d='M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6z'/><path d='m9 12 2 2 4-4'/>",

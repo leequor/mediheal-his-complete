@@ -21,9 +21,9 @@
       pages: ['dashboard', 'registration', 'registration-form', 'outpatient-form', 'profile',
         'appointments', 'appointment-form', 'appointment-confirmed', 'admissions', 'consultation', 'treatment',
         'nursing', 'pharmacy', 'laboratory', 'charges', 'attendance', 'personnel', 'payroll', 'departments', 'billing',
-        'claims', 'reports', 'audit', 'accounts'],
+        'claims', 'reports', 'audit', 'accounts', 'settings'],
       nav: ['dashboard', 'registration', 'admissions', 'appointments', 'consultation', 'treatment', 'nursing',
-        'pharmacy', 'laboratory', 'charges', 'attendance', 'personnel', 'payroll', 'departments', 'billing', 'claims', 'reports', 'audit', 'accounts'],
+        'pharmacy', 'laboratory', 'charges', 'attendance', 'personnel', 'payroll', 'departments', 'billing', 'claims', 'reports', 'audit', 'accounts', 'settings'],
       home: 'dashboard'
     },
     hospitaladmin: {
@@ -32,9 +32,9 @@
       scope: 'Operational oversight: admissions, occupancy, staffing, department performance and financial summaries.',
       pages: ['dashboard', 'registration', 'profile', 'appointments', 'admissions', 'consultation', 'treatment',
         'nursing', 'pharmacy', 'attendance', 'personnel', 'payroll', 'departments', 'billing',
-        'claims', 'laboratory', 'charges', 'reports', 'audit'],
+        'claims', 'laboratory', 'charges', 'reports', 'audit', 'settings'],
       nav: ['dashboard', 'registration', 'admissions', 'appointments', 'consultation', 'treatment', 'nursing',
-        'pharmacy', 'attendance', 'personnel', 'payroll', 'departments', 'billing', 'claims', 'laboratory', 'charges', 'reports', 'audit'],
+        'pharmacy', 'attendance', 'personnel', 'payroll', 'departments', 'billing', 'claims', 'laboratory', 'charges', 'reports', 'audit', 'settings'],
       home: 'dashboard'
     },
     receptionist: {
@@ -155,7 +155,8 @@
     ['claims', 'Claims', 'claim'],
     ['reports', 'Reports', 'chart'],
     ['audit', 'Audit log', 'shield'],
-    ['accounts', 'Accounts', 'key']
+    ['accounts', 'Accounts', 'key'],
+    ['settings', 'Configuration', 'sliders']
   ];
 
   // No session means no role. A guest role keeps every helper total instead of returning undefined.

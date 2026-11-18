@@ -22,12 +22,13 @@ either blocked on something outside this repository or deliberately deferred.
 
 ## 2. Highest value next
 
-### 2.1 Charge master and tariff administration screen
-`tariffs.setPrice()` exists and is audited, but there is no screen, so changing a price means editing
-a store from the console. The Laboratory catalogue and the bed configuration have the same gap.
-**Why it matters:** the brief asks that administrators configure supported workflows through the
-existing interface patterns. One admin screen covering tariffs, the laboratory catalogue and bed
-configuration would close three "partial" rows in the feature matrix at once.
+### 2.1 Catalogue and bed configuration screens
+M12 added `settings.html`, so tariffs are now administrable: a price change is an appended,
+effective-dated row, with a per-code history and an audit entry. The **laboratory catalogue** and the
+**bed inventory** are still seeded from code (`lab.js` CATALOG, `admissions.js` WARDS) and are only
+listed read-only on that screen. **Why it matters:** adding a test or a bed currently means editing a
+JavaScript file, which is fine for a fixed demonstration facility but is the last remaining
+configuration gap.
 
 ### 2.2 Proration for hires and separations
 `employees.js` has no hire date or separation date, so a mid-period joiner is paid a full period and

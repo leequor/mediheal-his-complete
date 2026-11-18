@@ -38,8 +38,8 @@
   "audit": {
     "width": 1366,
     "height": 900,
-    "bytes": 203967,
-    "sha256": "77b3791804262b779e03e4ecaf4de8c671f2cf69a9a6f1c797ea87adaa2d365a"
+    "bytes": 203996,
+    "sha256": "bfff6bbe1107b61acb69c9b76770c02047914f6ffa157659615eb9d761b74f90"
   },
   "billing": {
     "width": 1366,
@@ -56,8 +56,8 @@
   "claims": {
     "width": 1366,
     "height": 2177,
-    "bytes": 335557,
-    "sha256": "314f6c426fe62409866bfc1f91ddee756099766a7d2836287fc6c8eb33f73e4d"
+    "bytes": 335484,
+    "sha256": "8c3023958a1f383755cfde623c580049f8cf57a68c57343cc4045c9f18c31ef8"
   },
   "consultation": {
     "width": 1366,
@@ -110,8 +110,8 @@
   "personnel": {
     "width": 1366,
     "height": 1330,
-    "bytes": 585655,
-    "sha256": "978507be69df0e6bc159ae4937ea05b5cfea7f29cc41968f88eff73151dbd07c"
+    "bytes": 585659,
+    "sha256": "08cc584d878fd290aac3228e042d125ec0ed475f40299fa269bf178e8b0be0ab"
   },
   "pharmacy": {
     "width": 1366,
@@ -149,11 +149,17 @@
     "bytes": 354549,
     "sha256": "e39c5eb2c0c78132a2a39c46860ba95a66a2eee69c55d17f120b218cad9ac795"
   },
+  "settings": {
+    "width": 1366,
+    "height": 3335,
+    "bytes": 369689,
+    "sha256": "a002e2179e8ad1b68424a5ba05a7545dbc4925a0f7ea040b977f8f57ec68aefa"
+  },
   "staff": {
     "width": 1366,
     "height": 1330,
-    "bytes": 585659,
-    "sha256": "08cc584d878fd290aac3228e042d125ec0ed475f40299fa269bf178e8b0be0ab"
+    "bytes": 569097,
+    "sha256": "06cd5a7c7f37212ebe3b899a47b7f4c648e2eedd115f51cfa5f143335a827a85"
   },
   "treatment": {
     "width": 1366,

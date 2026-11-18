@@ -2,7 +2,7 @@
 
 **As of:** M12 (revenue integration, admissions and bed management).
 **Branch:** `dev/autonomous-milestones`. **`main`:** untouched at `fd5bf9f`. **Deployed:** no.
-**Surface:** 27 static pages, 61 JavaScript modules, 19 stylesheets, 28 test harnesses.
+**Surface:** 28 static pages, 62 JavaScript modules, 19 stylesheets, 29 test harnesses.
 **Data:** synthetic only. Browser `localStorage`. No server, no network calls, no real patient data.
 
 This document describes what the code actually does. It is written from the repository, not from
@@ -94,6 +94,11 @@ inspection of rendered screenshots.
 
 ### Administration
 - Accounts, departments, laboratory catalogue, pharmacy stock, tariffs, beds.
+- **Configuration screen** (`settings.html`): the charge master with the price in force today per
+  code, the date it took effect, "New price" (appends an effective-dated row, never edits one) and a
+  per-code price history. The areas that are seeded from code — laboratory catalogue, beds, payroll
+  policy, departments — are listed read-only with their counts, so the boundary between
+  "configurable" and "compiled in" is visible rather than a surprise.
 
 ## 3. Simulated, and labelled as such
 
@@ -139,8 +144,8 @@ Run with `PW=<path to playwright-core>` set (see `README.md`). Counts are the ac
 
 | Harness | Assertions | Proves |
 |---|---|---|
-| `smoke.mjs` | 27 pages | No console errors, no overflow, no dead controls |
-| `roles-check.mjs` | 142 | Every role reaches its allowlist, blocked elsewhere |
+| `smoke.mjs` | 28 pages | No console errors, no overflow, no dead controls |
+| `roles-check.mjs` | 144 | Every role reaches its allowlist, blocked elsewhere |
 | `auth-check.mjs` | 25 | Sign-in, session, expiry, audit |
 | `clinical-check.mjs` | 53 | Laboratory and pharmacy rules, integration with treatment |
 | `finance-check.mjs` | 31 | One money chain across Billing, Reports and the portal |
@@ -149,18 +154,18 @@ Run with `PW=<path to playwright-core>` set (see `README.md`). Counts are the ac
 | `claims-check.mjs` | 41 | Claim machine, role gates, settlement boundary |
 | `ledger-check.mjs` | 46 | Payments, refunds, coverage, idempotency, invariants |
 | `charges-check.mjs` | 44 | Clinical activity becomes a charge, once; unbilled persistence |
-| `revenue-check.mjs` | 74 | Charge master, consultation billing, ADT, accrual, queue, returns |
+| `revenue-check.mjs` | 80 | Charge master, consultation billing, ADT, accrual, queue, returns |
 | `acceptance-audit.mjs` | 180 | Independent M10 acceptance |
 | `m10-1-audit.mjs` | 77 | Pag-IBIG tiers, wage floor, corrections, negative balances |
 | `m10-2-audit.mjs` | 78 | Wage conversion factors and boundaries |
 | `m10-3-audit.mjs` | 75 | Divisor per purpose, compensation types, regional orders |
 | `m10-4-audit.mjs` | 54 | Hour classification, absence basis, Article 83 |
-| `a11y-check.mjs` | 26 pages | 0 axe violations |
-| `responsive-check.mjs` | 135 | 27 pages × 5 widths, no overflow |
-| `visual-check.mjs` | 27 pages | Pixel diff against `qa/baseline` at 1440 and 1366 |
+| `a11y-check.mjs` | 27 pages | 0 axe violations |
+| `responsive-check.mjs` | 140 | 28 pages × 5 widths, no overflow |
+| `visual-check.mjs` | 28 pages | Pixel diff against `qa/baseline` at 1440 and 1366 |
 | `buttons.mjs` | all pages | 0 dead controls |
 
-**Total: 1,208 assertions across 20 harnesses**, plus 27 page smoke checks and 54 visual baselines.
+**Total: 1,057 assertions across 15 rule-asserting harnesses**, plus a 28-page smoke sweep, a 27-page axe audit, 140 responsive checks and 56 visual baselines (28 pages × 2 widths).
 
 ## 7. Where to start reading
 

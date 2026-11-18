@@ -26,10 +26,11 @@ index.html            sign-in
    ├─ attendance.html / personnel.html / payroll.html / departments.html
    ├─ audit.html                audit trail
    ├─ accounts.html             user administration
+   ├─ settings.html             charge master and configuration           (M12)
    └─ portal.html               patient portal (separate shell, same auth)
 ```
 
-27 pages. Each is self-contained: it declares its own `<script>` list, in dependency order, and a
+28 pages. Each is self-contained: it declares its own `<script>` list, in dependency order, and a
 single page script renders into `#stage`.
 
 ## 2. Module layers
@@ -158,7 +159,7 @@ patterns exist:
    `pharmacy`, `billing`, `departments`, `profile`) — absolutely positioned inside a child wrapper,
    reproducing the Figma frame-local coordinates.
 2. **Admin pages** (`audit`, `reports`, `accounts`, `laboratory`, `pharmacy`, `claims`, `admissions`,
-   `charges`) — the `.ad-*` pattern: Outfit 36 title at (68,115), KPI strip, white card with a
+   `charges`, `settings`) — the `.ad-*` pattern: Outfit 36 title at (68,115), KPI strip, white card with a
    toolbar and a table, `.ac-*` modal shell. This pattern is an addition (there is no Figma frame for
    these screens) built entirely from existing tokens.
 3. **Dashboard** — `.kpi` cards at fixed geometry with a per-role configuration.
@@ -168,7 +169,7 @@ nothing in it applies at ≥1440 px.
 
 ## 10. Testing architecture
 
-28 harnesses in `scripts/`, all driving a real Chromium against a local static server. Each creates
+29 harnesses in `scripts/`, all driving a real Chromium against a local static server. Each creates
 its own browser context, so each starts from a clean `localStorage`. They assert rules, not
 renderings — except `visual-check.mjs`, which compares pixels against `qa/baseline` at 1440 and 1366.
 
