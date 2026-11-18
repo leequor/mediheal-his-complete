@@ -118,8 +118,9 @@ console.log('\n--- 2. minimum wage ---');
   const r = await page.evaluate(() => {
     const wf = HIS.wageFloor;
     const emp = (monthly, hours) => ({
-      id: 'T', monthlyBasic: monthly,
-      wage: { region: 'NCR', sector: 'non-agriculture', hoursPerDay: hours == null ? 8 : hours }
+      id: 'T', payBasis: 'monthly', monthlyBasic: monthly,
+      schedule: { daysPerWeek: 5, hoursPerDay: hours == null ? 8 : hours, paidRestDays: true, paidSpecialDays: true },
+      wage: { region: 'NCR', sector: 'non-agriculture' }
     });
     return {
       before: wf.floorFor({ asOf: '2026-09-25' }),
@@ -127,13 +128,13 @@ console.log('\n--- 2. minimum wage ---');
       later: wf.floorFor({ asOf: '2027-01-20' }),
       agri: wf.floorFor({ asOf: '2026-09-26', sector: 'agriculture' }),
       otherRegion: wf.floorFor({ asOf: '2026-09-26', region: 'Region VII' }),
-      ok755: wf.check(emp(16421.25), '2026-09-26'),
-      below: wf.check(emp(16000), '2026-09-26'),
+      ok755: wf.check(emp(22964.58), '2026-09-26'),
+      below: wf.check(emp(20000), '2026-09-26'),
       partTime: wf.check(emp(8000, 4), '2026-09-26'),
-      partTimeOk: wf.check(emp(8210.63, 4), '2026-09-26'),
+      partTimeOk: wf.check(emp(11482.29, 4), '2026-09-26'),
       exempt: wf.check(Object.assign(emp(16000), { wage: { region: 'NCR', sector: 'non-agriculture', hoursPerDay: 8, exemption: { code: 'KAWANI', reference: 'DOLE-EX-2026-014' } } }), '2026-09-26'),
       unknown: wf.check(emp(16000), '2026-08-31'),
-      conversion: wf.dailyEquivalent(emp(26100))
+      conversion: wf.equivalentDaily(emp(26100))
     };
   });
 
@@ -146,16 +147,18 @@ console.log('\n--- 2. minimum wage ---');
   ok('agriculture carries the lower 718 rate', r.agri.dailyRate === 718, r.agri.dailyRate);
   ok('a region with no order returns unknown rather than a national rate', r.otherRegion.status === 'unknown', r.otherRegion.status);
 
-  ok('a monthly rate of 16,421.25 converts to exactly 755.00 a day', near(r.ok755.dailyEquivalent, 755), r.ok755.dailyEquivalent);
-  ok('16,421.25 a month clears the floor', r.ok755.status === 'ok', r.ok755.status);
-  ok('16,000 a month is 735.63 a day and is below the floor', r.below.status === 'below' && near(r.below.dailyEquivalent, 735.63),
-    r.below.status + ' / ' + r.below.dailyEquivalent);
-  ok('the shortfall is reported in pesos', near(r.below.shortfall, 19.37), r.below.shortfall);
-  ok('a part-timer is compared on a full-time-equivalent basis', r.partTime.status === 'below', r.partTime.status);
-  ok('a part-timer at the full-time-equivalent floor passes', r.partTimeOk.status === 'ok', r.partTimeOk.status);
+  ok('a monthly rate of 22,964.58 converts to exactly 755.00 a day (365 factor)',
+    near(r.ok755.equivalentDaily, 755), r.ok755.equivalentDaily);
+  ok('22,964.58 a month clears the floor', r.ok755.status === 'ok', r.ok755.status);
+  ok('20,000 a month is 657.53 a day and is below the floor',
+    r.below.status === 'below' && near(r.below.equivalentDaily, 657.53),
+    r.below.status + ' / ' + r.below.equivalentDaily);
+  ok('the shortfall is reported in pesos', near(r.below.shortfall, 97.47), r.below.shortfall);
+  ok('a part-timer is compared against the floor prorated to their hours', r.partTime.status === 'below', r.partTime.status);
+  ok('a part-timer at the prorated floor passes', r.partTimeOk.status === 'ok', r.partTimeOk.status);
   ok('an exemption with a reference clears the block', r.exempt.status === 'exempt', r.exempt.status);
   ok('the period before any order is unknown, not a failure', r.unknown.status === 'unknown', r.unknown.status);
-  ok('the conversion uses 261 days, not 30', near(r.conversion, 1200), r.conversion);
+  ok('the conversion uses 365 days for a monthly-paid employee, not 261', near(r.conversion, 858.08), r.conversion);
 
   // The gate, two ways. The demo period is August 2026, before any NCR order is in force, so the
   // date-based check is exercised with an explicit as-of date; the wiring into approval is

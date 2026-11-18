@@ -215,15 +215,40 @@ sector *and* is in force on the date. A region with no configured order returns 
 default. Before 26 September 2026 there is no NCR order in this file, so the August 2026 demo period
 reports `unknown` and the Payroll screen says so rather than implying a floor it cannot prove.
 
-**Conversion.** Monthly rates become a daily equivalent with the same 261-day factor the engine
-uses, never by dividing by 30:
+**Conversion — corrected in M10.2.** M10.1 divided every monthly salary by 261, the factor for a
+*daily-paid* employee who is not paid on Saturdays and Sundays. For a monthly-paid employee that
+overstates the daily rate by about 40%: ₱20,000 was reported at ₱919.54 a day and passed a ₱755
+floor, when the correct equivalent is ₱657.53 and it fails. The error let underpaid staff through.
+
+The factors come from the NWPC FAQ, *"How is the equivalent monthly rate (EMR) of monthly-paid and
+daily-paid employees computed?"*:
+
+| Classification | Factor | Composition |
+|---|---|---|
+| Monthly-paid | **365** | 298 ordinary + 52 rest days + 12 regular holidays + 3 special days |
+| Daily-paid, works every day including rest days | **393.50** | 298 + 24 (regular holidays at 200%) + 67.60 (rest days at 130%) + 3.90 |
+| Daily-paid, not paid on Sundays | **313** (310 if special days unpaid) | 298 + 12 + 3 |
+| Daily-paid, not paid on Saturdays and Sundays | **261** (258 if special days unpaid) | 246 + 12 + 3 |
 
 ```
-daily equivalent = monthly × 12 / 261 / FTE      FTE = paid hours a day / 8
+monthly-paid    daily equivalent = monthly × 12 / 365
+daily-paid      EMR              = daily rate × factor / 12
+hourly-paid     daily equivalent = hourly rate × normal hours
 ```
 
-A part-timer on four hours a day is compared on a full-time-equivalent basis, which is what dividing
-by FTE tests: ₱8,000 a month for half days is ₱735.63 a day FTE and is below the floor.
+The minimum wage is prescribed "for normal working hours, which shall not exceed eight hours per
+day", so a part-time employee is compared against the floor prorated to their own hours
+(`floor × hours / 8`), not against a full day's floor and not through a blind FTE division.
+
+The factor follows the **basis**, never the schedule: a monthly-paid employee on a six-day week still
+uses 365, because they are paid for every day of the year. `wage-floor.js` states this and
+`m10-2-audit.mjs` asserts it for 5-, 6- and 7-day schedules.
+
+**Classification is stated on the record, never inferred.** `payBasis` is `monthly`, `daily` or
+`hourly`; `schedule` carries the normal day, the week and whether rest and special days are paid;
+`wage` carries region, sector and any exemption. A daily- or hourly-paid employee has no
+`monthlyBasic` — `HIS.payrollCalc.monthlyOf()` derives the equivalent monthly rate for the statutory
+tables, which is how a daily-paid employee on ₱755/day at 261 days lands on ₱16,421.25 a month.
 
 **Enforcement.** `payrollRuns.computeLines()` blocks an employee whose rate is below the floor — no
 line is produced and the reason is shown in the run — and `approve`/`release` re-check every
@@ -333,6 +358,12 @@ the test asserts the released run is byte-identical after a correction is create
   `verify()` reports the age and the payroll footer prints the effective date.
 * **The wage floor covers NCR only**, and only the region/sector split. Regional orders, establishment
   size, partial exemptions and the sector definitions inside an order are not modelled.
+* **The payroll engine's absence and premium rates still use 261** (`dailyRate()` in
+  `payroll-calc.js`), while the wage-floor check uses 365 for a monthly-paid employee. The two answer
+  different questions — what a day of absence costs versus whether the monthly rate meets the daily
+  minimum — but the divergence is a known open question and should be settled by a Philippine payroll
+  practitioner before production. The floor check is the one that decides compliance; the payroll
+  rate decides the amount of a deduction or a premium.
 * **Circulars 274 and 460 were not read directly.** The 1% Pag-IBIG tier rests on RA 9679 §7; the
   circulars could not be retrieved (reCAPTCHA, and the archived copies unreachable). See §3.
 * **No off-cycle deduction.** An authorised overpayment recovery is recorded as
