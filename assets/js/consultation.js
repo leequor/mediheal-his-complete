@@ -212,6 +212,31 @@
     return 'Admit to ward for observation';
   }
   function confirm() { confirm0(); saveState(); }
+
+  // M12 — consultation billing.
+  // The fee comes from the effective-dated charge master, never from a constant here. The encounter
+  // is the idempotency key: one completed consultation per episode, however many times the dialog
+  // is saved. Returns a short label for the toast, or '' when nothing could be billed.
+  function billConsultation(p) {
+    if (!window.HIS.charges || !window.HIS.encounters || !window.HIS.tariffs) return '';
+    var dept = p.dept || 'General Medicine';
+    var enc = HIS.encounters.ensure(p.id, { dept: dept, provider: DR });
+    if (!enc.ok) return '';
+    var code = HIS.tariffs.consultationCode(dept);
+    var q = HIS.tariffs.quote(code);
+    if (!q.ok) return 'no consultation tariff configured';
+    var res = HIS.charges.add({
+      patientId: p.id, encounterId: enc.encounter.id,
+      source: 'consultation', sourceId: enc.encounter.id,
+      code: code, description: q.description + ' \u00b7 ' + dept,
+      qty: 1, unitPrice: q.price,
+      tariffCode: code, tariffEffectiveFrom: q.effectiveFrom
+    });
+    if (!res.ok) return '';
+    if (res.duplicate) return 'consultation already billed';
+    return '\u20b1' + Number(res.charge.amount).toLocaleString('en-PH') + ' consultation charge raised' +
+      (res.unbilled ? ' (unbilled)' : '');
+  }
   function confirm0() {
     var p = byId(st.sel), r = rec(p), bad = false, f = st.f;
     [0, 1, 2, 3, 4].forEach(function (i) {
@@ -228,7 +253,12 @@
     // Persist the diagnosis on the record: saveState() stores rec(p), so it survives a reload and reopens
     // prefilled. Without this the modal claimed a save while every field was dropped.
     r.dx = { f: f.slice(), saved: st.saved };
-    st.modal = 'saved'; st.pn = false; render(); tip('Diagnosis saved for ' + p.name);
+    // M12: recording the diagnosis IS the completed consultation event, so it is what raises the fee.
+    // The charge is keyed on the encounter, so saving the same consultation again cannot bill it twice,
+    // and a fee is never raised merely because the screen was opened.
+    var billed = billConsultation(p);
+    st.modal = 'saved'; st.pn = false; render();
+    tip('Diagnosis saved for ' + p.name + (billed ? ' \u00b7 ' + billed : ''));
   }
 
   stage.addEventListener('click', function (ev) {

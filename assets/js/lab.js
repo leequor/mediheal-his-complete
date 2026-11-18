@@ -34,8 +34,24 @@
     'Coronary angiography': { price: 12000, category: 'Cardiology', specimen: 'Procedure', unit: '', range: 'No significant stenosis', critical: '' }
   };
 
+  // M12: every catalogue price carries the date it took effect. The price itself is unchanged; the
+  // date is what lets a charge keep the price it was raised at after a later tariff revision.
+  Object.keys(CATALOG).forEach(function (k) {
+    CATALOG[k].effectiveFrom = '2026-01-01';
+    CATALOG[k].code = 'LAB-' + k.toUpperCase().replace(/[^A-Z0-9]+/g, '-').replace(/^-|-$/g, '');
+  });
+
   var STATUSES = ['Ordered', 'Collected', 'In Process', 'Resulted', 'Validated', 'Cancelled'];
   var PRIORITIES = ['Routine', 'Urgent', 'STAT'];
+
+  // Billing policy on cancellation, stated once so the screen and the store cannot disagree.
+  //   before collection -> the service was never rendered, so the charge is voided.
+  //   after collection  -> consumables and bench time were used; the charge stands and the reason
+  //                        is recorded on both the order and the charge.
+  function cancelPolicy(o) {
+    if (o.status === 'Ordered') return { voidCharge: true, why: 'Cancelled before collection \u2014 no service rendered' };
+    return { voidCharge: false, why: 'Cancelled after collection \u2014 laboratory work was performed' };
+  }
 
   // ---- seed ---------------------------------------------------------------------------------
   // Every order belongs to a patient that exists in HIS.registry, and the tests are the ones the
@@ -168,9 +184,16 @@
     if (!p) return { ok: false, error: 'Choose a patient.' };
     if (!CATALOG[input.test]) return { ok: false, error: 'Choose a test from the catalogue.' };
     var rows = all();
+    // M12: name the episode. A charge must be able to say which encounter it happened in, so the
+    // order opens (or reuses) the patient's outpatient encounter before it is priced.
+    var enc = input.encounterId ? { ok: true, encounter: { id: input.encounterId } } : null;
+    if (!enc && window.HIS.encounters) {
+      enc = HIS.encounters.ensure(p.id, { dept: p.dept, provider: input.orderedBy || p.doctor });
+    }
     var o = {
       id: nextId(rows), patientId: p.id, orderedBy: input.orderedBy || actor(),
       dept: input.dept || p.dept || '', test: input.test,
+      encounterId: enc && enc.ok ? enc.encounter.id : null,
       priority: PRIORITIES.indexOf(input.priority) > -1 ? input.priority : 'Routine',
       orderedAt: new Date().toISOString(), status: 'Ordered', assignedTo: null,
       collected: null, result: null, resultedBy: null, resultedAt: null,
@@ -179,14 +202,16 @@
     };
     // Raise the billable charge with the order. A charge is a price, not a payment: it raises what
     // the patient owes and leaves the ledger's collected figure alone. `charges.add` is idempotent
-    // on (source, sourceId, code), so re-saving this order cannot bill it twice.
+    // on (source, sourceId, code), so re-saving this order cannot bill it twice. When the encounter
+    // has no invoice the charge is still recorded, and waits in the unbilled queue.
     if (window.HIS.charges) {
       var priced = HIS.charges.add({
-        patientId: o.patientId, source: 'laboratory', sourceId: o.id,
+        patientId: o.patientId, encounterId: o.encounterId, source: 'laboratory', sourceId: o.id,
         code: o.test, description: o.test + ' \u00b7 laboratory',
-        qty: 1, unitPrice: CATALOG[o.test].price
+        qty: 1, unitPrice: CATALOG[o.test].price,
+        tariffCode: CATALOG[o.test].code, tariffEffectiveFrom: CATALOG[o.test].effectiveFrom
       });
-      o.billing = priced.ok ? 'charged' : priced.error;
+      o.billing = priced.ok ? (priced.unbilled ? 'unbilled' : 'charged') : priced.error;
       o.chargeId = priced.ok ? priced.charge.id : null;
     }
     rows.push(o);
@@ -264,11 +289,58 @@
     var rows = all(), o = rows.filter(function (x) { return x.id === id; })[0];
     if (!o) return { ok: false, error: 'Order not found.' };
     if (o.status === 'Validated') return { ok: false, error: 'A validated result cannot be cancelled.' };
+    if (o.status === 'Cancelled') return { ok: false, error: 'That order is already cancelled.' };
     var before = o.status;
+    var policy = cancelPolicy(o);
     o.status = 'Cancelled';
     o.cancelReason = reason || '';
+    o.cancelledAt = new Date().toISOString();
+    o.cancelledBy = actor();
+
+    // M12: a cancelled order must not leave a live charge behind. The policy is stated on the order
+    // so the billing outcome is never a surprise.
+    var billing = null;
+    if (window.HIS.charges) {
+      if (policy.voidCharge) {
+        billing = HIS.charges.voidForSource('laboratory', o.id, 'Order cancelled before collection \u00b7 ' + (reason || 'no reason recorded'));
+        o.billing = 'voided \u2014 ' + policy.why;
+      } else {
+        o.billing = 'retained \u2014 ' + policy.why;
+      }
+    }
+    o.billingPolicy = policy.why;
     save(rows);
-    audit('Order cancelled', o, before, 'Cancelled');
+    audit('Order cancelled', o, before, 'Cancelled' + (billing && billing.count ? ' \u00b7 charge voided' : ''));
+    return { ok: true, order: o, billing: billing, policy: policy };
+  }
+
+  // A validated result is released and must not be edited. A correction archives the released value
+  // and records a new one, so the report shows both and the audit log shows who changed what.
+  function correctResult(id, data, reason) {
+    data = data || {};
+    var rows = all(), o = rows.filter(function (x) { return x.id === id; })[0];
+    if (!o) return { ok: false, error: 'Order not found.' };
+    if (o.status !== 'Validated') return { ok: false, error: 'Only a released result can be corrected.' };
+    if (!String(reason || '').trim()) return { ok: false, error: 'A result correction needs a reason.' };
+    var value = String(data.value == null ? '' : data.value).trim();
+    if (!value) return { ok: false, error: 'Enter the corrected result value.' };
+    var cat = CATALOG[o.test] || {};
+    o.corrections = (o.corrections || []).concat([{
+      at: new Date().toISOString(), by: actor(), reason: String(reason).trim(),
+      previous: o.result ? { value: o.result.value, unit: o.result.unit, flag: o.result.flag } : null
+    }]);
+    o.result = {
+      value: value,
+      unit: String(data.unit || cat.unit || '').trim(),
+      reference: String(data.reference || cat.range || '').trim(),
+      flag: data.flag || flagFor(value, data.reference || cat.range, o.test),
+      notes: String(data.notes || '').trim(),
+      corrected: true
+    };
+    o.correctedBy = actor();
+    o.correctedAt = new Date().toISOString();
+    save(rows);
+    audit('Result corrected', o, o.corrections[o.corrections.length - 1].previous ? o.corrections[o.corrections.length - 1].previous.value : '\u2014', o.result.value);
     return { ok: true, order: o };
   }
 
@@ -304,6 +376,7 @@
     KEY: KEY, CATALOG: CATALOG, STATUSES: STATUSES, PRIORITIES: PRIORITIES,
     all: all, save: save, byId: byId, forPatient: forPatient, create: create,
     collect: collect, process: process, enterResult: enterResult, validate: validate,
-    cancel: cancel, acknowledgeCritical: acknowledgeCritical, flagFor: flagFor, stats: stats
+    cancel: cancel, correctResult: correctResult, cancelPolicy: cancelPolicy,
+    acknowledgeCritical: acknowledgeCritical, flagFor: flagFor, stats: stats
   };
 })();

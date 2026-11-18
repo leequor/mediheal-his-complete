@@ -31,7 +31,15 @@
     payrollRuns: 'mh_payroll_runs',
     payrollCorrections: 'mh_payroll_corrections',
     claims: 'mh_claims',
-    thirteenth: 'mh_thirteenth'
+    thirteenth: 'mh_thirteenth',
+    // M12: the invoice table became writable (an invoice can now be opened for an episode), the
+    // charge master, the encounter episodes, and the admission/bed records.
+    invoices: 'mh_invoices',
+    tariffs: 'mh_tariffs',
+    encounters: 'mh_encounters',
+    charges: 'mh_charges',
+    admissions: 'mh_admissions',
+    bedState: 'mh_bed_state'
   };
   var VERSION = 1;
   var subs = {};

@@ -19,22 +19,22 @@
       person: { name: 'Dr. Elsie Chen', title: 'Chief Physician' },
       scope: 'Full system access, configuration, audit log and every clinical and financial screen.',
       pages: ['dashboard', 'registration', 'registration-form', 'outpatient-form', 'profile',
-        'appointments', 'appointment-form', 'appointment-confirmed', 'consultation', 'treatment',
-        'nursing', 'pharmacy', 'laboratory', 'attendance', 'personnel', 'payroll', 'departments', 'billing',
+        'appointments', 'appointment-form', 'appointment-confirmed', 'admissions', 'consultation', 'treatment',
+        'nursing', 'pharmacy', 'laboratory', 'charges', 'attendance', 'personnel', 'payroll', 'departments', 'billing',
         'claims', 'reports', 'audit', 'accounts'],
-      nav: ['dashboard', 'registration', 'appointments', 'consultation', 'treatment', 'nursing',
-        'pharmacy', 'laboratory', 'attendance', 'personnel', 'payroll', 'departments', 'billing', 'claims', 'reports', 'audit', 'accounts'],
+      nav: ['dashboard', 'registration', 'admissions', 'appointments', 'consultation', 'treatment', 'nursing',
+        'pharmacy', 'laboratory', 'charges', 'attendance', 'personnel', 'payroll', 'departments', 'billing', 'claims', 'reports', 'audit', 'accounts'],
       home: 'dashboard'
     },
     hospitaladmin: {
       label: 'Hospital Administrator', short: 'Hospital Admin',
       person: { name: 'Atty. Ramon Silva', title: 'Hospital Administrator' },
       scope: 'Operational oversight: admissions, occupancy, staffing, department performance and financial summaries.',
-      pages: ['dashboard', 'registration', 'profile', 'appointments', 'consultation', 'treatment',
+      pages: ['dashboard', 'registration', 'profile', 'appointments', 'admissions', 'consultation', 'treatment',
         'nursing', 'pharmacy', 'attendance', 'personnel', 'payroll', 'departments', 'billing',
-        'claims', 'laboratory', 'reports', 'audit'],
-      nav: ['dashboard', 'registration', 'appointments', 'consultation', 'treatment', 'nursing',
-        'pharmacy', 'attendance', 'personnel', 'payroll', 'departments', 'billing', 'claims', 'laboratory', 'reports', 'audit'],
+        'claims', 'laboratory', 'charges', 'reports', 'audit'],
+      nav: ['dashboard', 'registration', 'admissions', 'appointments', 'consultation', 'treatment', 'nursing',
+        'pharmacy', 'attendance', 'personnel', 'payroll', 'departments', 'billing', 'claims', 'laboratory', 'charges', 'reports', 'audit'],
       home: 'dashboard'
     },
     receptionist: {
@@ -51,8 +51,8 @@
       person: { name: 'Joel Aquino', title: 'Admissions Officer' },
       scope: 'Patient identification, demographics, PhilHealth and HMO details, inpatient and outpatient admission paperwork.',
       pages: ['dashboard', 'registration', 'registration-form', 'outpatient-form', 'profile',
-        'appointments', 'appointment-form', 'appointment-confirmed'],
-      nav: ['dashboard', 'registration', 'appointments'],
+        'appointments', 'appointment-form', 'appointment-confirmed', 'admissions'],
+      nav: ['dashboard', 'registration', 'admissions', 'appointments'],
       home: 'registration'
     },
     doctor: {
@@ -67,8 +67,8 @@
       label: 'Nurse', short: 'Nurse',
       person: { name: 'Sofia Mendoza', title: 'Staff Nurse' },
       scope: 'Assignments, triage, vital signs, nursing assessments, medication administration and shift handover.',
-      pages: ['dashboard', 'profile', 'nursing', 'treatment', 'laboratory', 'pharmacy'],
-      nav: ['dashboard', 'nursing', 'treatment', 'laboratory', 'pharmacy'],
+      pages: ['dashboard', 'profile', 'admissions', 'nursing', 'treatment', 'laboratory', 'pharmacy'],
+      nav: ['dashboard', 'admissions', 'nursing', 'treatment', 'laboratory', 'pharmacy'],
       home: 'dashboard'
     },
     pharmacist: {
@@ -91,16 +91,16 @@
       label: 'Cashier / Billing', short: 'Cashier',
       person: { name: 'Aileen Ramos', title: 'Cashier' },
       scope: 'Invoices, charges, payments, deposits, outstanding balances, refunds and receipts.',
-      pages: ['dashboard', 'billing', 'claims', 'profile'],
-      nav: ['dashboard', 'billing', 'claims'],
+      pages: ['dashboard', 'billing', 'charges', 'claims', 'profile'],
+      nav: ['dashboard', 'billing', 'charges', 'claims'],
       home: 'billing'
     },
     finance: {
       label: 'Finance / Accounting', short: 'Finance',
       person: { name: 'Rowena Lim', title: 'Finance Officer' },
       scope: 'Collections, revenue, reconciliation, payer mix and financial reporting.',
-      pages: ['dashboard', 'billing', 'claims', 'reports'],
-      nav: ['dashboard', 'billing', 'claims', 'reports'],
+      pages: ['dashboard', 'billing', 'charges', 'claims', 'reports'],
+      nav: ['dashboard', 'billing', 'charges', 'claims', 'reports'],
       home: 'billing'
     },
     hr: {
@@ -115,16 +115,16 @@
       label: 'Department Head', short: 'Dept Head',
       person: { name: 'Dr. Laurice Laureta', title: 'Cardiology Head' },
       scope: 'Department staffing, workload, patient queues, statistics and attendance.',
-      pages: ['dashboard', 'departments', 'personnel', 'attendance', 'profile'],
-      nav: ['dashboard', 'departments', 'personnel', 'attendance'],
+      pages: ['dashboard', 'departments', 'admissions', 'personnel', 'attendance', 'profile'],
+      nav: ['dashboard', 'departments', 'admissions', 'personnel', 'attendance'],
       home: 'departments'
     },
     auditor: {
       label: 'Auditor / Compliance', short: 'Auditor',
       person: { name: 'Ferdinand Yap', title: 'Compliance Auditor' },
       scope: 'Read-only access to the audit trail, payment history, payroll changes and administrative activity.',
-      pages: ['dashboard', 'billing', 'claims', 'payroll', 'profile', 'audit', 'reports'],
-      nav: ['dashboard', 'billing', 'claims', 'payroll', 'audit', 'reports'],
+      pages: ['dashboard', 'billing', 'charges', 'claims', 'payroll', 'profile', 'audit', 'reports'],
+      nav: ['dashboard', 'billing', 'charges', 'claims', 'payroll', 'audit', 'reports'],
       home: 'audit'
     },
     patient: {
@@ -139,12 +139,14 @@
   var NAV = [
     ['dashboard', 'Dashboard', 'grid'],
     ['registration', 'Registration', 'users'],
+    ['admissions', 'Admissions', 'bed'],
     ['appointments', 'Appointments', 'calendar-check'],
     ['consultation', 'Consultation', 'clipboard-plus'],
     ['treatment', 'Treatment', 'bag'],
     ['nursing', 'Nursing', 'heart'],
     ['pharmacy', 'Pharmacy', 'pill'],
     ['laboratory', 'Laboratory', 'flask'],
+    ['charges', 'Charges', 'tag'],
     ['attendance', 'Staff', 'users'],
     ['personnel', 'Personnel', 'id'],
     ['payroll', 'Payroll', 'peso'],

@@ -40,11 +40,18 @@
   }
 
   function actionFor(o) {
-    if (o.status === 'Ordered') return "<button class='ad-btn' data-act='collect' data-id='" + esc(o.id) + "'>Collect specimen</button>";
-    if (o.status === 'Collected') return "<button class='ad-btn' data-act='process' data-id='" + esc(o.id) + "'>Start processing</button>";
-    if (o.status === 'In Process') return "<button class='ad-btn' data-act='result' data-id='" + esc(o.id) + "'>Enter result</button>";
-    if (o.status === 'Resulted') return "<button class='ad-btn' data-act='validate' data-id='" + esc(o.id) + "'>Validate</button>";
-    return "<button class='ad-btn ghost' data-act='view' data-id='" + esc(o.id) + "'>View report</button>";
+    var main;
+    if (o.status === 'Ordered') main = "<button class='ad-btn' data-act='collect' data-id='" + esc(o.id) + "'>Collect specimen</button>";
+    else if (o.status === 'Collected') main = "<button class='ad-btn' data-act='process' data-id='" + esc(o.id) + "'>Start processing</button>";
+    else if (o.status === 'In Process') main = "<button class='ad-btn' data-act='result' data-id='" + esc(o.id) + "'>Enter result</button>";
+    else if (o.status === 'Resulted') main = "<button class='ad-btn' data-act='validate' data-id='" + esc(o.id) + "'>Validate</button>";
+    else main = "<button class='ad-btn ghost' data-act='view' data-id='" + esc(o.id) + "'>View report</button>";
+    // M12: a validated result cannot be cancelled, but anything before it can — and cancelling has a
+    // stated billing consequence, so the action is offered rather than hidden.
+    if (o.status !== 'Validated' && o.status !== 'Cancelled') {
+      main += "<button class='ad-btn ghost' data-act='cancel' data-id='" + esc(o.id) + "'>Cancel</button>";
+    }
+    return main;
   }
 
   function render() {
@@ -123,6 +130,7 @@
         if (act === 'result') return resultModal(o, b);
         if (act === 'validate') return run(HIS.lab.validate(id), 'Result validated and released.');
         if (act === 'ack') return run(HIS.lab.acknowledgeCritical(id), 'Critical result acknowledged.');
+        if (act === 'cancel') return cancelModal(o, b);
         if (act === 'view') return reportModal(o, b);
       };
     });
@@ -222,6 +230,25 @@
         var r = HIS.lab.enterResult(o.id, v);
         if (!r.ok) { err.textContent = r.error; return true; }
         HIS.kit.toast('Result saved. It is not released until it is validated.');
+        return false;
+      }
+    });
+  }
+
+  // M12: cancelling states its billing consequence before the operator commits, because a cancelled
+  // order either voids its charge or keeps it depending on whether the specimen was collected.
+  function cancelModal(o, trigger) {
+    var policy = HIS.lab.cancelPolicy(o);
+    modal({
+      title: 'Cancel order', sub: o.id + ' \u00b7 ' + o.test + ' \u00b7 ' + patientName(o.patientId), ok: 'Cancel order', trigger: trigger,
+      body: "<div class='ac-f'><label for='lbCancel'>Reason</label><input id='lbCancel' name='reason' placeholder='Why this order is being cancelled' required></div>" +
+        "<p class='ac-hint'><b>Billing:</b> " + esc(policy.why) + '. ' +
+        (policy.voidCharge ? 'The charge will be voided and will stop counting towards any invoice.'
+          : 'The charge stays on the bill; the reason is recorded on the order.') + '</p>',
+      onSubmit: function (v, err) {
+        var r = HIS.lab.cancel(o.id, v.reason);
+        if (!r.ok) { err.textContent = r.error; return true; }
+        HIS.kit.toast(o.id + ' cancelled \u00b7 ' + (policy.voidCharge ? 'charge voided' : 'charge retained'));
         return false;
       }
     });

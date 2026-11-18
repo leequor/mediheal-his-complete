@@ -55,14 +55,21 @@
   }
 
   function rxAction(r) {
+    var back = '';
+    // M12: a dispensing event can be reversed in full while nothing else depends on it. The button is
+    // only offered when there is an event that has not already been returned.
+    if ((r.dispensed || []).length) {
+      var done = (r.returns || []).map(function (x) { return x.dispenseIndex; });
+      if (done.length < r.dispensed.length) back = "<button class='ad-btn ghost' data-act='return' data-id='" + esc(r.id) + "'>Return</button>";
+    }
     if (r.status === 'Pending') {
       return "<button class='ad-btn' data-act='verify' data-id='" + esc(r.id) + "'>Verify</button> " +
-        "<button class='ad-btn ghost' data-act='reject' data-id='" + esc(r.id) + "'>Reject</button>";
+        "<button class='ad-btn ghost' data-act='reject' data-id='" + esc(r.id) + "'>Reject</button>" + back;
     }
     if (r.status === 'Verified' || r.status === 'Partial') {
-      return "<button class='ad-btn' data-act='dispense' data-id='" + esc(r.id) + "'>Dispense</button>";
+      return "<button class='ad-btn' data-act='dispense' data-id='" + esc(r.id) + "'>Dispense</button>" + back;
     }
-    return "<button class='ad-btn ghost' data-act='view' data-id='" + esc(r.id) + "'>View</button>";
+    return "<button class='ad-btn ghost' data-act='view' data-id='" + esc(r.id) + "'>View</button>" + back;
   }
 
   function render() {
@@ -125,6 +132,7 @@
         if (act === 'verify') return run(HIS.pharmacy.verify(id), 'Prescription verified.');
         if (act === 'reject') return rejectModal(HIS.pharmacy.rxById(id), b);
         if (act === 'dispense') return dispenseModal(HIS.pharmacy.rxById(id), b);
+        if (act === 'return') return returnModal(HIS.pharmacy.rxById(id), b);
         if (act === 'view') return rxViewModal(HIS.pharmacy.rxById(id), b);
       };
     });
@@ -209,6 +217,31 @@
     if (first) first.focus();
     if (opts.after) opts.after(bg);
     return { close: close, el: bg };
+  }
+
+  // M12: reverse one dispensing event. The original dispense is never edited — the stock comes back
+  // as its own movement and the charge for that event is voided with the reason.
+  function returnModal(r, trigger) {
+    var done = (r.returns || []).map(function (x) { return x.dispenseIndex; });
+    var open = (r.dispensed || []).map(function (d, i) { return { d: d, i: i }; })
+      .filter(function (x) { return done.indexOf(x.i) === -1; });
+    if (!open.length) { HIS.kit.toast('Every dispensing event on ' + r.id + ' has already been returned.'); return; }
+    modal({
+      title: 'Return dispensed medication', sub: r.id + ' \u00b7 ' + r.drug + ' \u00b7 ' + patientName(r.patientId), ok: 'Return to stock', trigger: trigger,
+      body: "<div class='ac-f'><label for='rtEv'>Dispensing event</label><select id='rtEv' name='index'>" +
+        open.map(function (x) {
+          return "<option value='" + x.i + "'>" + esc(x.d.qty + ' ' + r.unit + ' \u00b7 batch ' + (x.d.batch || x.d.batchId) + ' \u00b7 ' + when(x.d.at)) + '</option>';
+        }).join('') + '</select></div>' +
+        "<div class='ac-f'><label for='rtWhy'>Reason</label><input id='rtWhy' name='reason' placeholder='e.g. patient discharged before use, wrong strength dispensed' required></div>" +
+        "<p class='ac-hint'>The whole event is reversed: stock returns to its batch, the charge for that event is voided, and the original dispense row stays on file. " +
+        'Partial returns are not modelled and are refused rather than approximated.</p>',
+      onSubmit: function (v, err) {
+        var res = HIS.pharmacy.returnDispense(r.id, Number(v.index), v.reason);
+        if (!res.ok) { err.textContent = res.error; return true; }
+        HIS.kit.toast('Dispensing event returned to batch ' + res.batch.batch + ' \u00b7 ' + r.id + ' has ' + res.remaining + ' outstanding.');
+        return false;
+      }
+    });
   }
 
   function dispenseModal(r, trigger) {
