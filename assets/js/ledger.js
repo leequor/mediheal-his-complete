@@ -86,28 +86,50 @@
     return rows.filter(function (t) { return t.status === 'posted'; });
   }
 
-  function paidCentavos(invoiceId) {
-    return settled(forInvoice(invoiceId)).reduce(function (s, t) {
-      return s + (t.kind === 'refund' || t.kind === 'adjustment' ? -t.amount : t.amount);
-    }, 0);
+  // One place that defines what each transaction kind does to a balance.
+  //   payment   -> money received
+  //   refund    -> money returned, so it reduces what was received
+  //   coverage  -> a payer (PhilHealth / HMO) settles part of the charge; NOT money the hospital
+  //                received from the patient, and it must never be reported as a collection
+  //   discount  -> an authorised reduction of the charge (senior citizen, PWD, hospital-approved)
+  //   adjustment-> a correction that reduces the charge
+  function sums(invoiceId) {
+    var rows = settled(forInvoice(invoiceId));
+    var paid = 0, refunded = 0, covered = 0;
+    rows.forEach(function (t) {
+      if (t.kind === 'payment') paid += t.amount;
+      else if (t.kind === 'refund') refunded += t.amount;
+      else covered += t.amount;   // coverage | discount | adjustment
+    });
+    return { paid: paid, refunded: refunded, net: paid - refunded, covered: covered };
   }
+
+  function paidCentavos(invoiceId) { return sums(invoiceId).net; }
+  function coveredCentavos(invoiceId) { return sums(invoiceId).covered; }
+
   function paidOf(bill) {
     if (!bill) return 0;
     return toPesos(paidCentavos(bill.id));
   }
+  // What a payer other than the patient has taken off the bill. Reported separately from collected.
+  function coveredOf(bill) {
+    if (!bill) return 0;
+    return toPesos(coveredCentavos(bill.id));
+  }
   function balanceOf(bill) {
     if (!bill) return 0;
-    return toPesos(toCentavos(bill.amount) - paidCentavos(bill.id));
+    return toPesos(toCentavos(bill.amount) - paidCentavos(bill.id) - coveredCentavos(bill.id));
   }
 
   // Status is DERIVED, never stored independently: an invoice cannot claim "Paid" while its
   // transactions say otherwise.
   function statusOf(bill) {
     if (!bill) return '';
-    var paid = paidCentavos(bill.id), total = toCentavos(bill.amount);
-    if (paid <= 0) return 'Pending';
-    if (paid >= total) return 'Paid';
-    return 'Partial';
+    var bal = balanceOf(bill);
+    var s = sums(bill.id);
+    if (bal <= 0.005) return 'Paid';
+    if (s.net > 0 || s.covered > 0) return 'Partial';
+    return 'Pending';
   }
 
   function pendingOf(bill) {
@@ -232,8 +254,62 @@
     return { ok: true, transaction: tx };
   }
 
+  // ---- coverage and discounts ---------------------------------------------------------------
+  // A payer taking part of the bill is NOT a payment. It is recorded as its own kind so that
+  // "collected" (money the hospital actually received) never inflates by the PhilHealth or HMO
+  // share, and the patient's own balance reflects the reduction.
+  //
+  // Every row needs a basis and a reference, because a discount without a reason is a leak.
+  var COVERAGE_KINDS = ['coverage', 'discount', 'adjustment'];
+
+  function recordCoverage(input) {
+    input = input || {};
+    var bill = billById(input.invoiceId);
+    if (!bill) return { ok: false, error: 'Invoice not found.' };
+    var kind = COVERAGE_KINDS.indexOf(input.kind) > -1 ? input.kind : 'coverage';
+    var amount = Number(input.amount);
+    if (!isFinite(amount) || amount <= 0) return { ok: false, error: 'Enter an amount greater than zero.' };
+    if (amount > balanceOf(bill) + 1e-9) {
+      return { ok: false, error: 'That is more than the outstanding balance of ' + peso(balanceOf(bill)) + '.' };
+    }
+    if (!String(input.reference || '').trim()) {
+      return { ok: false, error: 'A ' + kind + ' needs a reference (case rate, LOA number, or authorisation).' };
+    }
+    if (!String(input.payer || '').trim()) {
+      return { ok: false, error: 'Record who is covering this amount.' };
+    }
+    var rows = all();
+    var tx = {
+      id: nextId(rows), kind: kind,
+      invoiceId: bill.id, patientId: bill.pt,
+      method: input.payer,
+      reference: String(input.reference).trim(),
+      amount: toCentavos(amount),
+      at: new Date().toISOString(),
+      cashier: actorName(),
+      status: 'posted',
+      notes: String(input.notes || '').trim(),
+      basis: String(input.basis || '').trim(),
+      seeded: false
+    };
+    rows.push(tx);
+    save(rows);
+    if (window.HIS.audit) {
+      HIS.audit.append({
+        who: actorName(), role: roleLabel(),
+        what: (kind === 'discount' ? 'Discount applied' : kind === 'coverage' ? 'Coverage applied' : 'Adjustment applied') +
+          ' \u2014 ' + peso(amount) + ' from ' + tx.method + ' on ' + bill.id + ' (' + tx.reference + ')' +
+          (tx.basis ? ' \u00b7 ' + tx.basis : ''),
+        entity: 'invoice:' + bill.id, before: peso(balanceOf(bill) + amount), after: peso(balanceOf(bill))
+      });
+    }
+    return { ok: true, transaction: tx, balance: balanceOf(bill) };
+  }
+
   // ---- aggregates ---------------------------------------------------------------------------
   // Every figure is a filter over the ledger, so no screen can disagree with another.
+  // `collected` is money received. `covered` is what a payer took off the bill. They are never
+  // added together, because a PhilHealth case rate is not a collection.
   function totals(filter) {
     filter = filter || {};
     var list = bills().filter(function (b) {
@@ -242,24 +318,45 @@
       if (filter.from && new Date(b.date) < new Date(filter.from)) return false;
       return true;
     });
-    var billedC = list.reduce(function (s, b) { return s + toCentavos(b.amount); }, 0);
-    var collectedC = list.reduce(function (s, b) { return s + paidCentavos(b.id); }, 0);
+    var billedC = 0, collectedC = 0, coveredC = 0;
+    list.forEach(function (b) {
+      billedC += toCentavos(b.amount);
+      var s = sums(b.id);
+      collectedC += s.net;
+      coveredC += s.covered;
+    });
     return {
       invoices: list.length,
       billed: toPesos(billedC),
       collected: toPesos(collectedC),
-      outstanding: toPesos(billedC - collectedC),
+      covered: toPesos(coveredC),
+      outstanding: toPesos(billedC - collectedC - coveredC),
       rate: billedC ? Math.round((collectedC / billedC) * 100) : 0
     };
   }
 
+  // Payment-method distribution counts MONEY RECEIVED only. Coverage rows carry a payer name in
+  // `method`, so including them here would list Maxicare as a payment channel.
   function byMethod() {
     var map = {};
     settled(all()).forEach(function (t) {
+      if (t.kind !== 'payment' && t.kind !== 'refund') return;
       var k = t.method || 'Unspecified';
       map[k] = (map[k] || 0) + (t.kind === 'refund' ? -t.amount : t.amount);
     });
     return Object.keys(map).map(function (k) { return { method: k, amount: toPesos(map[k]) }; })
+      .sort(function (a, b) { return b.amount - a.amount; });
+  }
+
+  // Payer mix: who took money off the bill, and how much.
+  function byPayer() {
+    var map = {};
+    settled(all()).forEach(function (t) {
+      if (COVERAGE_KINDS.indexOf(t.kind) < 0) return;
+      var k = (t.method || 'Unspecified') + (t.kind === 'discount' ? ' (discount)' : '');
+      map[k] = (map[k] || 0) + t.amount;
+    });
+    return Object.keys(map).map(function (k) { return { payer: k, amount: toPesos(map[k]) }; })
       .sort(function (a, b) { return b.amount - a.amount; });
   }
 
@@ -284,6 +381,7 @@
     forInvoice: forInvoice, forPatient: forPatient, settled: settled,
     paidOf: paidOf, balanceOf: balanceOf, statusOf: statusOf, pendingOf: pendingOf,
     recordPayment: recordPayment, confirm: confirm, void: voidTx, refund: refund,
-    totals: totals, byMethod: byMethod
+    recordCoverage: recordCoverage, COVERAGE_KINDS: COVERAGE_KINDS, sums: sums,
+    coveredOf: coveredOf, totals: totals, byMethod: byMethod, byPayer: byPayer
   };
 })();
