@@ -24,7 +24,8 @@
   var audit = function () { return HIS.audit ? HIS.audit.list().slice().reverse() : []; };
   var depts = function () { return HIS.departments || []; };
 
-  function paidOf(b) { return typeof b.paid === 'number' ? b.paid : (b.status === 'Paid' ? b.amount : 0); }
+  // M7: one money chain. Every dashboard figure comes from the ledger, like Billing and Reports.
+  function paidOf(b) { return HIS.ledger.paidOf(b); }
   function money(n) { return '\u20b1' + Number(n).toLocaleString('en-PH', { maximumFractionDigits: 0 }); }
   function count(list, fn) { return list.filter(fn).length; }
   function first(name) { return String(name || '').replace(/^(Dr|Atty)\.\s*/i, '').split(' ')[0] || name; }

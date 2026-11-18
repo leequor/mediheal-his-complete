@@ -1,9 +1,9 @@
 {
   "accounts": {
     "width": 1440,
-    "height": 1336,
-    "bytes": 434933,
-    "sha256": "9bc23594b3974880e1a7b9271c118b9c93ca2bbe1998773f0ea9417a7bfa851e"
+    "height": 1509,
+    "bytes": 454859,
+    "sha256": "ce4ff4a53e33153ca2ac5a54c5bd7050ef5c3fb865cd2673512bf8b3795254ee"
   },
   "appointment-confirmed": {
     "width": 1440,
@@ -26,8 +26,8 @@
   "attendance": {
     "width": 1440,
     "height": 1635,
-    "bytes": 477756,
-    "sha256": "044906bb4ee9e575d8e11574871b25d05a343e3efdf5712608ff3e834f56e70e"
+    "bytes": 469136,
+    "sha256": "ba6860afc1e96c18d7922eb8ac0a865c849e044e6d3ea6c9c898ca89e63e31ef"
   },
   "audit": {
     "width": 1440,
@@ -38,8 +38,8 @@
   "billing": {
     "width": 1440,
     "height": 1120,
-    "bytes": 461218,
-    "sha256": "e6a91bb31e8dff5a20d489480d8d23b010938202248cc5b521b4e5a748fd897b"
+    "bytes": 462645,
+    "sha256": "8e4748598bd8e6c8b95c6057195920698486dd9b8d0f9b2b342e3c49645b5856"
   },
   "consultation": {
     "width": 1440,
@@ -98,8 +98,8 @@
   "portal": {
     "width": 1440,
     "height": 900,
-    "bytes": 271092,
-    "sha256": "590732e13bbed7210669ebe705a927720939f738801a3cb69e0a480d4d723f2b"
+    "bytes": 271241,
+    "sha256": "f5391fe0bc63d1cd4457e56ad1ec79aecb8adb5ad24ccffd2bf29a245b6659ac"
   },
   "profile": {
     "width": 1440,
@@ -115,9 +115,9 @@
   },
   "registration": {
     "width": 1440,
-    "height": 1120,
-    "bytes": 383686,
-    "sha256": "a9a1f458fc53a1c7561a6402417ad36d9b13bf948a8b02c360ac247ae89af010"
+    "height": 1228,
+    "bytes": 379480,
+    "sha256": "016bd62d45ce354e9337ba6e41aaf172652403945190b790472bacb62bfc560b"
   },
   "reports": {
     "width": 1440,

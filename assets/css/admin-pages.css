@@ -87,3 +87,9 @@
 .ac-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 .ac-err{min-height:18px;margin-top:10px;font:500 12.5px/17px var(--font-inter);color:var(--red-fg)}
 .ac-a{display:flex;justify-content:flex-end;gap:10px;margin-top:6px;padding-top:16px;border-top:1px solid #e3edf3}
+
+/* ===== M5: patient portal access ========================================================= */
+.ac-g2{grid-template-columns:1.25fr 1.25fr 1.9fr 96px}
+.ac-hint{display:block;margin-top:4px;font:400 11.5px/16px var(--font-inter);color:var(--muted)}
+.ac-f select:disabled{color:#8a97a6}
+.ad-tr.ac-g2 .ac-edit{height:26px;padding:0 9px;font-size:11.5px}
