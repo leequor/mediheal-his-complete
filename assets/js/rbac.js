@@ -20,10 +20,10 @@
       scope: 'Full system access, configuration, audit log and every clinical and financial screen.',
       pages: ['dashboard', 'registration', 'registration-form', 'outpatient-form', 'profile',
         'appointments', 'appointment-form', 'appointment-confirmed', 'consultation', 'treatment',
-        'nursing', 'pharmacy', 'attendance', 'personnel', 'payroll', 'departments', 'billing',
+        'nursing', 'pharmacy', 'laboratory', 'attendance', 'personnel', 'payroll', 'departments', 'billing',
         'reports', 'audit', 'accounts'],
       nav: ['dashboard', 'registration', 'appointments', 'consultation', 'treatment', 'nursing',
-        'pharmacy', 'attendance', 'personnel', 'payroll', 'departments', 'billing', 'reports', 'audit', 'accounts'],
+        'pharmacy', 'laboratory', 'attendance', 'personnel', 'payroll', 'departments', 'billing', 'reports', 'audit', 'accounts'],
       home: 'dashboard'
     },
     hospitaladmin: {
@@ -32,9 +32,9 @@
       scope: 'Operational oversight: admissions, occupancy, staffing, department performance and financial summaries.',
       pages: ['dashboard', 'registration', 'profile', 'appointments', 'consultation', 'treatment',
         'nursing', 'pharmacy', 'attendance', 'personnel', 'payroll', 'departments', 'billing',
-        'reports', 'audit'],
+        'laboratory', 'reports', 'audit'],
       nav: ['dashboard', 'registration', 'appointments', 'consultation', 'treatment', 'nursing',
-        'pharmacy', 'attendance', 'personnel', 'payroll', 'departments', 'billing', 'reports', 'audit'],
+        'pharmacy', 'attendance', 'personnel', 'payroll', 'departments', 'billing', 'laboratory', 'reports', 'audit'],
       home: 'dashboard'
     },
     receptionist: {
@@ -59,33 +59,33 @@
       label: 'Doctor / Physician', short: 'Physician',
       person: { name: 'Dr. Elsie Chen', title: 'Chief Physician' },
       scope: 'Patient records, consultations, diagnoses, prescriptions, laboratory orders and follow-ups.',
-      pages: ['dashboard', 'registration', 'profile', 'appointments', 'consultation', 'treatment'],
-      nav: ['dashboard', 'registration', 'appointments', 'consultation', 'treatment'],
+      pages: ['dashboard', 'registration', 'profile', 'appointments', 'consultation', 'treatment', 'laboratory', 'pharmacy'],
+      nav: ['dashboard', 'registration', 'appointments', 'consultation', 'treatment', 'laboratory', 'pharmacy'],
       home: 'dashboard'
     },
     nurse: {
       label: 'Nurse', short: 'Nurse',
       person: { name: 'Sofia Mendoza', title: 'Staff Nurse' },
       scope: 'Assignments, triage, vital signs, nursing assessments, medication administration and shift handover.',
-      pages: ['dashboard', 'profile', 'nursing', 'treatment'],
-      nav: ['dashboard', 'nursing', 'treatment'],
+      pages: ['dashboard', 'profile', 'nursing', 'treatment', 'laboratory', 'pharmacy'],
+      nav: ['dashboard', 'nursing', 'treatment', 'laboratory', 'pharmacy'],
       home: 'dashboard'
     },
     pharmacist: {
       label: 'Pharmacist', short: 'Pharmacist',
       person: { name: 'Miguel Reyes', title: 'Pharmacist' },
       scope: 'Prescription verification, dispensing, batch and expiry tracking, stock levels and inventory reports.',
-      pages: ['dashboard', 'profile', 'pharmacy', 'treatment'],
-      nav: ['dashboard', 'pharmacy', 'treatment'],
-      home: 'dashboard'
+      pages: ['dashboard', 'profile', 'pharmacy', 'laboratory', 'treatment'],
+      nav: ['dashboard', 'pharmacy', 'laboratory', 'treatment'],
+      home: 'pharmacy'
     },
     lab: {
       label: 'Laboratory / Diagnostic', short: 'Laboratory',
       person: { name: 'Daniel Cruz', title: 'Medical Technologist' },
       scope: 'Test requests, specimen collection and tracking, result entry, validation and critical-result alerts.',
-      pages: ['dashboard', 'profile', 'treatment', 'consultation'],
-      nav: ['dashboard', 'treatment', 'consultation'],
-      home: 'dashboard'
+      pages: ['dashboard', 'laboratory', 'profile', 'treatment', 'consultation'],
+      nav: ['dashboard', 'laboratory', 'treatment', 'consultation'],
+      home: 'laboratory'
     },
     cashier: {
       label: 'Cashier / Billing', short: 'Cashier',
@@ -144,6 +144,7 @@
     ['treatment', 'Treatment', 'bag'],
     ['nursing', 'Nursing', 'heart'],
     ['pharmacy', 'Pharmacy', 'pill'],
+    ['laboratory', 'Laboratory', 'flask'],
     ['attendance', 'Staff', 'users'],
     ['personnel', 'Personnel', 'id'],
     ['payroll', 'Payroll', 'peso'],

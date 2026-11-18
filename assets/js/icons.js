@@ -21,6 +21,7 @@ const ICON_PATHS = {
   'clipboard-plus': "<rect x='5' y='3' width='14' height='18' rx='2'/><path d='M12 8v6M9 11h6'/>",
   'bag': "<rect x='3' y='7' width='18' height='13' rx='2'/><path d='M9 7V4h6v3M12 11v5M9.5 13.5h5'/>",
   'heart': "<path d='M20.8 5.6a5 5 0 0 0-7-.1L12 7.3l-1.8-1.8a5 5 0 0 0-7 7L12 21l8.8-8.4a5 5 0 0 0 0-7z' fill='currentColor'/>",
+  'flask': "<path d='M9 3h6M10 3v6.5L5.2 18a2 2 0 0 0 1.7 3h10.2a2 2 0 0 0 1.7-3L14 9.5V3'/><path d='M7.5 14h9'/>",
   'pill': "<path d='M10.5 20.5a5 5 0 0 1-7-7l10-10a5 5 0 0 1 7 7zM8.5 8.5l7 7'/>",
   'id': "<rect x='3' y='4' width='18' height='16' rx='2'/><circle cx='12' cy='10' r='3'/><path d='M7 18c1-3 9-3 10 0'/>",
   'peso': "<text x='12' y='18' text-anchor='middle' font-size='18' font-weight='700' fill='currentColor' stroke='none' font-family='Inter'>\u20b1</text>",

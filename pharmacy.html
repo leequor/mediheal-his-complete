@@ -1,13 +1,29 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta http-equiv="refresh" content="0; url=treatment.html?modal=pharmacy">
-<title>Pharmacy – MediHeal HIS</title>
-<script>location.replace('treatment.html?modal=pharmacy');</script>
-<link rel='stylesheet' href='assets/css/responsive.css'></head>
-<body>
-<!-- Figma has no Pharmacy page frame: Pharmacy is the Treatment Plan Dispense medication flow (2047:25913 / 2047:26213). -->
-<p><a href="treatment.html?modal=pharmacy">Open Pharmacy (Treatment Plans)</a></p>
-</body>
-</html>
+<!doctype html>
+<html lang='en'><head>
+<meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'>
+<title>Pharmacy · MediHeal</title>
+<link rel='icon' type='image/png' href='assets/img/logo-removebg-preview%201.png'>
+<link href='https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lexend:wght@300;400;500;600;700&family=Outfit:wght@600;700&display=swap' rel='stylesheet'>
+<link rel='stylesheet' href='assets/css/tokens.css'><link rel='stylesheet' href='assets/css/base.css'><link rel='stylesheet' href='assets/css/components.css'><link rel='stylesheet' href='assets/css/admin-pages.css'>
+<link rel='stylesheet' href='assets/css/responsive.css'>
+</head><body data-page='pharmacy'>
+<!-- Addition (not in Figma): the pharmacy module. Before M6 this file was a redirect to
+     treatment.html?modal=pharmacy, so the drawer's Pharmacy link dropped the user into the
+     Treatment Plan screen. Built in the admin screen format (M2/M3) — see DESIGN-LOCK.md §10.
+     Data: assets/js/pharmacy.js. Layout: assets/js/pharmacy-page.js. -->
+<div class='stage ad' id='stage'></div>
+<script src='assets/js/data.js'></script>
+<script src='assets/js/store.js'></script>
+<script src='assets/js/audit.js'></script>
+<script src='assets/js/kit.js'></script>
+<script src='assets/js/data-records.js'></script>
+<script src='assets/js/registry.js'></script>
+<script src='assets/js/icons.js'></script>
+<script src='assets/js/accounts.js'></script>
+<script src='assets/js/auth.js'></script>
+<script src='assets/js/rbac.js'></script>
+<script src='assets/js/shell.js'></script>
+<script src='assets/js/pdf.js'></script>
+<script src='assets/js/pharmacy.js'></script>
+<script src='assets/js/pharmacy-page.js'></script>
+</body></html>
