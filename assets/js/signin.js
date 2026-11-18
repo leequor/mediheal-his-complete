@@ -87,7 +87,7 @@
   // --- password help -------------------------------------------------------
   var VIEWS = {
     signin: ['Sign in to your workspace', 'Enter your staff credentials to access the hospital Information System.'],
-    forgot: ['Password help', 'How to recover access to a demo account.']
+    forgot: ['Password help', 'How to recover access to your account.']
   };
   function view(v) {
     document.getElementById('sif').hidden = v !== 'signin';
@@ -149,7 +149,7 @@
       openDemo(false);
       document.getElementById('sik').checked = false;
       e.focus();
-      tip('Demo credentials filled in — press Sign in');
+      tip('Credentials filled in — press Sign in');
     }
   });
   document.getElementById('dmPw').parentNode.addEventListener('click', function (ev) {

@@ -25,7 +25,7 @@
     "<div class='hd-date'>" + svg('calendar', 18) + '<span>' + HIS.fmtShort(HIS.today) + '</span></div>' +
     "<button class='bell' aria-label='Notifications'>" + svg('bell', 20) + '<b>4</b></button>' +
     "<div class='sep'></div>" +
-    "<div class='profile' id='profile' role='button' tabindex='0' aria-haspopup='dialog' aria-expanded='false' aria-label='Account and demo role: " + u.name + ", " + u.title + "'>" +
+    "<div class='profile' id='profile' role='button' tabindex='0' aria-haspopup='dialog' aria-expanded='false' aria-label='Account: " + u.name + ", " + u.title + "'>" +
     "<span class='avatar'>" + ini + "<img src='assets/img/Avatar.png' alt='' data-hide></span><div><div class='nm'>" + u.name + '</div><small>' + u.title.toUpperCase() + '</small></div></div>' +
     '</div></header>' +
     "<div class='scrim' id='scrim'></div>" +
@@ -100,8 +100,9 @@
       (a.dept ? "<div class='am-r'><span>Department</span><b>" + HIS.kit.esc(a.dept) + '</b></div>' : '') +
       '</div>' +
       (a.role === 'superadmin' ? "<a class='am-a' href='accounts.html'>Manage accounts</a>" : '') +
+      "<button class='am-a' data-act='reset'>Reset sample data</button>" +
       "<button class='am-a out' data-act='signout'>Sign out</button>" +
-      "<div class='am-f'>Demo environment \u00b7 synthetic data only</div>";
+      "<div class='am-f'>Sample data \u00b7 all records fictitious</div>";
   }
   function setOpen(o) {
     panel.classList.toggle('on', o);
@@ -112,10 +113,28 @@
   prof.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setOpen(!panel.classList.contains('on')); } });
   panel.addEventListener('click', e => {
     const b = e.target.closest('[data-act="signout"]');
-    if (!b) return;
-    HIS.auth.signOut();
-    location.replace('index.html');
+    if (b) {
+      HIS.auth.signOut();
+      location.replace('index.html');
+      return;
+    }
+    const r = e.target.closest('[data-act="reset"]');
+    if (r) { setOpen(false); resetDemo(); }
   });
+  // A deliberate reset, so a visitor can hand the demonstration on in its original state without
+  // having to sign out. Everything is local; nothing is sent anywhere.
+  function resetDemo() {
+    HIS.kit.modal({
+      title: 'Reset sample data?',
+      sub: 'Restores every record to its original state and discards anything changed in this session.',
+      body: "<p style='margin:12px 0 0;color:#6f8890;font-size:13px'>You stay signed in. This cannot be undone.</p>",
+      saveLabel: 'Reset data',
+      onSave: function () {
+        HIS.store.reset({ includeOwner: true });
+        location.reload();
+      }
+    });
+  }
   document.addEventListener('click', e => {
     if (!panel.classList.contains('on')) return;
     const path = e.composedPath ? e.composedPath() : [];

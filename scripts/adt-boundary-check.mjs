@@ -389,13 +389,13 @@ await withHospital(async page => {
 });
 
 // =================================================================================================
-// 12. THE CONCURRENCY LIMIT — demonstrated, not asserted away
+// 12. TWO TABS ARE TWO DEMONSTRATIONS
 // =================================================================================================
-// Two tabs share one localStorage. Every store write is a read-modify-write of a single JSON blob
-// with no lock and no transaction. When both tabs read before either writes, the second write wins
-// and the first tab's admission disappears. This case proves that; it is the reason the project does
-// not claim that simultaneous real users cannot double-book a bed.
-console.log('\n--- 12. two tabs, one store ---');
+// Demonstration data lives in `sessionStorage`, which is scoped to one tab. Two tabs are therefore
+// two independent hospitals: they do not share a store, so there is no cross-tab lost update to
+// demonstrate. That is a deliberate property of a single-user presentation, not a concurrency
+// guarantee — see docs/PROJECT-STATUS.md §5.2.
+console.log('\n--- 12. two tabs are two demonstrations ---');
 {
   const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
   const tabA = await ctx.newPage();
@@ -406,46 +406,63 @@ console.log('\n--- 12. two tabs, one store ---');
   await tabB.goto(BASE + '/admissions.html', { waitUntil: 'load' });
   await tabA.waitForTimeout(200);
 
-  // Both tabs hold the same starting picture.
   const shared = await tabA.evaluate(() => ({
     rows: HIS.admissions.all().length,
-    bed: HIS.admissions.bedBoard('Cardiology Ward').filter(b => b.status === 'available')[0].id
+    bed: HIS.admissions.bedBoard('Cardiology Ward').filter(b => b.status === 'available')[0].id,
+    inSession: !!window.sessionStorage.getItem(HIS.admissions.AKEY),
+    inLocal: !!window.localStorage.getItem(HIS.admissions.AKEY)
   }));
 
-  // Tab A reads a snapshot (this is what admit() does first).
-  const snapA = await tabA.evaluate(() => JSON.stringify(HIS.store.get(HIS.admissions.AKEY, [])));
-  // Tab B admits into the bed in the meantime.
   const bResult = await tabB.evaluate(`(() => {
     const bed = HIS.admissions.bedBoard('Cardiology Ward').filter(b => b.status === 'available')[0];
     const r = HIS.admissions.admit({ patientId: 'PT-99212', bedId: bed.id, diagnosis: 'tab B', admittedAt: '2026-09-01T09:00:00+08:00' });
-    return { ok: r.ok, id: r.admission && r.admission.id, bed: bed.id };
+    return { ok: r.ok, id: r.admission && r.admission.id, rows: HIS.admissions.all().length };
   })()`);
-  // Tab A now writes back its stale snapshot plus its own admission — the same read-modify-write.
-  const lost = await tabA.evaluate(([snap, bedId, tabBId]) => {
-    const rows = JSON.parse(snap);
-    rows.push({
-      id: 'ADM-9' + String(rows.length), patientId: 'PT-99210', encounterId: null, status: 'active',
-      admittedAt: '2026-09-01T09:05:00+08:00', attending: 'Tab A', dept: 'Cardiology', ward: 'Cardiology Ward',
-      bedId: bedId, bedLabel: bedId.replace('BED-', ''), bedType: 'Private', diagnosis: 'tab A',
-      reason: '', payer: { type: 'self', reference: '' }, transfers: [], legacyBilledThrough: null,
-      discharge: null, createdBy: 'tab A', createdAt: new Date().toISOString()
-    });
-    HIS.store.set(HIS.admissions.AKEY, rows);
-    const after = HIS.admissions.all();
-    return {
-      ids: after.map(x => x.id),
-      tabBStillThere: after.some(x => x.id === tabBId),
-      occupantsOfBed: after.filter(x => x.status === 'active' && x.bedId === bedId).length,
-      rows: after.length
-    };
-  }, [snapA, shared.bed, bResult.id]);
 
-  ok('two tabs see the same starting store', shared.rows >= 2, shared.rows);
-  ok('tab B\'s admission is accepted on its own', bResult.ok === true, bResult.ok);
-  ok('a stale read written back discards tab B\'s admission (no transaction)', lost.tabBStillThere === false, lost.ids.join(','));
-  ok('the store is last-write-wins, not merged', lost.rows === shared.rows + 1, lost.rows + ' vs ' + (shared.rows + 1));
+  const tabAAfter = await tabA.evaluate(([tabBId, before]) => {
+    const rows = HIS.admissions.all();
+    return {
+      rows: rows.length,
+      seesTabB: rows.some(x => x.id === tabBId),
+      sameBedFree: HIS.admissions.bedStatus(HIS.admissions.bedBoard('Cardiology Ward').filter(b => b.status === 'available')[0].id) === 'available',
+      unchanged: rows.length === before
+    };
+  }, [bResult.id, shared.rows]);
+
+  ok('demonstration data is held in the tab session, not in persistent storage',
+    shared.inSession === true && shared.inLocal === false, JSON.stringify({ session: shared.inSession, local: shared.inLocal }));
+  ok('both tabs open on the same seeded dataset', shared.rows >= 2, shared.rows);
+  ok('an admission made in tab B is accepted there', bResult.ok === true, bResult.ok);
+  ok('and is invisible to tab A, which keeps its own dataset', tabAAfter.seesTabB === false, tabAAfter.rows);
+  ok('tab A is otherwise unchanged by tab B', tabAAfter.unchanged === true, tabAAfter.rows);
   await ctx.close();
 }
+
+// =================================================================================================
+// 13. SIGNING OUT RESTORES THE SAMPLE DATASET
+// =================================================================================================
+console.log('\n--- 13. sign-out resets ---');
+await withHospital(async page => {
+  const r = await page.evaluate(`(() => {
+    const a = (${ADMIT})('PT-99210', 'Cardiology Ward', 'Private', '2026-09-01T09:00:00+08:00');
+    HIS.admissions.accrue(a.id, { asOf: '2026-09-02T13:00:00+08:00' });
+    const before = { admissions: HIS.admissions.all().length, charges: HIS.charges.all().length };
+
+    HIS.auth.signOut();
+    const cleared = { admissions: HIS.admissions.all().length, charges: HIS.charges.all().length, active: HIS.admissions.active().length };
+    const trail = HIS.audit.list().map(x => x.what);
+
+    HIS.auth.attempt('superadmin@mediheal.test', 'MediHeal2026!', true);
+    const after = { admissions: HIS.admissions.all().length, active: HIS.admissions.active().length };
+    return { before, cleared, trail, after };
+  })()`);
+  ok('the session had added records before signing out', r.before.admissions === 3 && r.before.charges > 0, JSON.stringify(r.before));
+  ok('signing out clears every charge raised in the session', r.cleared.charges === 0, r.cleared.charges);
+  ok('and restores the seeded admissions', r.cleared.admissions === 2 && r.cleared.active === 2, JSON.stringify(r.cleared));
+  ok('the audit trail survives the reset so the session remains readable',
+    r.trail.some(w => /Signed out/.test(w)), r.trail.length + ' entries');
+  ok('signing in again starts from the restored dataset', r.after.admissions === 2, JSON.stringify(r.after));
+});
 
 ok('no case produced a console error', allErrs.length === 0, allErrs[0]);
 

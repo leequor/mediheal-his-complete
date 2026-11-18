@@ -1,15 +1,15 @@
 {
   "accounts": {
     "width": 1440,
-    "height": 1509,
-    "bytes": 454859,
-    "sha256": "ce4ff4a53e33153ca2ac5a54c5bd7050ef5c3fb865cd2673512bf8b3795254ee"
+    "height": 1508,
+    "bytes": 449586,
+    "sha256": "e5dade079aeb06619ba80527bd32bfb170f2a460511c7815c920128c56132e75"
   },
   "admissions": {
     "width": 1440,
-    "height": 1121,
-    "bytes": 422657,
-    "sha256": "1198f77e5b631c7d529410994526a81c1710def096e4eec5f698978f6359b051"
+    "height": 1120,
+    "bytes": 427064,
+    "sha256": "664d7ca2b7aad24e0e665a0879ce50c3268492c2d3aabec74fb4242d135a99d3"
   },
   "appointment-confirmed": {
     "width": 1440,
@@ -38,26 +38,26 @@
   "audit": {
     "width": 1440,
     "height": 1120,
-    "bytes": 572256,
-    "sha256": "9c696412fedc53a70b995c57a17cf39f11b49f4ff3b313b41827c9394a8cf493"
+    "bytes": 577932,
+    "sha256": "8493489edc9096eaf2f97701362476d961f3cd7e0820e20e690a14e89ee9e03e"
   },
   "billing": {
     "width": 1440,
     "height": 1120,
-    "bytes": 462645,
-    "sha256": "8e4748598bd8e6c8b95c6057195920698486dd9b8d0f9b2b342e3c49645b5856"
+    "bytes": 454867,
+    "sha256": "ccaa3066c41a51e4c649bd98d45da22fc67d34539e572b3fdb655409c99b8c72"
   },
   "charges": {
     "width": 1440,
     "height": 1134,
-    "bytes": 394034,
-    "sha256": "acbad86046201b36d4e85a93cdf911e877dcf3dfde7ef5493987daf51185b994"
+    "bytes": 392672,
+    "sha256": "50379111fcfa3bb38771c4369f3bf015cbd9abf67acfa14605a70e803d405074"
   },
   "claims": {
     "width": 1440,
     "height": 1181,
-    "bytes": 427521,
-    "sha256": "e9a615dee317f526c9002504a3e7af84c8f098c4d1351bfa02898772d6c85271"
+    "bytes": 428700,
+    "sha256": "ea3689eccba4c5d4a65b01ff7a03246e325dc0d4139a8e63fda6ae7420606dc9"
   },
   "consultation": {
     "width": 1440,
@@ -68,8 +68,8 @@
   "dashboard": {
     "width": 1440,
     "height": 1128,
-    "bytes": 358772,
-    "sha256": "260fcbaf76c2a433fd239f091c175eb50ac46a907f1af927703553eec2610535"
+    "bytes": 358045,
+    "sha256": "e95797e2f91b798ea199668e7e738b909885052a19e3c6cb5fb9e06b8ae7cf01"
   },
   "departments": {
     "width": 1440,
@@ -80,14 +80,14 @@
   "index": {
     "width": 1440,
     "height": 900,
-    "bytes": 704158,
-    "sha256": "e1e7596d4c10e43c3c3c3112bee1862e912dc8e4a5e8c25896e57d6cc6f5d08b"
+    "bytes": 704505,
+    "sha256": "51ecb4fa847fbfbf27818e9c2352c7cba5f61d68f3030f72e0674901abc895f1"
   },
   "laboratory": {
     "width": 1440,
     "height": 1120,
-    "bytes": 456425,
-    "sha256": "a17dac2957a970a5d49530a47f60bd199b1f71842d5d55459d76bade89a529fb"
+    "bytes": 454767,
+    "sha256": "3e6119d641c8f25cd17feced4ee167659e6224c06f7d5f9be1603982297ad6c4"
   },
   "nursing": {
     "width": 1440,
@@ -116,8 +116,8 @@
   "pharmacy": {
     "width": 1440,
     "height": 1120,
-    "bytes": 535443,
-    "sha256": "17ed8d4f6902dbe22b91dca36c9a196959bd78e56f4856d4faa8836753801c5e"
+    "bytes": 533161,
+    "sha256": "9e9afefd882050701c3309c7fb619dff36181e82ed9c69949312a6e318c525f6"
   },
   "portal": {
     "width": 1440,
@@ -151,9 +151,9 @@
   },
   "settings": {
     "width": 1440,
-    "height": 1591,
-    "bytes": 474612,
-    "sha256": "2bb5a71fcda78c52853e346ac2534003a347f3e1287ac2713d3790950791c38e"
+    "height": 1554,
+    "bytes": 463215,
+    "sha256": "17314ecbb9ed67b4cce020f553ae7f32e94b322ea482d58899c5bcc8ae596fd9"
   },
   "staff": {
     "width": 1440,

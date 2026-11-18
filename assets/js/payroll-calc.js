@@ -214,7 +214,7 @@
         basis: 'daily-rate',
         factor: 261,
         status: 'configured-assumption',
-        review: 'No employment contract, payroll manual or historical payslip is available for this demo. ' +
+        review: 'No employment contract, payroll manual or historical payslip is available for this facility. ' +
           'The 261-day factor is a configured assumption, not a proven practice. A Philippine payroll ' +
           'practitioner should confirm it against the employer\u2019s written policy before production.'
       }

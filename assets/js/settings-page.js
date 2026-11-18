@@ -50,7 +50,7 @@
 
     stage.innerHTML =
       "<h1 class='ad-title'>Configuration</h1>" +
-      "<p class='ad-sub'>Only service tariffs are administered here. The laboratory catalogue, the bed inventory, the payroll policy and the department list are seeded from code and shown read-only below.</p>" +
+      "<p class='ad-sub'>Only service tariffs are administered here. The laboratory catalogue, the bed inventory, the payroll policy and the department list are fixed for this facility and shown read-only below.</p>" +
       "<div class='ad-body'>" +
 
       "<div class='ad-kpis'>" +
@@ -81,33 +81,32 @@
       '</div>' +
 
       "<div class='ad-card'>" +
-      "<div class='ad-bar'><h2>Seeded from code \u2014 not editable here</h2><span class='ad-count'>View only</span></div>" +
+      "<div class='ad-bar'><h2>Fixed for this facility \u2014 not editable here</h2><span class='ad-count'>View only</span></div>" +
       "<div class='ad-th' style='grid-template-columns:1.4fr .7fr 1.6fr'><span>Area</span><span>Count</span><span>Where it lives</span></div>" +
       "<div class='ad-tr' style='grid-template-columns:1.4fr .7fr 1.6fr'>" +
       '<span><b>Laboratory catalogue</b></span>' +
       "<span><b>" + labCount + '</b></span>' +
-      "<span class='mu'>assets/js/lab.js \u00b7 CATALOG (test, price, reference range, effectiveFrom)</span></div>" +
+      "<span class='mu'>Tests, prices and reference ranges \u00b7 maintained with the application</span></div>" +
       "<div class='ad-tr' style='grid-template-columns:1.4fr .7fr 1.6fr'>" +
       '<span><b>Beds and wards</b></span>' +
       "<span><b>" + bedCount + '</b></span>' +
-      "<span class='mu'>assets/js/admissions.js \u00b7 WARDS (ward, prefix, split by bed type)</span></div>" +
+      "<span class='mu'>Wards, bed numbering and bed types \u00b7 maintained with the application</span></div>" +
       "<div class='ad-tr' style='grid-template-columns:1.4fr .7fr 1.6fr'>" +
       '<span><b>Payroll policy</b></span>' +
       "<span><b>" + (HIS.payrollCalc ? HIS.payrollCalc.POLICIES.length : '\u2014') + '</b></span>' +
-      "<span class='mu'>assets/js/payroll-calc.js \u00b7 POLICIES (effective-dated, with a source per rule)</span></div>" +
+      "<span class='mu'>Effective-dated policies, each with a cited source \u00b7 maintained with the application</span></div>" +
       "<div class='ad-tr' style='grid-template-columns:1.4fr .7fr 1.6fr'>" +
       '<span><b>Departments</b></span>' +
       "<span><b>" + ((window.HIS.departments || []).length || '\u2014') + '</b></span>' +
-      "<span class='mu'>assets/js/data-departments.js \u00b7 head, doctors, beds, consult fee</span></div>" +
-      "<div class='ad-foot'>These four are a fixed property of this demonstration facility and are changed by editing the " +
-      'file named against each row. They are listed here so the boundary between \u201cadministrable on this screen\u201d and ' +
-      '\u201ccompiled in\u201d is visible rather than implied. Adding a test or a bed is therefore a code change, not a ' +
-      'configuration change.</div>' +
+      "<span class='mu'>Heads, physicians, beds and consultation fees \u00b7 maintained with the application</span></div>" +
+      "<div class='ad-foot'>These four are a fixed property of this facility and are maintained with the application rather " +
+      'than from this screen. They are listed so the boundary between \u201cadministrable here\u201d and \u201cfixed\u201d is ' +
+      'visible rather than implied.</div>' +
       '</div>' +
 
-      "<div class='ad-note'><b>Demonstration prices.</b> Every figure here is synthetic and exists so a workflow can be priced " +
-      'end to end. None of it is a real hospital tariff. A real deployment would load a maintained charge master with ' +
-      'payer-specific tiers and a VAT rule per line, neither of which this demo models.</div>' +
+      "<div class='ad-note'><b>About these prices.</b> The figures are sample tariffs used so that a service can be priced " +
+      'end to end; they are not a published hospital price list. Payer-specific tiers and a VAT rule per line are not ' +
+      'modelled.</div>' +
       '</div>';
 
     document.getElementById('cfQ').oninput = function (e) {

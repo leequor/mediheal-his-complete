@@ -295,7 +295,7 @@
     rows.push(['Underpayments  ' + money(c.totals.underpayment), 10, 16]);
     rows.push(['Overpayments   ' + money(c.totals.overpayment), 10, 16]);
     rows.push(['Net adjustment ' + money(c.totals.net), 12, 24]);
-    rows.push(['The original released payroll is unchanged. Demonstration data, not a legal record.', 8, 14]);
+    rows.push(['The original released payroll is unchanged. Sample data, not a legal record.', 8, 14]);
     HIS.pdf.save(rows, 'correction-' + c.id + '.pdf');
     return { ok: true };
   }

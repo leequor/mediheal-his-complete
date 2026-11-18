@@ -50,7 +50,7 @@
         amount: toCentavos(paid),
         at: new Date('2026-08-29T10:15:00+08:00').toISOString(),
         cashier: 'Aileen Ramos', status: 'posted',
-        notes: 'Opening balance migrated from the invoice record (pre-ledger demo data)',
+        notes: 'Opening balance carried forward',
         seeded: true
       });
     });

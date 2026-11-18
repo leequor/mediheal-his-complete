@@ -107,9 +107,9 @@
       (tab === 'rx' ? rxTable(rxs) : stockTable(batches)) +
       '</div>' +
 
-      "<div class='ad-note'><b>Demonstration inventory.</b> " + st.skus + ' medication lines, stock value ' + peso(st.stockValue) +
-      '. Quantities are synthetic. Dispensing deducts from the chosen batch and writes a stock movement and an audit row; ' +
-      'an expired batch is excluded from the dispense picker and can only be disposed of, not given to a patient.</div>' +
+      "<div class='ad-note'><b>Inventory summary.</b> " + st.skus + ' medication lines, stock value ' + peso(st.stockValue) +
+      '. Dispensing deducts from the selected batch and records a stock movement. An expired batch is excluded from ' +
+      'the dispense list and can only be disposed of, never given to a patient.</div>' +
       '</div>';
 
     document.getElementById('phQ').oninput = function (e) {

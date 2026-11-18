@@ -70,7 +70,7 @@ ok('malformed email is rejected', /valid email/i.test(await message()) && stem()
 
 // ---- 3. unknown account ---------------------------------------------------
 await submit('nobody@mediheal.test', PW_DEMO);
-ok('unknown account is rejected', /no demo account/i.test(await message()) && stem() === 'index', await message());
+ok('unknown account is rejected', /no account uses that email/i.test(await message()) && stem() === 'index', await message());
 
 // ---- 4. wrong password ----------------------------------------------------
 await submit('doctor@mediheal.test', 'definitely-wrong');

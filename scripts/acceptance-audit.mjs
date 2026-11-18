@@ -331,7 +331,7 @@ console.log('\n--- 2. statutory rules ---');
 // 3. CLAIMS
 // =================================================================================================
 console.log('\n--- 3. claims and financial integrity ---');
-await page.evaluate(() => { HIS.auth.signOut(); HIS.auth.attempt('finance@mediheal.test', 'MediHeal2026!', true); });
+await page.evaluate(() => { HIS.auth.clear(); HIS.auth.attempt('finance@mediheal.test', 'MediHeal2026!', true); });
 await page.goto(BASE + '/claims.html', { waitUntil: 'load' });
 await page.waitForTimeout(400);
 {
@@ -403,13 +403,13 @@ await page.waitForTimeout(400);
 
     // Role gating: a cashier cannot record a payer decision; an auditor cannot transition at all.
     const underId = makeAt('under-review');
-    HIS.auth.signOut(); HIS.auth.attempt('cashier@mediheal.test', 'MediHeal2026!', true);
+    HIS.auth.clear(); HIS.auth.attempt('cashier@mediheal.test', 'MediHeal2026!', true);
     const cashierApprove = HIS.claims.transition(underId, 'approve', { approvedAmount: 1000 });
     const cashierSubmitOk = HIS.claims.available(HIS.claims.get(underId)).map(t => t.action);
-    HIS.auth.signOut(); HIS.auth.attempt('auditor@mediheal.test', 'MediHeal2026!', true);
+    HIS.auth.clear(); HIS.auth.attempt('auditor@mediheal.test', 'MediHeal2026!', true);
     const auditorDeny = HIS.claims.transition(underId, 'deny', { reason: 'x' });
     const auditorOffered = HIS.claims.available(HIS.claims.get(underId)).length;
-    HIS.auth.signOut(); HIS.auth.attempt('finance@mediheal.test', 'MediHeal2026!', true);
+    HIS.auth.clear(); HIS.auth.attempt('finance@mediheal.test', 'MediHeal2026!', true);
 
     return {
       grid, statuses: statuses.length, actions: actions.length,
@@ -547,7 +547,7 @@ await page.waitForTimeout(400);
 // 4. PAYSLIPS
 // =================================================================================================
 console.log('\n--- 4. payslips ---');
-await page.evaluate(() => { HIS.auth.signOut(); HIS.auth.attempt('hr@mediheal.test', 'MediHeal2026!', true); });
+await page.evaluate(() => { HIS.auth.clear(); HIS.auth.attempt('hr@mediheal.test', 'MediHeal2026!', true); });
 await page.goto(BASE + '/payroll.html', { waitUntil: 'load' });
 await page.waitForTimeout(400);
 {

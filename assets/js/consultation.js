@@ -276,7 +276,7 @@
     if (X.closest('#tpd')) { st.menu = !st.menu; render(); return; }
     var r = X.closest('[data-pt]');
     if (r) { st.sel = r.dataset.pt; render(); return; }
-    if (X.closest('[data-hist]')) { tip('Visit history is not drawn in Figma'); return; }
+    if (X.closest('[data-hist]')) { tip('Visit history is not available in this view'); return; }
     var m = X.closest('[data-modal]');
     if (m) { st.modal = 'dx'; st.pn = false; st.f = dxInit(byId(st.sel)); render(); var fi = document.querySelector('#tpmodal .tp-m-i'); if (fi) fi.focus({ preventScroll: true }); return; }
     if (X.closest('[data-ok]')) confirm();

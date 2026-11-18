@@ -107,10 +107,9 @@
       }).join('') : "<div class='ad-empty'><b>No orders match</b>Clear the search or pick a different status.</div>") +
       '</div>' +
 
-      "<div class='ad-note'><b>Demonstration data.</b> Every result here is synthetic. The abnormal / critical flag is a " +
-      'mechanical comparison of the entered number against the reference range printed on the order — it is not an ' +
-      'interpretation and not a diagnosis. Nothing in this screen infers a condition from a value. ' +
-      'A validated result is the only one released to the patient record.</div>' +
+      "<div class='ad-note'><b>About these results.</b> The abnormal and critical flags compare the entered value with the " +
+      'reference range printed on the order. They are not an interpretation and not a diagnosis, and nothing on this ' +
+      'screen infers a condition from a value. A result reaches the patient record only once it is verified.</div>' +
       '</div>';
 
     document.getElementById('lbQ').oninput = function (e) {
@@ -268,14 +267,14 @@
       ['Notes', o.result && o.result.notes ? o.result.notes : '\u2014']
     ];
     modal({
-      title: 'Laboratory report', sub: o.id + ' \u00b7 demonstration copy', ok: 'Download PDF', trigger: trigger,
+      title: 'Laboratory report', sub: o.id + ' \u00b7 sample copy', ok: 'Download PDF', trigger: trigger,
       body: "<div class='ad-kv'>" + rows.map(function (r) {
         return '<div><dt>' + esc(r[0]) + '</dt><dd>' + esc(r[1]) + '</dd></div>';
       }).join('') + '</div>',
       onSubmit: function () {
         HIS.pdf.save([
           ['MEDIHEAL MEDICAL CENTER', 14, 22],
-          ['Laboratory report - demonstration copy', 8, 18],
+          ['Laboratory report - sample copy', 8, 18],
           [o.test + '  (' + o.id + ')', 12, 24],
           ['Patient: ' + patientName(o.patientId) + '   ' + o.patientId, 9, 14],
           ['Ordered by: ' + o.orderedBy + '   ' + when(o.orderedAt), 9, 14],
@@ -287,7 +286,7 @@
           ['Resulted by: ' + (o.resultedBy || '-'), 9, 14],
           ['Validated by: ' + (o.validatedBy || 'not validated'), 9, 14],
           ['', 9, 12],
-          ['Synthetic data. Not a clinical document.', 8, 12]
+          ['Sample data. Not a clinical document.', 8, 12]
         ], o.id + '_report.pdf');
         HIS.kit.toast('Report downloaded.');
         return false;

@@ -38,7 +38,7 @@ textarea.ap-i{height:88px;padding:12px 14px;line-height:20px;resize:none;font-fa
     <div class='a-grid a-th'><span>PATIENT NAME</span><span>DATE &amp; TIME</span><span>APPOINTMENT TYPE</span><span>DOCTOR</span><span>STATUS</span><span>ACTIONS</span></div>
     <div id='rows'></div>
     <div class='a-foot'><span id='count'></span>
-      <div class='a-pages'><button disabled aria-label='Previous page'>&lsaquo;</button><button class='on'>1</button><button disabled title='Demo data fits on one page'>2</button><button disabled>3</button><button disabled aria-label='Next page'>&rsaquo;</button></div>
+      <div class='a-pages'><button disabled aria-label='Previous page'>&lsaquo;</button><button class='on'>1</button><button disabled>2</button><button disabled>3</button><button disabled aria-label='Next page'>&rsaquo;</button></div>
     </div>
   </section>
 </div>
@@ -88,7 +88,7 @@ function toInputs(when) {
 function form(a) {
   a = a || {};
   openModal({
-    title: a.patient ? 'Edit Appointment' : 'New Appointment / Walk-In', sub: 'Temporary form. Figma has no edit screen yet.',
+    title: a.patient ? 'Edit Appointment' : 'New Appointment / Walk-In', sub: 'Update the details below and save to keep the appointment.',
     saveLabel: a.patient ? 'Save changes' : 'Create',
     body: "<label>Patient</label><input name='patient' required value='" + HIS.kit.esc(a.patient || '') + "'>" +
       "<div class='row'><div><label>Date</label><input name='date' type='date' required value='" + (a.date || '2026-08-31') + "'></div><div><label>Time</label><input name='time' type='time' required value='" + (a.time || '09:00') + "'></div></div>" +

@@ -179,7 +179,7 @@
     if (run.status === 'released') {
       // A released payroll is a historical record. Rewriting it would change what was paid; a real
       // deployment would raise an off-cycle correction, which this demo does not implement.
-      return { ok: false, error: 'This run was released and is final. A correction after release needs an off-cycle run, which this demo does not support.' };
+      return { ok: false, error: 'This run was released and is final. A correction after release needs an off-cycle run, which is not available here.' };
     }
     run.versions = run.versions || [];
     run.versions.push({
@@ -331,7 +331,7 @@
     rows.push(['  Total employer cost  ' + money(p.employer.total), 9, 22]);
     rows.push(['Attendance: ' + p.attendance.workedDays + ' days worked, ' + p.attendance.absenceDays + ' absent, ' +
       p.attendance.lateMinutes + ' min late, ' + p.attendance.overtimeHours + ' h overtime, ' + p.attendance.nightHours + ' h night', 9, 14]);
-    rows.push(['Statutory tables effective ' + HIS.payrollCalc.CONFIG.effectiveFrom + '. Demonstration data, not a legal record.', 8, 14]);
+    rows.push(['Statutory tables effective ' + HIS.payrollCalc.CONFIG.effectiveFrom + '. Sample data, not a legal record.', 8, 14]);
     HIS.pdf.save(rows, 'payslip-' + p.employee.id + '-' + p.runId + '.pdf');
     return { ok: true };
   }

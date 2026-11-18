@@ -67,12 +67,13 @@ The order matters in three places:
 
 ## 4. Persistence
 
-`HIS.store` is the only module that touches `localStorage`. It provides a typed read with a fallback,
+`HIS.store` is the only module that touches browser storage. It uses `sessionStorage`, so every demonstration record is scoped to the tab: it survives navigation and refresh, and is discarded when the tab closes. It provides a typed read with a fallback,
 a write that never throws, a tiny pub/sub, a snapshot and a reset. Every key is registered in one
 `KEYS` table (`store.js`), so the full data surface is one readable list.
 
-Seeding is **lazy and idempotent**: a store writes its seed only when its key is absent. A browser
-that already holds records is never overwritten. There is no destructive migration.
+Seeding is **lazy and idempotent**: a store writes its seed only when its key is absent. A tab that
+already holds records is never overwritten. There is no destructive migration. Signing out — and the
+"Reset sample data" action — clear the keys so the next visitor starts from the seed.
 
 | Key group | Stores |
 |---|---|

@@ -143,8 +143,8 @@
 
       "<div class='ad-note'><b>Daily billing rule.</b> A calendar day is billable when the patient was in the bed at 12:00 Asia/Manila on that day: " +
       'admitted before noon bills that day, discharged before noon does not, and the rate is the bed occupied at that cutoff. ' +
-      'Accrual is an explicit, audited action rather than a page-load side effect, and each day is charged once. ' +
-      'The two seeded admissions are marked as already billed inside their invoice opening amount, so their nights are not charged twice.</div>' +
+      'Daily charges are posted as an explicit, audited action, and each day is charged once. ' +
+      'Admissions already billed through their invoice opening balance are not charged a second time.</div>' +
       '</div>';
 
     document.getElementById('adQ').oninput = function (e) {

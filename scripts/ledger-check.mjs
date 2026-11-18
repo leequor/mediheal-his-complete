@@ -250,7 +250,7 @@ await page.waitForTimeout(400);
 
 // ---------------------------------------------------------------- 9. other screens agree
 {
-  await page.evaluate(() => { HIS.auth.signOut(); HIS.auth.attempt('finance@mediheal.test', 'MediHeal2026!', true); });
+  await page.evaluate(() => { HIS.auth.clear(); HIS.auth.attempt('finance@mediheal.test', 'MediHeal2026!', true); });
   await page.goto(BASE + '/reports.html', { waitUntil: 'load' });
   await page.waitForTimeout(400);
   const r = await page.evaluate(() => {

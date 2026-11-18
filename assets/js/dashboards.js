@@ -102,18 +102,18 @@
         return {
           greet: 'System overview',
           kpis: [
-            { label: 'Demo accounts', value: String(ACC.length), delta: activeAcc + ' active \u00b7 ' + (ACC.length - activeAcc) + ' deactivated', icon: 'key' },
+            { label: 'User accounts', value: String(ACC.length), delta: activeAcc + ' active \u00b7 ' + (ACC.length - activeAcc) + ' deactivated', icon: 'key' },
             { label: 'Audit entries', value: String(HIS.audit ? HIS.audit.list().length : 0), delta: AUD.length ? 'Latest ' + AUD[0].seq : 'No activity yet', icon: 'shield' },
             { label: 'Departments', value: String(depts().length), delta: 'Clinical and support', icon: 'branches' },
             { label: 'Open invoices', value: String(openBills.length), delta: money(outstanding) + ' outstanding', icon: 'receipt' }
           ],
           table: {
-            title: 'Accounts by role', sub: 'Seeded demo identities and their current state',
+            title: 'Accounts by role', sub: 'Accounts and their current state',
             cols: [{ t: 'ACCOUNT', left: 20, w: 200 }, { t: 'ROLE', left: 240, w: 160 }, { t: 'DEPARTMENT', left: 420, w: 130 }, { t: 'STATUS', left: 570, w: 93 }, { t: 'LAST LOGIN', left: 700, w: 120 }],
             rows: ACC.slice(0, 6).map(function (a) {
               return { cells: [[a.name, a.email], (HIS.rbac.ROLES[a.role] || {}).short || a.role, a.dept || '\u2014', [a.status === 'active' ? 'Active' : 'Deactivated', a.status === 'active' ? 'ok' : 'off'], a.lastLogin ? new Date(a.lastLogin).toLocaleDateString('en-PH', { timeZone: 'Asia/Manila', month: 'short', day: 'numeric' }) : 'Never'] };
             }),
-            empty: 'No accounts seeded'
+            empty: 'No accounts'
           },
           feed: {
             title: 'Recent activity', sub: 'Newest audit entries', icon: 'shield',

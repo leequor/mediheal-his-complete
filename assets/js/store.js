@@ -1,7 +1,12 @@
 // Shared state layer (session 23, Phase 0 of docs/IMPROVEMENT-PLAN.md). One place for every
-// `mh_*` localStorage key: a safe typed read with a fallback, a write that never throws, a tiny
-// pub/sub, a whole-store snapshot and a reset. Key names and value shapes are UNCHANGED, so data
-// saved by earlier sessions keeps working (backward compatible).
+// `mh_*` storage key: a safe typed read with a fallback, a write that never throws, a tiny
+// pub/sub, a whole-store snapshot and a reset.
+//
+// TEMPORARY BY DESIGN. Every demonstration record lives in `sessionStorage`, not `localStorage`:
+// it survives navigation and refresh within the tab and disappears when the tab closes, so a new
+// visitor always starts from the seeded dataset and no hospital record is left on the device.
+// `reset()` is called on sign-out for the same reason.
+//
 // `mh_regs_extra` and `mh_appts_extra` belong to the OWNER: reset() leaves them alone unless
 // called with { includeOwner: true }.
 (function () {
@@ -44,21 +49,43 @@
   var VERSION = 1;
   var subs = {};
 
+  // sessionStorage, with an in-memory fallback for a browser that blocks it (private mode, a
+  // storage policy). The fallback keeps a single page working; it simply does not survive navigation.
+  var MEM = {};
+  function bucket() {
+    try { return window.sessionStorage || null; } catch (e) { return null; }
+  }
+  function rawGet(key) {
+    var s = bucket();
+    if (s) { try { return s.getItem(key); } catch (e) { return null; } }
+    return Object.prototype.hasOwnProperty.call(MEM, key) ? MEM[key] : null;
+  }
+  function rawSet(key, value) {
+    var s = bucket();
+    if (s) { try { s.setItem(key, value); return true; } catch (e) { return false; } }
+    MEM[key] = value; return true;
+  }
+  function rawRemove(key) {
+    var s = bucket();
+    if (s) { try { s.removeItem(key); } catch (e) { /* nothing to do */ } }
+    delete MEM[key];
+  }
+
   // Missing key, unparseable JSON or a stored `null` all return the fallback.
   function get(key, fallback) {
     try {
-      var raw = localStorage.getItem(key);
+      var raw = rawGet(key);
       if (raw == null) return fallback;
       var v = JSON.parse(raw);
       return v == null ? fallback : v;
     } catch (e) { return fallback; }
   }
   function set(key, value) {
-    try { localStorage.setItem(key, JSON.stringify(value)); emit(key, value); return true; }
+    try { rawSet(key, JSON.stringify(value)); emit(key, value); return true; }
     catch (e) { return false; } // storage blocked: the caller keeps the change in memory
   }
   function remove(key) {
-    try { localStorage.removeItem(key); } catch (e) { /* nothing to do */ }
+    rawRemove(key);
     emit(key, undefined);
   }
   // Read-modify-write in one call: update('mh_x', [], rows => { rows.push(r); return rows; })

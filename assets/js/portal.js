@@ -135,7 +135,7 @@
     var h = "<h1 class='pt-h1'>" + greeting() + ', ' + esc(String(p.first || p.name).split(' ')[0]) + '</h1>';
     h += "<p class='pt-sub'>" + esc(p.id) + ' \u00b7 ' + esc(p.type) + ' \u00b7 ' + esc(p.dept || 'Unassigned department') +
       (ctx.via === 'guardian' ? ' \u00b7 viewing as ' + esc(ctx.link.relationship.toLowerCase()) : '') + '</p>';
-    h += "<div class='pt-banner'><span><b>Demonstration environment.</b> Every record here is synthetic. " +
+    h += "<div class='pt-banner'><span><b>Sample records.</b> All information shown here is fictitious. " +
       'This portal reads the same browser storage as the staff console, so it does not sync between devices.</span></div>';
 
     h += "<div class='pt-cards'>";
@@ -210,7 +210,7 @@
 
     h += "<div class='pt-banner'><span>To book, reschedule or cancel, contact the front desk at " +
       esc((HIS.contact && HIS.contact.phone) || '+63 2 8888 0000') +
-      '. Online self-booking is not implemented in this demonstration, so no booking button is shown rather than a button that does nothing.</span></div>';
+      '. Online self-booking is not available — please contact the front desk.</span></div>';
     return h;
   };
 
@@ -350,7 +350,7 @@
     });
 
     h += "<div class='pt-banner'><span><b>Payment instructions.</b> Settle at the cashier, or ask for a " +
-      'GCash / Maya / QR Ph reference. Electronic payments recorded in this demonstration are marked ' +
+      'GCash / Maya / QR Ph reference. Electronic payments recorded here are marked ' +
       '"awaiting confirmation" until a cashier verifies the provider reference — no gateway is connected.</span></div>';
     return h;
   };
@@ -446,7 +446,7 @@
       "<p class='pt-error' id='pt-req-err' role='alert'></p>" +
       "<button class='pt-btn' type='button' id='pt-req-send'>Send request</button>" +
       "<p class='pt-muted pt-small' style='margin-top:10px'>Requests are recorded for staff review and appear in the audit log. " +
-      'This demonstration cannot send email, so nothing is delivered — check with registration on your next visit.</p></div>');
+      'This environment cannot send email, so nothing is delivered — please check with registration on your next visit.</p></div>');
     return h;
   };
 
@@ -455,7 +455,7 @@
     var p = ctx.patient, rows = [];
     var head = function (title) {
       rows.push(['MEDIHEAL MEDICAL CENTER', 14, 22]);
-      rows.push(['Patient portal document - demonstration copy', 8, 18]);
+      rows.push(['Patient portal document - sample copy', 8, 18]);
       rows.push([title, 12, 26]);
       rows.push(['', 9, 8]);
       rows.push(['Patient: ' + p.name, 9, 14]);
@@ -640,8 +640,10 @@
     if (!r.ok) { err.textContent = r.message; return; }
 
     if (r.account.role !== 'patient') {
-      // Do not let a staff account read a patient record. End the session immediately.
-      HIS.auth.signOut();
+      // Do not let a staff account read a patient record. End the session — but do NOT end the
+      // demonstration: `signOut()` restores the sample dataset, and a wrong sign-in here should
+      // leave the visitor's work intact so they can go back to the staff console.
+      HIS.auth.clear();
       err.textContent = 'That is a staff account. Sign in to the staff console at index.html instead.';
       return;
     }
@@ -749,12 +751,12 @@
       stepTo(2);
       $('#pt-otp-demo').hidden = false;
       // Same wording either way: this page is public and must not disclose whether an account exists.
-      $('#pt-otp-demo').innerHTML = '<b>Demonstration:</b> no email is sent. ' +
-        'A password reset in this build is performed by the Super Administrator from the Accounts screen. ' +
+      $('#pt-otp-demo').innerHTML = '<b>No email is sent.</b> ' +
+        'A password reset is performed by the Super Administrator from the Accounts screen. ' +
         (acct ? 'Ask them to reset the password for this address.' : 'Ask them to check the address on file.');
     };
     $('#pt-verify').onclick = function () {
-      $('#pt-f2err').textContent = 'Verification codes are not sent in this demonstration, so this step cannot complete.';
+      $('#pt-f2err').textContent = 'Verification codes are not sent from this environment, so this step cannot be completed.';
     };
     $('#pt-back-signin').onclick = function () { location.hash = '#signin'; };
   }
@@ -781,7 +783,7 @@
       var pw = $('#pt-pw');
       if (pw) pw.oninput = function () {
         var hint = $('#pt-pw-hint');
-        hint.textContent = strong(pw.value) ? 'Password strength: acceptable for this demonstration.'
+        hint.textContent = strong(pw.value) ? 'Password strength: acceptable.'
           : 'Use at least 12 characters, including letters and numbers.';
         hint.className = 'pt-hint ' + (strong(pw.value) ? 'strong' : 'weak');
       };
