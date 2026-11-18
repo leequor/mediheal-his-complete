@@ -68,8 +68,8 @@
   "laboratory": {
     "width": 1440,
     "height": 1120,
-    "bytes": 452921,
-    "sha256": "e2190d82d145bd6c01afcd948ba277efe8d2c16980fbd121c5c77ab4b7b4f20f"
+    "bytes": 453839,
+    "sha256": "023efaa5568293e952dbf0c7e5dbd397918ba3b04e6b0f431c56996c517c1125"
   },
   "nursing": {
     "width": 1440,
@@ -92,8 +92,8 @@
   "personnel": {
     "width": 1440,
     "height": 1262,
-    "bytes": 436732,
-    "sha256": "08691ad0cc634d2ad3af1e11181f2a37c2dff2b526a0b614126b13527c5e7e96"
+    "bytes": 430369,
+    "sha256": "f65e96d18c6096539955aacb4c5af43cd14ef959b6f0a806079e72e96ded426e"
   },
   "pharmacy": {
     "width": 1440,
@@ -110,8 +110,8 @@
   "profile": {
     "width": 1440,
     "height": 1332,
-    "bytes": 458084,
-    "sha256": "70133434814c83d76ffb02663e8fd396ba2f5bd8ce2c3af6d061ed81be284ac3"
+    "bytes": 458083,
+    "sha256": "1e92af1b4f3bfebc690702b73e679f1ed2ac1dcb080ff6c63c38bbc33592878f"
   },
   "registration-form": {
     "width": 1440,
