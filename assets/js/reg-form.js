@@ -20,7 +20,11 @@
   const GENDER = ['Female', 'Male'];
   const CIVIL = ['Single', 'Married', 'Widowed', 'Separated', 'Divorced'];
   const BLOOD = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
-  const WARDS = ['General Ward', 'Semi-Private', 'Private Room', 'ICU', 'Pediatric Ward', 'Maternity Ward'];
+  // The wards the hospital actually runs, so a registration cannot name a ward that does not exist.
+  // Falls back to the Figma list if the admissions module is not on the page.
+  const WARDS = (window.HIS.admissions && HIS.admissions.wards().length)
+    ? HIS.admissions.wards().map(w => w.ward)
+    : ['General Ward', 'Semi-Private', 'Private Room', 'ICU', 'Pediatric Ward', 'Maternity Ward'];
   const COND = ['Stable', 'Fair', 'Serious', 'Critical'];
 
   // r = required: red asterisk (#e05252) after the label. Every label is Inter SemiBold 13 #0e2a3f (get_styled_text_segments on Figma 420:1624).
@@ -37,8 +41,8 @@
       { c: 1, h: 191.6, f: [{ k: 'notes', l: 'Additional Notes', ta: 1, ph: 'Any other information the doctor or nurse should know', hint: 'Optional remarks for the care team' }] }
     ] },
     { top: 1458, h: 329, icon: 'bed', title: 'Admission Details', sub: 'Ward assignment and attending doctor for this inpatient stay', sw: 357.7, rows: [
-      { c: 3, h: 93.6, f: [{ k: 'dept', l: 'Department', r: 1, sel: HIS.departments }, { k: 'doctor', l: 'Assigned Doctor', r: 1, sel: HIS.doctors, hint: 'Select a department first to narrow options' }, { k: 'pcond', l: 'Patient Condition', r: 1, sel: COND }] },
-      { c: 3, h: 93.6, f: [{ k: 'ward', l: 'Ward', r: 1, sel: WARDS }, { k: 'bed', l: 'Bed Number', r: 1, ph: 'Enter bed number', hint: 'e.g. C-12' }, { k: 'adate', l: 'Admission Date', r: 1, ph: 'dd/mm/yyyy' }] }
+      { c: 3, h: 93.6, f: [{ k: 'dept', l: 'Department', r: 1, sel: HIS.deptNames }, { k: 'doctor', l: 'Assigned Doctor', r: 1, sel: HIS.doctors, hint: 'Select a department first to narrow options' }, { k: 'pcond', l: 'Patient Condition', r: 1, sel: COND }] },
+      { c: 3, h: 93.6, f: [{ k: 'ward', l: 'Ward', r: 1, sel: WARDS }, { k: 'bed', l: 'Bed Number', r: 1, sel: [], hint: 'Choose a ward first — only free beds are listed' }, { k: 'adate', l: 'Admission Date', r: 1, ph: 'dd/mm/yyyy' }] }
     ] },
     { top: 1807, h: 328, icon: 'activity', title: 'Admission Vitals', sub: 'Vital signs recorded when the patient is admitted', sw: 355.6, rows: [
       { c: 3, h: 93.6, f: [{ k: 'bp', l: 'Blood Pressure', ph: 'e.g. 120/80', hint: 'mmHg' }, { k: 'temp', l: 'Temperature', ph: 'e.g. 36.8', hint: '\u00b0C' }, { k: 'wt', l: 'Weight', ph: 'e.g. 64', hint: 'kg' }] },
@@ -68,21 +72,40 @@
 
   // selects
   const sels = {};
-  document.querySelectorAll('.rf-sel').forEach(el => {
-    const f = SECS.flatMap(s => s.rows.flatMap(r => r.f)).find(x => x.k === el.dataset.k);
+  const FIELDS = SECS.flatMap(s => s.rows.flatMap(r => r.f));
+  function bindSel(el, f, options) {
     el.innerHTML = "<button type='button' class='rf-sb' aria-haspopup='listbox' aria-expanded='false' aria-label='" + f.l + "'><span class='v'>Please select</span>" + CH + "</button><div class='rf-p' role='listbox'>" +
-      f.sel.map((o, i) => "<button type='button' role='option' data-i='" + i + "'>" + o + '</button>').join('') + '</div>';
+      options.map((o, i) => "<button type='button' role='option' data-i='" + i + "'>" + o + '</button>').join('') + '</div>';
     const b = el.querySelector('.rf-sb');
     const o = { value: '', el };
     const setOpen = on => { el.classList.toggle('open', on); b.setAttribute('aria-expanded', on ? 'true' : 'false'); };
     b.onclick = e => { e.stopPropagation(); document.querySelectorAll('.rf-sel.open').forEach(d => d !== el && d.classList.remove('open')); setOpen(!el.classList.contains('open')); };
     el.querySelector('.rf-p').onclick = e => {
       const t = e.target.closest('button'); if (!t) return;
-      o.value = f.sel[+t.dataset.i]; el.querySelector('.v').textContent = o.value; el.classList.remove('err'); setOpen(false); sum();
+      o.value = options[+t.dataset.i]; el.querySelector('.v').textContent = o.value; el.classList.remove('err'); setOpen(false); sum();
     };
     el.addEventListener('keydown', e => { if (e.key === 'Escape') { setOpen(false); b.focus(); } });
     sels[f.k] = o;
+    return o;
+  }
+  document.querySelectorAll('.rf-sel').forEach(el => {
+    const f = FIELDS.find(x => x.k === el.dataset.k);
+    bindSel(el, f, f.sel);
   });
+  // Ward -> bed. The bed list is rebuilt from the chosen ward and offers only beds that are free, so
+  // a registration cannot reserve a bed that is occupied or out of service.
+  function freeBeds(ward) {
+    const ad = window.HIS.admissions;
+    if (!ad || !ward) return [];
+    return ad.bedBoard(ward).filter(b => b.status === 'available').map(b => b.label + ' (' + b.type + ')');
+  }
+  if (sels.ward && sels.bed) {
+    const bedField = FIELDS.find(x => x.k === 'bed');
+    document.getElementById('f-ward').querySelector('.rf-p').addEventListener('click', () => {
+      const list = freeBeds(sels.ward.value);
+      bindSel(document.getElementById('f-bed'), bedField, list.length ? list : ['No free bed in this ward']);
+    });
+  }
   document.addEventListener('click', () => document.querySelectorAll('.rf-sel.open').forEach(d => d.classList.remove('open')));
 
   const val = k => sels[k] ? sels[k].value : $('f-' + k).value.trim();

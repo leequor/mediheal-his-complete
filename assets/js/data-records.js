@@ -1,6 +1,6 @@
 // Records for Registration and Appointments. Extends window.HIS from data.js.
 // Dropdown lists copied from the Figma dropdown frames (Registration 480:1360 and 482:1631).
-HIS.departments = ['Cardiology', 'Orthopedics', 'Pediatrics', 'Neurology', 'General Medicine', 'Obstetrics & Gynecology', 'Intensive Care (ICU)'];
+HIS.deptNames = ['Cardiology', 'Orthopedics', 'Pediatrics', 'Neurology', 'General Medicine', 'Obstetrics & Gynecology', 'Intensive Care (ICU)'];
 HIS.patientStatuses = ['Admitted', 'Waiting', 'In Consultation', 'Critical', 'Completed', 'Discharged'];
 HIS.doctors = ['Dr. Laurice Laureta', 'Dr. Marc Laureta', 'Dr. Yumie Pasiol', 'Dr. Jeremias Esperanza', 'Dr. Paolo Tipay', 'Dr. Elsie Chen'];
 
@@ -27,4 +27,4 @@ HIS.appointments = [
 ];
 HIS.apptKinds = ['Inpatient Admission', 'General Check-Up', 'Lab/Test Result Review', 'Vaccination/Immunization', 'Medical Certificate Request', 'Follow-up'];
 HIS.apptStatuses = ['Confirmed', 'Completed', 'Cancelled', 'Pending'];
-HIS.apptTotals = { total: '1,284', confirmed: '856', pending: '263', cancelled: '165', walkin: '12' };
+

@@ -52,6 +52,7 @@ before M7.
 | `mh_payroll_runs` | `{ runs[] }` | Payroll |
 | `mh_payroll_corrections` | `{ corrections[] }` | Payroll → corrections |
 | `mh_claims` | `{ claims[], version, seededAt }` | Claims |
+| `mh_notif_read` | `{ v:2, by:{ role:[rowId] } }` | Header bell |
 | `mh_charges` | `{ charges[], version }` | Laboratory, Pharmacy, Consultation, Admissions |
 | `mh_invoices` | `Invoice[]` | seeded from `data-billing.js`; Billing → new invoice |
 | `mh_tariffs` | `Tariff[]` | seeded charge master; Administration |
@@ -347,3 +348,11 @@ seeds, a present key is read as-is.
   that cannot be edited after release.
 - A claim table with a status-transition trigger, so an illegal transition is rejected by the
   database rather than by a JavaScript guard.
+
+
+## Naming collision resolved
+
+`HIS.departments` is the object list from `data-departments.js` (name, head, beds, occupancy,
+revenue). The plain name list used by the registration and appointment forms is `HIS.deptNames`.
+Before the QA pass both were called `HIS.departments`, so whichever module loaded last won: the
+Departments page crashed for the department head, and the dashboard read `.name` off a string.

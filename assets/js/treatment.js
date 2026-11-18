@@ -159,6 +159,21 @@
     var over = n > have;
     return { bt: over ? '\u2715 Not enough stock' : '\u2713 Stock available', bx: over ? 'Only ' + have + ' are on hand.' : have + ' on hand. ' + (n > 0 ? 'After dispensing, ' + (have - n) + ' remain in the pharmacy stock.' : 'Enter a quantity to see the remaining stock.') };
   }
+  // Controlled values for the isolation field: the three precautions this facility actually records.
+  var ISOLATION = ['None required', 'Contact precautions', 'Droplet precautions', 'Airborne precautions'];
+  // Live availability sentence for the ward/bed pair the user has selected.
+  function bedNote(ward, bedLabel) {
+    var ad = window.HIS.admissions;
+    if (!ad) return 'Bed availability is read from the admissions module.';
+    var label = String(bedLabel || '').replace(/\s*\(.*\)$/, '');
+    var beds = ad.bedBoard(ward);
+    if (!beds.length) return 'No bed is configured in ' + ward + '.';
+    if (!label) return 'Every bed in ' + ward + ' is in use or out of service. Choose another ward.';
+    var b = beds.filter(function (x) { return x.label === label; })[0];
+    if (!b) return 'That bed is not in ' + ward + '. Choose another bed.';
+    if (b.status !== 'available') return 'Bed ' + b.label + ' is ' + b.status + ' and cannot be assigned.';
+    return 'Bed ' + b.label + ' in ' + ward + ' is vacant and cleaned (' + b.type + '). No isolation conflict with the neighbouring beds.';
+  }
   function spec(kind, p) {
     var G = p.id === 'PT-99213', f = p.f;
     var al = String(f.allergies || '').split(' \u00b7 ')[0], bp = String(f.bp || '').replace(/\s*mmHg/, '');
@@ -192,10 +207,28 @@
       l: ['Procedure', 'Performing doctor', 'Room', 'Date', 'Time and duration', 'Pre-procedure instructions'],
       v: G ? ['Coronary angiography', 'Dr. Laurice Laureta (Cardiology)', 'Cath Lab 1', 'Sep 2, 2026', '9:00 AM \u00b7 about 60 minutes', 'Nothing by mouth 6 hours before. Hold Metformin that morning. Signed consent required.'] : ['', f.attending + ' (' + f.department + ')', '', '', '', ''],
       bt: G ? 'Room and doctor available' : 'Room and doctor check', bx: G ? 'Slot check: Cath Lab 1 and Dr. Laureta are free on Sep 2 at 9:00 AM. No conflict found.' : 'Enter the procedure, doctor, room, date and time to check the slot.' };
-    if (kind === 'bed') return { title: 'Assign ward and bed', sub: p.name + ' \u00b7 ' + p.id + ' \u00b7 ' + f.department + ' admission', ok: 'Assign bed', req: [0, 1],
-      l: ['Ward', 'Bed', 'Admission date', 'Attending doctor', 'Isolation precautions', 'Admission notes'],
-      v: G ? ['Inpatient Ward 3', 'Bed 12 (vacant)', 'Aug 31, 2026', 'Dr. Laurice Laureta, Cardiology', 'None required', 'Admitted for cardiac monitoring. Telemetry requested. Family contact is on file at the front desk.'] : ['', '', 'Aug 31, 2026', f.attending + ', ' + f.department, 'None required', ''],
-      bt: G ? 'Bed available' : 'Bed check', bx: G ? 'Bed check: Bed 12 in Ward 3 is vacant and cleaned. No isolation conflict with the neighbouring beds.' : 'Enter a ward and bed to check availability.' };
+    if (kind === 'bed') {
+      // The ward, bed, doctor and isolation fields are chosen from the hospital's own records, not
+      // typed. The bed list is rebuilt from the selected ward and only offers beds that are free
+      // right now, so an occupied or out-of-service bed cannot be submitted.
+      var ad = window.HIS.admissions;
+      var wardList = ad ? ad.wards().map(function (w) { return w.ward; }) : [];
+      if (!wardList.length) wardList = ['Cardiology Ward'];
+      var ward0 = G ? 'Cardiology Ward' : wardList[0];
+      var freeIn = function (w) {
+        return (ad ? ad.bedBoard(w) : []).filter(function (b) { return b.status === 'available'; });
+      };
+      var bedList = freeIn(ward0);
+      var bed0 = bedList[0] ? bedList[0].label + ' (' + bedList[0].type + ')' : '';
+      return { title: 'Assign ward and bed', sub: p.name + ' \u00b7 ' + p.id + ' \u00b7 ' + f.department + ' admission', ok: 'Assign bed', req: [0, 1],
+        l: ['Ward', 'Bed', 'Admission date', 'Attending doctor', 'Isolation precautions', 'Admission notes'],
+        v: [ward0, bed0, '2026-08-31', G ? 'Dr. Laurice Laureta' : (f.attending || (HIS.doctors || [])[0] || ''), 'None required',
+          G ? 'Admitted for cardiac monitoring. Telemetry requested. Family contact is on file at the front desk.' : ''],
+        sel: { 0: wardList, 1: bedList.map(function (b) { return b.label + ' (' + b.type + ')'; }),
+          3: (HIS.doctors || []).slice(), 4: ISOLATION },
+        date: [2],
+        bt: 'Bed available', bx: bedNote(ward0, bed0) };
+    }
     if (kind === 'results') {
       var tname = String(f.next || '').replace(/^Awaiting result:\s*/i, '').replace(/\s*\(.*\)$/, '') || 'Troponin I';
       return { title: 'Test results', sub: tname + ' \u00b7 ' + p.name + ' \u00b7 ' + p.id + ' \u00b7 Aug 31, 2026',
@@ -220,9 +253,16 @@
     h += "<button class='tp-m-x' data-close='1' aria-label='Close'>\u00d7</button><div class='tp-m-t'>" + esc(s.title) + "</div><div class='tp-m-s'>" + esc(s.sub) + "</div><div class='tp-m-d'></div>";
     pos.forEach(function (q, i) {
       var ro = dn || rs || (s.ro || []).indexOf(i) > -1 ? ' readonly' : '';
+      var style = 'left:' + q[2] + 'px;top:' + q[1] + 'px;width:' + q[3] + 'px';
       h += "<div class='tp-m-l' style='left:" + q[2] + 'px;top:' + q[0] + "px'>" + esc(s.l[i]) + '</div>';
-      if (i === 5) h += "<textarea class='tp-m-i' data-i='5'" + ro + " style='left:32px;top:" + q[1] + "px;width:616px'>" + esc(s.v[i]) + '</textarea>';
-      else h += "<input class='tp-m-i' data-i='" + i + "' value='" + esc(s.v[i]) + "'" + ro + " style='left:" + q[2] + 'px;top:' + q[1] + 'px;width:' + q[3] + "px'>";
+      if (s.sel && s.sel[i]) {
+        h += "<select class='tp-m-i tp-sel' data-i='" + i + "'" + ro + " style='" + style + "'>" +
+          s.sel[i].map(function (o) { return "<option" + (o === s.v[i] ? ' selected' : '') + '>' + esc(o) + '</option>'; }).join('') +
+          '</select>';
+      } else if (s.date && s.date.indexOf(i) > -1) {
+        h += "<input class='tp-m-i' type='date' data-i='" + i + "' value='" + esc(s.v[i]) + "'" + ro + " style='" + style + "'>";
+      } else if (i === 5) h += "<textarea class='tp-m-i' data-i='5'" + ro + " style='left:32px;top:" + q[1] + "px;width:616px'>" + esc(s.v[i]) + '</textarea>';
+      else h += "<input class='tp-m-i' data-i='" + i + "' value='" + esc(s.v[i]) + "'" + ro + " style='" + style + "'>";
     });
     if (dn) return h + "<button class='tp-m-c' data-close='1' style='top:300px'>Back to plan</button><button class='tp-m-ok' data-close='1' style='top:300px'>Close</button></div>";
     if (rs) return h + "<button class='tp-m-c' data-close='1' style='top:500px'>Order another</button><button class='tp-m-ok' data-close='1' style='top:500px'>Back to plan</button></div>";
@@ -234,8 +274,38 @@
   var tipT;
   function tip(t) { var o = document.querySelector('.tp-tip'); if (o) o.remove(); var d = document.createElement('div'); d.className = 'tp-tip'; d.textContent = t; document.body.appendChild(d); clearTimeout(tipT); tipT = setTimeout(function () { d.remove(); }, 2600); }
 
+  // The bed list is dependent on the ward, and the availability banner is recomputed from the pair
+  // the user has actually selected rather than being a fixed sentence.
+  function wireBed() {
+    var ward = document.querySelector('#tpmodal [data-i="0"]');
+    var bed = document.querySelector('#tpmodal [data-i="1"]');
+    var banner = document.querySelector('#tpmodal .tp-m-b');
+    if (!ward || !bed) return;
+    function paintBanner() {
+      if (!banner) return;
+      var note = bedNote(ward.value, bed.value);
+      var ok = /vacant and cleaned/.test(note);
+      var b = banner.querySelector('b'), s2 = banner.querySelector('span');
+      if (b) b.textContent = ok ? 'Bed available' : 'Bed check';
+      if (s2) s2.textContent = note;
+      banner.classList.toggle('bad', !ok);
+      banner.classList.toggle('green', false);
+    }
+    ward.onchange = function () {
+      var free = (window.HIS.admissions ? window.HIS.admissions.bedBoard(ward.value) : [])
+        .filter(function (b) { return b.status === 'available'; });
+      bed.innerHTML = free.length
+        ? free.map(function (b) { return '<option>' + esc(b.label + ' (' + b.type + ')') + '</option>'; }).join('')
+        : "<option value=''>No free bed in this ward</option>";
+      paintBanner();
+    };
+    bed.onchange = paintBanner;
+    paintBanner();
+  }
+
   function render(keepFocus) {
     wrap.innerHTML = top() + directory() + profile() + "<div id='tpmenu'>" + menu() + "</div><div id='tpmodal'>" + modal() + '</div>';
+    if (st.modal === 'bed') wireBed();
     if (keepFocus) { var q = document.getElementById('tpq'); q.focus(); var c = st.caret == null ? q.value.length : st.caret; q.setSelectionRange(c, c); }
   }
   render();
@@ -304,7 +374,20 @@
         : testName + ' recorded on the plan \u00b7 not in the laboratory catalogue';
     }
     else if (kind === 'proc') { f.procs = v[0] + ' \u00b7 ' + v[3]; msg = v[0] + ' scheduled for ' + v[3]; }
-    else if (kind === 'bed') { f.care = 'Inpatient \u00b7 ' + v[0].replace(/^Inpatient\s+/i, '') + ', ' + v[1].replace(/\s*\(.*\)$/, ''); p.type = 'Inpatient'; msg = 'Bed assigned: ' + v[0] + ', ' + v[1].replace(/\s*\(.*\)$/, ''); }
+    else if (kind === 'bed') {
+      // Re-check at submit time: the bed could have been taken while the dialog was open.
+      var bedLabel = String(v[1] || '').replace(/\s*\(.*\)$/, '');
+      var ad2 = window.HIS.admissions;
+      var view = ad2 ? ad2.bedBoard(v[0]).filter(function (b) { return b.label === bedLabel; })[0] : null;
+      if (!view || view.status !== 'available') {
+        tip(view ? 'Bed ' + bedLabel + ' is ' + view.status + '. Choose another bed.' : 'Choose an available bed in ' + v[0] + '.');
+        return;
+      }
+      var wardName = String(v[0]).replace(/\s*Ward$/i, '');
+      f.care = 'Inpatient \u00b7 ' + wardName + ', ' + bedLabel;
+      p.type = 'Inpatient';
+      msg = 'Bed assigned: ' + wardName + ', ' + bedLabel;
+    }
     else { p.pstat = /complet/i.test(v[2]) ? 'done' : /cancel/i.test(v[2]) ? 'stop' : ''; msg = 'Status updated to ' + v[2]; }
     st.modal = ''; render(); tip(msg);
   }

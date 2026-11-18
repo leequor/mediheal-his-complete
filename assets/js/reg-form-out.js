@@ -40,7 +40,7 @@
       { c: 1, h: 191.6, f: [{ k: 'notes', l: 'Additional Notes', ta: 1, ph: 'Any other information the doctor or nurse should know', hint: 'Optional remarks for the care team' }] }
     ] },
     { top: 1465, h: 556.2, icon: 'calcheck', title: 'Appointment & Vitals', sub: 'Clinic schedule plus the vital signs recorded at the front desk', sw: 355.6, rows: [
-      { c: 3, h: 93.6, f: [{ k: 'dept', l: 'Department', r: 1, sel: HIS.departments }, { k: 'doctor', l: 'Attending Doctor', r: 1, sel: HIS.doctors, hint: 'Select a department first to narrow options' }, { k: 'atype', l: 'Appointment Type', r: 1, sel: KINDS }] },
+      { c: 3, h: 93.6, f: [{ k: 'dept', l: 'Department', r: 1, sel: HIS.deptNames }, { k: 'doctor', l: 'Attending Doctor', r: 1, sel: HIS.doctors, hint: 'Select a department first to narrow options' }, { k: 'atype', l: 'Appointment Type', r: 1, sel: KINDS }] },
       { c: 3, h: 93.6, f: [{ k: 'adate', l: 'Appointment Date', r: 1, ph: 'dd/mm/yyyy' }, { k: 'atime', l: 'Time Slot', r: 1, ph: '--:-- --', hint: 'e.g. 10:30 AM' }] },
       { c: 3, h: 93.6, f: [{ k: 'bp', l: 'Blood Pressure', ph: 'e.g. 120/80', hint: 'mmHg' }, { k: 'temp', l: 'Temperature', ph: 'e.g. 36.8', hint: '\u00b0C' }, { k: 'wt', l: 'Weight', ph: 'e.g. 64', hint: 'kg' }] },
       { c: 3, h: 93.6, f: [{ k: 'ht', l: 'Height', ph: 'e.g. 168', hint: 'cm' }] }

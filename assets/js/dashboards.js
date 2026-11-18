@@ -28,6 +28,10 @@
   function paidOf(b) { return HIS.ledger.paidOf(b); }
   function money(n) { return '\u20b1' + Number(n).toLocaleString('en-PH', { maximumFractionDigits: 0 }); }
   function count(list, fn) { return list.filter(fn).length; }
+  function ptName(id) {
+    var p = window.HIS.registry && HIS.registry.byId ? HIS.registry.byId(id) : null;
+    return p ? p.name : (id || '—');
+  }
   function first(name) { return String(name || '').replace(/^(Dr|Atty)\.\s*/i, '').split(' ')[0] || name; }
 
   // ---- renderers ----------------------------------------------------------
@@ -259,65 +263,72 @@
         };
 
       case 'pharmacist': {
-        var meds = [];
-        T.forEach(function (t) {
-          String((t.f && t.f.meds) || '').split(',').forEach(function (m) {
-            m = m.trim();
-            if (m && m !== 'None') meds.push({ patient: t.name, id: t.id, med: m, dept: t.dept });
-          });
-        });
+        // Read the pharmacy store, not the treatment plans: the queue the pharmacist works from is
+        // the prescription list, and stock is the batch table.
+        var rxAll = HIS.pharmacy ? HIS.pharmacy.rx() : [];
+        var rxPending = rxAll.filter(function (r) { return r.status === 'Pending'; });
+        var rxReady = rxAll.filter(function (r) { return r.status === 'Verified' || r.status === 'Partial'; });
+        var low = HIS.pharmacy ? HIS.pharmacy.lowStock() : [];
+        var soon = HIS.pharmacy ? HIS.pharmacy.nearExpiry() : [];
         return {
           greet: 'Welcome back, ' + first(person.name) + '!',
           kpis: [
-            { label: 'Prescriptions on file', value: String(meds.length), delta: 'From active treatment plans', icon: 'pill' },
-            { label: 'Patients to dispense', value: String(new Set(meds.map(function (m) { return m.patient; })).size), delta: 'Awaiting verification', icon: 'users' },
-            { label: 'Plans reviewed', value: String(T.length), delta: 'Medication reviews complete', icon: 'check-circle' },
-            { label: 'Inventory', value: '\u2014', delta: 'Not modelled yet (M6)', icon: 'bag' }
+            { label: 'To verify', value: String(rxPending.length), delta: 'Prescriptions waiting', icon: 'pill' },
+            { label: 'Ready to dispense', value: String(rxReady.length), delta: 'Verified, not yet given', icon: 'bag' },
+            { label: 'Low stock', value: String(low.length), delta: 'At or below reorder level', icon: 'branches' },
+            { label: 'Expiring soon', value: String(soon.length), delta: 'Batches within 90 days', icon: 'clock' }
           ],
           table: {
-            title: 'Dispensing queue', sub: 'Medication from active treatment plans',
-            cols: [{ t: 'PATIENT', left: 20, w: 170 }, { t: 'MEDICATION', left: 200, w: 240 }, { t: 'DEPARTMENT', left: 450, w: 150 }, { t: 'STATUS', left: 712, w: 85 }],
-            rows: meds.slice(0, 6).map(function (m) {
-              return { cells: [[m.patient, m.id], m.med, m.dept, ['Pending', 'in']] };
+            title: 'Dispensing queue', sub: 'Prescriptions in the order they were raised',
+            cols: [{ t: 'PATIENT', left: 20, w: 170 }, { t: 'MEDICATION', left: 200, w: 240 }, { t: 'QUANTITY', left: 450, w: 150 }, { t: 'STATUS', left: 712, w: 85 }],
+            rows: rxAll.slice(0, 6).map(function (r) {
+              return { cells: [[ptName(r.patientId), r.id], r.drug + (r.dosage ? ' \u00b7 ' + r.dosage : ''), r.qty + ' ' + r.unit, [r.status, r.status === 'Dispensed' ? 'ok' : (r.status === 'Rejected' ? 'off' : 'in')]] };
             }),
-            empty: 'No prescriptions on file'
+            empty: 'No prescriptions raised yet'
           },
           feed: {
-            title: 'Stock watch', sub: 'Inventory tracking not yet modelled', icon: 'bag',
-            items: [],
-            empty: 'Low-stock and near-expiry tracking arrives with the pharmacy module (M6). Nothing is invented here.'
+            title: 'Stock watch', sub: 'Items at or below their reorder level', icon: 'bag',
+            items: low.slice(0, 4).map(function (r) {
+              return { time: r.qty + ' ' + r.unit, title: r.drug, line1: 'Reorder at ' + r.reorder + ' ' + r.unit, line2: r.expired ? r.expired + ' ' + r.unit + ' expired' : 'All batches in date' };
+            }),
+            empty: 'Every item is above its reorder level'
           }
         };
       }
 
       case 'lab': {
-        var orders = [];
-        T.forEach(function (t) {
-          String((t.f && t.f.procs) || '').split(',').forEach(function (p) {
-            p = p.trim();
-            if (p && p !== 'None scheduled' && p !== 'None') orders.push({ patient: t.name, id: t.id, test: p, dept: t.dept });
-          });
-        });
+        // Every figure here is a count of laboratory records by status. The screen previously
+        // reported treatment-plan procedures and printed "Not modelled yet" against the two cards
+        // that matter most to this role; the module has existed since M6.
+        var orders = HIS.lab ? HIS.lab.all() : [];
+        var awaiting = orders.filter(function (o) { return o.status === 'Ordered'; });
+        var running = orders.filter(function (o) { return o.status === 'Collected' || o.status === 'In Process'; });
+        var toValidate = orders.filter(function (o) { return o.status === 'Resulted'; });
+        var validated = orders.filter(function (o) { return o.status === 'Validated'; });
+        var critical = orders.filter(function (o) { return o.result && o.result.flag === 'Critical' && !o.criticalAck && o.status !== 'Cancelled'; });
         return {
           greet: 'Welcome back, ' + first(person.name) + '!',
           kpis: [
-            { label: 'Orders on file', value: String(orders.length), delta: 'Procedures from treatment plans', icon: 'clipboard-plus' },
-            { label: 'Patients', value: String(new Set(orders.map(function (o) { return o.patient; })).size), delta: 'With an active order', icon: 'users' },
-            { label: 'Departments', value: String(new Set(orders.map(function (o) { return o.dept; })).size), delta: 'Requesting investigations', icon: 'branches' },
-            { label: 'Validated results', value: '\u2014', delta: 'Not modelled yet (M6)', icon: 'check-circle' }
+            { label: 'Awaiting collection', value: String(awaiting.length), delta: 'Specimen not yet taken', icon: 'clipboard-plus' },
+            { label: 'In process', value: String(running.length), delta: 'Collected or running', icon: 'flask' },
+            { label: 'Awaiting validation', value: String(toValidate.length), delta: 'Resulted, not released', icon: 'clock' },
+            { label: 'Validated results', value: String(validated.length), delta: 'Released to the record', icon: 'check-circle' }
           ],
           table: {
-            title: 'Test orders', sub: 'Requested investigations by patient',
-            cols: [{ t: 'PATIENT', left: 20, w: 170 }, { t: 'ORDER', left: 200, w: 240 }, { t: 'DEPARTMENT', left: 450, w: 150 }, { t: 'STATUS', left: 712, w: 85 }],
+            title: 'Laboratory orders', sub: 'Every order on file, newest first',
+            cols: [{ t: 'PATIENT', left: 20, w: 170 }, { t: 'TEST', left: 200, w: 240 }, { t: 'PRIORITY', left: 450, w: 150 }, { t: 'STATUS', left: 712, w: 85 }],
             rows: orders.slice(0, 6).map(function (o) {
-              return { cells: [[o.patient, o.id], o.test, o.dept, ['Requested', 'in']] };
+              var kind = o.status === 'Validated' ? 'ok' : (o.status === 'Cancelled' ? 'off' : (o.status === 'Resulted' ? 'in' : 'warn'));
+              return { cells: [[ptName(o.patientId), o.id], o.test, o.priority, [o.status, kind]] };
             }),
-            empty: 'No orders on file'
+            empty: 'No laboratory orders on file'
           },
           feed: {
-            title: 'Specimens', sub: 'Collection tracking not yet modelled', icon: 'clipboard-plus',
-            items: [],
-            empty: 'Specimen tracking and result validation arrive with the laboratory module (M6). Nothing is invented here.'
+            title: 'Critical results', sub: 'Flagged on release, awaiting acknowledgement', icon: 'bell',
+            items: critical.slice(0, 4).map(function (o) {
+              return { time: o.result.value + ' ' + (o.result.unit || ''), title: o.test, line1: ptName(o.patientId), line2: 'Reference ' + (o.result.reference || '\u2014') };
+            }),
+            empty: critical.length ? '' : 'No critical result is waiting for acknowledgement'
           }
         };
       }

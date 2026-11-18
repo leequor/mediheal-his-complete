@@ -395,7 +395,7 @@
 
   function modal() {
     if (!st.modal) return '';
-    var d = modalDef(), h = "<div class='pr-scrim' data-close='1'></div><div class='pr-modal" + (d.wide ? ' wide' : '') + "' role='dialog' aria-modal='true' style='top:" + d.y + 'px;height:' + d.h + "px'>";
+    var d = modalDef(), h = "<div class='pr-scrim' data-close='1'></div><div class='pr-modal" + (d.wide ? ' wide' : '') + "' role='dialog' aria-modal='true' style='height:" + d.h + "px'>";
     h += "<button class='pr-m-x' data-close='1' aria-label='Close'>\u00d7</button><div class='pr-m-t'>" + esc(d.t) + "</div><div class='pr-m-s'>" + esc(d.s) + "</div><div class='pr-m-d'></div>";
     if (d.body) {
       h += "<div class='pr-m-body'>" + d.body + '</div>';

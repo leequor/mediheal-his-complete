@@ -87,7 +87,7 @@
       "<span class='bd-key'><span class='bd-dot occupied'></span>Occupied</span>" +
       "<span class='bd-key'><span class='bd-dot cleaning'></span>Cleaning</span>" +
       "<span class='bd-key'><span class='bd-dot maintenance'></span>Maintenance</span>" +
-      '<span>Select a bed to admit, move or change its state.</span></div></div>';
+      '<span>Select a bed to admit, move or change its state. The board scrolls when a ward has more beds than fit.</span></div></div>';
   }
 
   function actionFor(a) {
