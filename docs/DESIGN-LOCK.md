@@ -545,3 +545,58 @@ Against the pre-M12 baseline, exactly two pre-existing pages differ, at both wid
 Both are the additions recorded in §15.2 and §15.3. The other 22 pre-existing pages are 0.000% at
 both widths. **Do not describe this milestone as "no visual change":** two pages changed by design,
 and three pages (`admissions`, `charges`, `settings`) did not exist in the original.
+
+---
+
+## 16. Presentation polish — copy, not design
+
+A pass over every screen removed wording that exposed the build: milestone labels on invoice lines,
+source paths on the Configuration screen, "Figma" in tooltips and invoice fallbacks, a developer note
+in the appointment dialog's subtitle, and "demo / synthetic / seeded" throughout. The full list is in
+`PROJECT-STATUS.md` §2 "Presentation and copy".
+
+**No design value changed.** No colour, type size, radius, shadow, spacing token or component was
+altered. The two label changes are text-only:
+
+| Change | Where | Why |
+|---|---|---|
+| Navigation "Staff" → "Attendance" | Drawer, all roles that can open it | The page heading and title already said Attendance; nav and page now agree |
+| `staff.html` title "Staff – MediHeal HIS" → "Staff · MediHeal" | Document title | Matches every other page's separator and product name |
+
+### 16.1 What the copy changes did to the pixels
+
+Measured against the pre-polish M12 baseline, at **both** widths, 11 pages differ and every one is a
+text change:
+
+| Page | 1440 | 1366 | Nature |
+|---|---|---|---|
+| accounts | 0.989% | 0.319% | Subtitle and note |
+| admissions | 0.717% | 1.567% | Note |
+| audit | 1.450% | 1.756% | Subtitle, button label, note, empty state |
+| billing | 0.389% | 0.222% | Invoice line-item descriptions |
+| charges | 0.702% | 0.480% | Note |
+| claims | 0.194% | 0.119% | Subtitle |
+| dashboard | 0.253% | 0.109% | Accounts KPI and panel copy |
+| index | 0.132% | 1.007% | Sign-in help and sample-accounts panel |
+| laboratory | 0.792% | 0.391% | Note and report copy |
+| pharmacy | 0.660% | 0.482% | Note |
+| settings | 4.414% | 2.049% | Subtitle, headings, read-only descriptions, note |
+
+Layout was verified separately by comparing page heights: at 1440 only `accounts` (−1px) and
+`settings` (−37px) changed total height, and at 1366 only `admissions` (−16px) and `settings` (−32px).
+All four are flow-layout reflows from shorter or longer copy, with zero horizontal overflow on any
+page at either width. Every other page is pixel-identical in height.
+
+### 16.2 Against the original pre-M12 baseline
+
+Nine pre-existing pages now differ from the original design, and the distinction matters:
+
+- **Two by design** — Laboratory (the Cancel action, §15.2) and Reports (the added KPI strip and
+  unbilled card, §15.3).
+- **Seven by copy only** — Accounts, Audit, Billing, Claims, Dashboard, Index, Pharmacy. These were
+  0.000% at the M12 closeout; the polish pass changed their wording, so they now differ from the
+  original by the text alone. Page height is identical to the original on 23 of the 25 pre-existing
+  pages at 1440, and on 23 of 25 at 1366 (Laboratory is +2px at 1366 from the added action button).
+
+Do not read "all pages match baseline" as "nothing changed since the original". It means the current
+build matches the baseline captured *for this build*.

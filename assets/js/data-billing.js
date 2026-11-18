@@ -14,7 +14,7 @@ window.HIS = window.HIS || {};
 
   var SEED = [
     { id: 'BL-8801', name: 'Isabel Geliz Ramos', full: 'Isabel Geliz V. Ramos', pt: 'PT-99213', dept: 'Cardiology', date: 'Aug 29, 2026', status: 'Partial', amount: 17360, type: 'Inpatient',
-      items: [['Consultation \u2014 Dr. L. Laureta \u00b7 from Consultation (M2)', 1, 1500, 1500], ['ECG \u00b7 from Lab / imaging order (M3)', 1, 600, 600], ['Echocardiogram \u00b7 from Lab / imaging order (M3)', 1, 3200, 3200], ['Room charges (3 days) \u00b7 from Ward / bed assignment (M3)', 3, 2800, 8400], ['Nursing charges \u00b7 from Nursing care (M3)', 3, 600, 1800]],
+      items: [['Consultation \u2014 Dr. L. Laureta', 1, 1500, 1500], ['ECG \u2014 12-lead', 1, 600, 600], ['Echocardiogram', 1, 3200, 3200], ['Room and board \u2014 private, 3 days', 3, 2800, 8400], ['Nursing care \u2014 3 days', 3, 600, 1800]],
       subtotal: 15500, vat: 1860, paid: 10000 },
     { id: 'BL-8800', name: 'Maria Santos', full: 'Maria Santos', pt: 'PT-99215', dept: 'OB-GYN', date: 'Aug 29, 2026', status: 'Paid', amount: 4200, type: 'Outpatient' },
     { id: 'BL-8799', name: 'Rilaneh M. Acabal', full: 'Rilaneh Marie L. Acabal', pt: 'PT-99212', dept: 'Orthopedics', date: 'Aug 28, 2026', status: 'Paid', amount: 86500, type: 'Inpatient' },

@@ -70,7 +70,7 @@
     var acct = HIS.accounts.byEmail(e);
     if (!acct) {
       auditFail(e, 'No account for this email');
-      return { ok: false, code: 'no-account', message: 'No demo account uses that email address.' };
+      return { ok: false, code: 'no-account', message: 'No account uses that email address.' };
     }
     if (acct.status !== 'active') {
       auditFail(e, 'Account is ' + acct.status);
@@ -109,13 +109,22 @@
 
   function signOut() {
     var a = account();
-    if (a && window.HIS.audit) {
-      HIS.audit.append({
-        who: a.name, role: HIS.rbac ? (HIS.rbac.ROLES[a.role] || {}).label || a.role : a.role,
-        what: 'Signed out', entity: 'session:' + a.email, before: 'active', after: 'ended'
-      });
-    }
+    // Signing out ends the demonstration: the sample dataset is restored for whoever signs in next,
+    // so one visitor's edits never greet the next. The audit trail is carried across the reset —
+    // a log that erased itself would not be a log — and both are discarded when the tab closes.
+    // See docs/PROJECT-STATUS.md §5.2.
+    var trail = window.HIS.audit ? HIS.audit.list() : null;
     clear();
+    if (window.HIS.store) HIS.store.reset({ includeOwner: true });
+    if (window.HIS.audit) {
+      if (trail) HIS.store.set(HIS.audit.KEY, trail);
+      if (a) {
+        HIS.audit.append({
+          who: a.name, role: HIS.rbac ? (HIS.rbac.ROLES[a.role] || {}).label || a.role : a.role,
+          what: 'Signed out', entity: 'session:' + a.email, before: 'active', after: 'ended'
+        });
+      }
+    }
   }
 
   // Where a freshly signed-in account should land.

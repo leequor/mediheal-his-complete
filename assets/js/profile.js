@@ -56,7 +56,6 @@
     "<section class='pf-card " + cls + "' style='left:" + l + 'px;top:' + t + 'px;width:' + w + 'px;height:' + h + "px'><div class='pf-ch'><i class='pf-ic'><span>" + ic + "</span></i><b class='pf-h3'>" + esc(title) + '</b></div>' + inner + '</section>';
 
   const TAG = { o: 'background:#fdeee0;color:#b6641b', g: 'background:#e6f6ec;color:#1a8a4a', g2: 'background:#d8ffd3;color:#084d02' };
-  const tip = 'Opens a modal state frame in Figma; not built yet';
   // [label, left, width, text padding-left, action]
   const hb = [['Edit', 705.999, 64, 20, 'edit'], ['Transfer', 779.999, 88, 14.4, 'transfer'], ['Discharge', 877.999, 96, 14.4, 'discharge'], ['\u{1FAAA} ' + id, 983.615, 110.611, 14.4, 'id'], ['\u{1F5A8} Print', 1104.664, 71.849, 14.4, 'print']];
 
@@ -64,7 +63,7 @@
   h += "<section class='pf-card pf-head' style='left:118.344px;top:123.133px;width:1202.4px;height:94.355px'>" +
     "<div class='pf-av'>" + esc(P.ini) + '</div><h1 class=\'pf-name\'>' + esc(P.name) + '</h1>' +
     "<div class='pf-tags'>" + P.tags.map(t => "<span class='pf-tag' style='" + (TAG[t[1]] || TAG.g) + "'>" + esc(t[0]) + '</span>').join('') + "<span class='pf-meta'>" + esc(P.meta) + '</span></div>' +
-    hb.map(b => "<button class='pf-btn' data-act='" + b[4] + "' style='left:" + b[1] + 'px;width:' + b[2] + 'px;padding-left:' + b[3] + "px'" + (['edit', 'transfer', 'discharge'].includes(b[4]) ? " title='" + tip + "'" : '') + '>' + esc(b[0]) + '</button>').join('') +
+    hb.map(b => "<button class='pf-btn' data-act='" + b[4] + "' style='left:" + b[1] + 'px;width:' + b[2] + 'px;padding-left:' + b[3] + "px'" + '>' + esc(b[0]) + '</button>').join('') +
     '</section>';
   h += card('', 118.344, 236.277, 389.658, 257.5975, '\u{1F464}', 'Personal Information', rows(P.personal));
   h += card('', 524.7, 236.277, 389.658, 257.5975, '\u2709\uFE0F', 'Contact & Address', rows(P.contact, [35.07, 35.07, 51.77]));

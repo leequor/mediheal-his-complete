@@ -290,3 +290,108 @@ the three new pages having no pre-M12 baseline to compare against, which is expe
 ## 7. Repository state
 
 `dev/autonomous-milestones` · `main` still `fd5bf9f` · not merged · not deployed · nothing pushed.
+
+---
+
+# Final presentation pass
+
+A polish pass over the finished application. No new features, no redesign: remove everything that
+exposed the build, make the naming agree, make the demonstration data genuinely temporary, and verify
+the whole site at both desktop widths.
+
+## 1. What was removed from the product
+
+An audit of every rendered page, every dialog and every tooltip found these build artefacts:
+
+| Artefact | Where it was visible | Now |
+|---|---|---|
+| "from Consultation (M2)", "from Ward / bed assignment (M3)" | Billing invoice line items | "Consultation — Dr. L. Laureta", "Room and board — private, 3 days" |
+| `assets/js/lab.js · CATALOG`, `assets/js/admissions.js · WARDS` | Configuration, read-only rows | Plain descriptions of what each setting is |
+| "not in the main Figma frame (estimated summary)" | Billing, invoices without items | "Itemised lines are not recorded for this invoice" |
+| "Opens a state frame in Figma; not built yet" | Departments "Add doctor", Profile "Edit / Transfer / Discharge" | Removed — both controls open a working dialog, so the tooltip was both stale and wrong |
+| "Visit history is not drawn in Figma" | Consultation tooltip | "Visit history is not available in this view" |
+| "Temporary form. Figma has no edit screen yet." | Appointment editor subtitle | "Update the details below and save to keep the appointment." |
+| "Demonstration identity system… non-cryptographic digest… see `docs/AUTH.md`" | Accounts note | A product note about deactivation and the audit log |
+| "Demo accounts", "Demo environment · synthetic data only", "Demonstration data", "seeded" | Sign-in, account menu, Laboratory, Pharmacy, Admissions, Charges, Settings, Reports, Portal, Audit | "Sample accounts", "Sample data · all records fictitious", "About these results", etc. |
+
+Also fixed: the `aria-label` on the header profile block read *"Account and demo role: …"* on all 28
+pages, and `staff.html` used a different title separator and product name.
+
+**Kept deliberately:** the honest disclosures. A hospital demonstration must say its records are
+fictitious, that a claim is not cash, and that a critical flag is a comparison rather than a
+diagnosis. Those are product statements, not build artefacts.
+
+## 2. Naming
+
+- Drawer item **Staff** → **Attendance**. The page heading and document title already said Attendance;
+  the navigation was the odd one out.
+- `staff.html` title → `Staff · MediHeal`.
+- Every other navigation label already matched its page heading.
+
+## 3. Temporary data, actually temporary
+
+The demonstration data moved from `localStorage` to **`sessionStorage`**:
+
+- survives navigation and refresh within the tab;
+- is discarded when the tab closes, so a new visitor always starts from the seed;
+- is restored immediately on **sign out** and on the new **Reset sample data** action in the account
+  menu (the audit trail is carried across the reset so the session stays readable).
+
+The only thing that can outlive the tab is an explicitly remembered sign-in token — a user id, an
+email and an expiry, no hospital record. Unticked (the default) nothing persists at all.
+
+Two consequences worth stating rather than hiding:
+
+- **Two tabs are two independent demonstrations.** That is isolation, not concurrency control. The
+  duplicate-bed guard is real within a tab (`adt-boundary-check.mjs` §8) and there is no shared store
+  to race over (§12 asserts the isolation). The project still does not claim that simultaneous real
+  users could not double-book a bed, because there is no server and no transaction.
+- **A role switch ends the demonstration.** Signing out restores the seed, so the harnesses that
+  switch identity mid-scenario now call `HIS.auth.clear()` instead of `signOut()` — the session ends,
+  the data does not. `auth-check` still covers a real sign-out end to end.
+
+## 4. Verification
+
+Every suite was re-run after the changes; three needed updating for the new behaviour, none weakened:
+
+- `auth-check` — the unknown-account assertion matched the old copy ("No demo account…"); it now
+  matches the new message. 25/25.
+- `clinical-check` — the portal check opened a second tab, which is now a separate dataset; it signs
+  in on the same tab, which is what a visitor does. 53/53.
+- `claims`, `ledger`, `acceptance`, `m10-1` — role switches use `clear()` rather than `signOut()`.
+- `adt-boundary-check` §12 was rewritten from "lost update across tabs" to "two tabs are two
+  demonstrations", plus a new §13 proving sign-out restores the seed. 65/65.
+
+| Suite | Result |
+|---|---|
+| `adt-boundary-check` | 65 / 65 |
+| `revenue-check` | 81 / 81 |
+| `charges-check` | 44 / 44 |
+| `clinical-check` | 53 / 53 |
+| `finance-check` | 31 / 31 |
+| `ledger-check` | 46 / 46 |
+| `claims-check` | 41 / 41 |
+| `portal-check` | 40 / 40 |
+| `auth-check` | 25 / 25 |
+| `payroll-check` | 89 / 89 |
+| `acceptance-audit` | 180 / 180 |
+| `m10-1..4` | 77 / 78 / 75 / 54 |
+| `roles-check` | 144 checks |
+| `smoke` | 28 pages clean |
+| `a11y` | 27 pages, 0 violations |
+| `responsive` | 140 checks, no overflow |
+| `buttons` | 0 anomalies |
+| `visual` | 28 pages, 0.000% at 1440 and 1366 after re-capture |
+
+**1,123 assertions across 16 rule-asserting harnesses, 0 failures.**
+
+## 5. Visual result
+
+Copy changes moved pixels on 11 pages. Each was verified to be text-only before the baseline was
+re-captured: page heights were compared separately, and at 1440 only `accounts` (−1px) and `settings`
+(−37px) changed total height; at 1366 only `admissions` (−16px) and `settings` (−32px). No horizontal
+overflow on any page at either width. Details and per-page percentages are in `DESIGN-LOCK.md` §16.
+
+Against the **pre-M12 original**, nine pre-existing pages differ: Laboratory and Reports by design,
+and seven (Accounts, Audit, Billing, Claims, Dashboard, Index, Pharmacy) by wording alone. Height is
+identical to the original on 23 of the 25 pre-existing pages at both widths.

@@ -179,18 +179,18 @@ await page.waitForTimeout(400);
 // ---------------------------------------------------------------- 6. role gating
 {
   const r = await page.evaluate(() => {
-    HIS.auth.signOut();
+    HIS.auth.clear();
     HIS.auth.attempt('auditor@mediheal.test', 'MediHeal2026!', true);
     const auditorRole = HIS.rbac.key();
     const c = HIS.claims.all().filter(x => x.status === 'under-review')[0];
     const auditorApprove = c ? HIS.claims.transition(c.id, 'deny', { reason: 'x' }) : { ok: 'no-claim' };
     const auditorCreate = HIS.claims.create({ invoiceId: 'BL-8801', payer: 'X', memberRef: '1', requestedAmount: 1 });
-    HIS.auth.signOut();
+    HIS.auth.clear();
     HIS.auth.attempt('cashier@mediheal.test', 'MediHeal2026!', true);
     const cashierRole = HIS.rbac.key();
     const cashierApprove = c ? HIS.claims.transition(c.id, 'approve', { approvedAmount: 1 }) : { ok: 'no-claim' };
     const cashierCreate = HIS.claims.create({ invoiceId: 'BL-8801', payer: 'PhilHealth', memberRef: '12-3', requestedAmount: 500 });
-    HIS.auth.signOut();
+    HIS.auth.clear();
     HIS.auth.attempt('finance@mediheal.test', 'MediHeal2026!', true);
     return {
       auditorRole, cashierRole,

@@ -31,7 +31,7 @@
     var list = rows();
     stage.innerHTML =
       "<h1 class='ad-title'>Accounts</h1>" +
-      "<p class='ad-sub'>Individual demo identities. Each account signs in with its own email and resolves its own role.</p>" +
+      "<p class='ad-sub'>Each account signs in with its own email address and resolves its own role, dashboard and navigation.</p>" +
       "<div class='ad-body'>" +
       "<div class='ad-kpis'>" +
       "<div class='ad-kpi'><div class='l'>Total accounts</div><div class='v'>" + st.total + "</div><div class='d'>Across " + Object.keys(st.byRole).length + ' roles</div></div>' +
@@ -84,11 +84,9 @@
       }).join('') : "<div class='ad-empty'><b>No patient accounts yet</b>Create one with “New account”, or link an existing account from “Manage”.</div>") +
       '</div>' +
 
-      "<div class='ad-note'><b>Demonstration identity system.</b> Accounts and the active session live in this " +
-      "browser's storage. Passwords are stored as a fast non-cryptographic digest, not a password hash, " +
-      'and the session is readable by anyone with devtools. This is not production authentication \u2014 see ' +
-      '<code>docs/AUTH.md</code> for what a real deployment requires. Every action on this page is written ' +
-      'to the audit log; passwords never are.</div>' +
+      "<div class='ad-note'><b>About these accounts.</b> Accounts and the active session are held in this browser " +
+      'only. Deactivating an account keeps its history attributable; accounts are never deleted. ' +
+      'Every change on this page is recorded in the audit log, and passwords never are.</div>' +
       '</div>';
 
     document.getElementById('acQ').oninput = function (e) {

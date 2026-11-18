@@ -52,7 +52,7 @@
     var canClear = HIS.rbac && HIS.rbac.key() === 'superadmin';
     stage.innerHTML =
       "<h1 class='ad-title'>Audit log</h1>" +
-      "<p class='ad-sub'>Every recorded change in this demo, newest first. Read-only for auditors.</p>" +
+      "<p class='ad-sub'>Every recorded change, newest first. Read-only for auditors.</p>" +
       "<div class='ad-body'>" +
       "<div class='ad-card'>" +
       "<div class='ad-bar'>" +
@@ -63,7 +63,7 @@
       KINDS.map(function (k) { return "<option value='" + k[0] + "'" + (type === k[0] ? ' selected' : '') + '>' + k[1] + '</option>'; }).join('') +
       '</select>' +
       "<button class='ad-btn' id='adCsv' type='button'>Export CSV</button>" +
-      (canClear ? "<button class='ad-btn' id='adClear' type='button'>Clear demo log</button>" : '') +
+      (canClear ? "<button class='ad-btn' id='adClear' type='button'>Clear log</button>" : '') +
       '</div>' +
       "<div class='ad-th ad-g-audit'><span>#</span><span>When</span><span>Who</span><span>Role</span><span>Action</span><span>Change</span></div>" +
       (r.length
@@ -75,11 +75,10 @@
             '<span>' + esc(x.what) + '</span>' +
             '<span>' + change(x) + '</span></div>';
         }).join('')
-        : "<div class='ad-empty'><b>No audit entries yet</b>Switch role from the header, or record a payment in Billing, and the change appears here.</div>") +
+        : "<div class='ad-empty'><b>No audit entries yet</b>Sign in as another role, or record a payment in Billing, and the change appears here.</div>") +
       '</div>' +
-      "<div class='ad-note'><b>About this log.</b> Entries are written by <code>HIS.audit</code> into this browser's " +
-      "localStorage (<code>mh_audit</code>) and never leave the device. This is a demonstration: it is not " +
-      'tamper-evident, not server-side, and not a substitute for a real compliance audit trail.</div>' +
+      "<div class='ad-note'><b>About this log.</b> Entries are held in this browser only and never leave the device. " +
+      'The log is not tamper-evident and is not a substitute for a compliance audit trail.</div>' +
       '</div>';
 
     document.getElementById('adQ').oninput = function (e) {
@@ -113,15 +112,15 @@
 
   function clearLog() {
     HIS.kit.modal({
-      title: 'Clear the demo audit log?',
+      title: 'Clear the audit log?',
       sub: 'Removes all ' + list.length + ' entries stored in this browser. This cannot be undone.',
-      body: "<p style='margin:12px 0 0;color:#6f8890;font-size:13px'>Only the local demonstration log is cleared. No patient, billing or payroll record is touched.</p>",
+      body: "<p style='margin:12px 0 0;color:#6f8890;font-size:13px'>Only the audit log is cleared. No patient, billing or payroll record is touched.</p>",
       saveLabel: 'Clear log',
       onSave: function () {
         HIS.audit.clear();
         list = [];
         render();
-        HIS.kit.toast('Demo audit log cleared.');
+        HIS.kit.toast('Audit log cleared.');
       }
     });
   }

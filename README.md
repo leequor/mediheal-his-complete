@@ -28,8 +28,10 @@ one authoritative patient record, and a single money chain from a clinical servi
 | Configuration | charge master: effective-dated prices, per-code history, audit on every change |
 | Configuration | charge master with effective-dated prices and per-code history |
 
-Everything is synthetic and lives in `localStorage`. It does not synchronise between devices, and it
-is not a hospital database. Read `docs/PROJECT-STATUS.md` §3 before treating any figure as real.
+Every record is fictitious and lives in the tab session (`sessionStorage`): it survives navigation and
+refresh, and is gone when the tab closes. Sign out or use **Reset sample data** to restore the seed
+during a visit. It does not synchronise between devices and it is not a hospital database. Read
+`docs/PROJECT-STATUS.md` §3 before treating any figure as real.
 
 ## Run locally
 

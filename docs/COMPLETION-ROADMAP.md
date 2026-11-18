@@ -29,6 +29,17 @@ either blocked on something outside this repository or deliberately deferred.
 | Boundary and idempotency behaviour was untested | `adt-boundary-check.mjs`: 59 assertions over the admission day, the noon cutoff, the discharge day, transfers either side of the cutoff, repeated accrual, repeated discharge, reopen, reload, derived occupancy, duplicate bed assignment, invoice association and history preservation |
 | Concurrency was described loosely | `PROJECT-STATUS.md` §5.1 states what the store cannot do, and §12 of the boundary suite demonstrates the lost update rather than asserting safety |
 
+### 1.2 Closed in the presentation pass
+
+| Item | Outcome |
+|---|---|
+| Build artefacts visible in the product | Milestone labels on invoice lines, `assets/js/...` paths on Configuration, "Figma" in tooltips and invoice fallbacks, a developer note in the appointment dialog, and "demo / synthetic / seeded" throughout — all removed. Full list in `PROJECT-STATUS.md` §2. |
+| Nav and page heading disagreed | "Staff" in the drawer → **Attendance**, matching the page heading and title |
+| Dead-looking controls | Two buttons carried a tooltip claiming they were "not built yet" while both open a working dialog; the tooltips are gone. The `buttons.mjs` sweep reports 0 anomalies. |
+| No way to reset the demonstration | **Reset sample data** added to the account menu; sign-out also restores the seed |
+| Demonstration data persisted indefinitely | Moved from `localStorage` to `sessionStorage` — tab-scoped, discarded when the tab closes. Only an explicitly remembered sign-in token can outlive the tab, and it holds no hospital record. |
+| Page title inconsistencies | `staff.html` used a different separator and product name |
+
 ## 2. Highest value next
 
 ### 2.1 Catalogue and bed configuration screens
@@ -82,8 +93,9 @@ connection.
 
 - **Client-side authentication.** A session can be forged from devtools. `docs/AUTH.md` describes what
   a real deployment needs.
-- **`localStorage` as the database.** Per-browser, ~5 MB, no transactions, no concurrency. Two tabs are
-  two writers with no locking.
+- **Browser storage as the database.** `sessionStorage`: per-tab, ~5 MB, no transactions, no
+  concurrency. Two tabs are two independent datasets, which is isolation rather than concurrency
+  control.
 - **No server-side authorisation.** Every restriction is a JavaScript allowlist.
 - **Admin tables below 1440 px.** They stack into unlabelled blocks. Shared with Laboratory, Pharmacy,
   Claims, Accounts, Audit and Reports; the desktop layout is the design contract.
@@ -97,3 +109,5 @@ connection.
 
 Do not open a new milestone to re-research the payroll methodology. Those questions are recorded in
 `docs/PAYROLL.md` §10 and need a Philippine practitioner, not another audit.
+
+---

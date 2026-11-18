@@ -147,7 +147,7 @@
     ['pharmacy', 'Pharmacy', 'pill'],
     ['laboratory', 'Laboratory', 'flask'],
     ['charges', 'Charges', 'tag'],
-    ['attendance', 'Staff', 'users'],
+    ['attendance', 'Attendance', 'users'],
     ['personnel', 'Personnel', 'id'],
     ['payroll', 'Payroll', 'peso'],
     ['departments', 'Departments', 'branches'],

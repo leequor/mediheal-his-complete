@@ -94,7 +94,7 @@
     var h = "<section class='bl-inv'><div class='bl-ih'><span class='t'>Invoice " + b.id + "</span><span class='m'>" + esc(b.full) + ' \u00b7 ' + b.pt + ' \u00b7 ' + esc(b.dept) + "</span><span class='d'>" + b.date + "</span><span class='bp'>" + pill(status) + '</span></div>';
     h += "<div class='bl-tb'><div class='bl-tr h'><span class='c1'>Description \u00b7 charge source</span><span class='c2'>Qty</span><span class='c3'>Rate (\u20b1)</span><span class='c4'>Amount</span></div>";
     if (items) items.forEach(function (r) { h += "<div class='bl-tr'><span class='c1'>" + esc(r[0]) + "</span><span class='c2'>" + r[1] + "</span><span class='c3'>" + num(r[2]) + "</span><span class='c4'>" + num(r[3]) + '</span></div>'; });
-    else h += "<div class='bl-tr'><span class='c1' style='color:#8a97a6'>Line items for this bill are not in the main Figma frame (estimated summary)</span><span class='c2'>1</span><span class='c3'>" + num(sub) + "</span><span class='c4'>" + num(sub) + '</span></div>';
+    else h += "<div class='bl-tr'><span class='c1' style='color:#8a97a6'>Itemised lines are not recorded for this invoice</span><span class='c2'>1</span><span class='c3'>" + num(sub) + "</span><span class='c4'>" + num(sub) + '</span></div>';
     // Charges raised by clinical modules, each naming the module it came from.
     charges.forEach(function (c) {
       h += "<div class='bl-tr'><span class='c1'>" + esc(c.description) + ' \u00b7 ' + esc(c.sourceLabel) +

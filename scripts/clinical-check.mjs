@@ -274,15 +274,16 @@ async function session(email, pagePath) {
   ok('an entered result stays a draft until validated', r.draftStatus === 'Resulted', r.draftStatus);
 
   // Now look at the patient's own record in the portal.
-  const p2 = await ctx.newPage();
-  await p2.goto(BASE + '/portal.html#signin', { waitUntil: 'load' });
-  await p2.evaluate(pw => HIS.auth.attempt('patient@mediheal.test', pw, true), DEMO);
-  await p2.goto(BASE + '/portal.html#medical', { waitUntil: 'load' });
-  await p2.waitForTimeout(600);
-  const seen = await p2.evaluate(() => document.querySelector('#pt-stage').innerText);
+  // Opened in the SAME tab: demonstration data is tab-scoped, so a second tab would be a separate,
+  // freshly seeded dataset. Signing in as the patient here is also what a visitor does.
+  await page.evaluate(() => HIS.auth.clear());
+  await page.goto(BASE + '/portal.html#signin', { waitUntil: 'load' });
+  await page.evaluate(pw => HIS.auth.attempt('patient@mediheal.test', pw, true), DEMO);
+  await page.goto(BASE + '/portal.html#medical', { waitUntil: 'load' });
+  await page.waitForTimeout(600);
+  const seen = await page.evaluate(() => document.querySelector('#pt-stage').innerText);
   ok('the portal shows the validated result', /Hemoglobin/.test(seen) && /11\.2/.test(seen));
   ok('the portal does NOT show the unvalidated draft', !/Creatinine/.test(seen));
-  await p2.close();
   await ctx.close();
 }
 
@@ -295,14 +296,13 @@ async function session(email, pagePath) {
     HIS.pharmacy.verify('RX-0002');
     HIS.pharmacy.dispense('RX-0002', { batchId: b.id, qty: 30 });
   });
-  const p2 = await ctx.newPage();
-  await p2.goto(BASE + '/portal.html#signin', { waitUntil: 'load' });
-  await p2.evaluate(pw => HIS.auth.attempt('patient@mediheal.test', pw, true), DEMO);
-  await p2.goto(BASE + '/portal.html#medical', { waitUntil: 'load' });
-  await p2.waitForTimeout(600);
-  const seen = await p2.evaluate(() => document.querySelector('#pt-stage').innerText);
+  await page.evaluate(() => HIS.auth.clear());
+  await page.goto(BASE + '/portal.html#signin', { waitUntil: 'load' });
+  await page.evaluate(pw => HIS.auth.attempt('patient@mediheal.test', pw, true), DEMO);
+  await page.goto(BASE + '/portal.html#medical', { waitUntil: 'load' });
+  await page.waitForTimeout(600);
+  const seen = await page.evaluate(() => document.querySelector('#pt-stage').innerText);
   ok('the portal lists the dispensed prescription with its status', /Atorvastatin/.test(seen) && /Dispensed/.test(seen));
-  await p2.close();
   await ctx.close();
 }
 

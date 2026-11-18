@@ -284,7 +284,7 @@ console.log('\n--- 3. off-cycle corrections ---');
 // 4. NEGATIVE BALANCES
 // =================================================================================================
 console.log('\n--- 4. negative balances and unapplied coverage ---');
-await page.evaluate(() => { HIS.auth.signOut(); HIS.auth.attempt('finance@mediheal.test', 'MediHeal2026!', true); });
+await page.evaluate(() => { HIS.auth.clear(); HIS.auth.attempt('finance@mediheal.test', 'MediHeal2026!', true); });
 await page.goto(BASE + '/claims.html', { waitUntil: 'load' });
 await page.waitForTimeout(400);
 {

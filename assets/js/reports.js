@@ -81,7 +81,7 @@
           "<span class='num'>" + peso(p) + '</span>' +
           "<span class='num'>" + peso(HIS.ledger.balanceOf(b)) + '</span>' +
           "<span>" + HIS.kit.pill(s, PILL[s]) + '</span></div>';
-      }).join('') : "<div class='ad-empty'><b>No invoices</b>The demo ledger is empty.</div>") +
+      }).join('') : "<div class='ad-empty'><b>No invoices</b>No invoices have been recorded.</div>") +
       "<div class='ad-foot'>Balance = billed \u2212 collected. Status is derived, never stored separately.</div>" +
       '</div>' +
 

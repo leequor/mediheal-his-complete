@@ -24,7 +24,7 @@
     cityPopulation: null,
     cityPopulationSource: null,
     bedCapacity: 60,
-    bedCapacitySource: 'Demo profile: a 60-bed private hospital.',
+    bedCapacitySource: 'Facility profile: a 60-bed private hospital.',
     employsHealthPersonnel: true
   };
 

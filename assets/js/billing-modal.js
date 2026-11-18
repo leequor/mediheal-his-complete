@@ -80,7 +80,7 @@
     t('Description / charge source                 Qty     Rate            Amount', 10, 16);
     var items = b.items || [];
     if (items.length) items.forEach(function (r) { t(String(r[0]).slice(0, 46) + '    ' + r[1] + '    ' + String(r[2]) + '    ' + String(r[3]), 10, 14); });
-    else t('Estimated summary (line items are not in the main Figma frame)', 10, 14);
+    else t('Summary only — itemised lines are not recorded for this invoice', 10, 14);
     var charges = (window.HIS.charges ? HIS.charges.forInvoice(b.id) : []).filter(function (c) { return c.status !== 'void'; });
     charges.forEach(function (c) {
       t(String(c.description + ' - ' + c.sourceLabel).slice(0, 46) + '    ' + c.qty + '    ' + String(c.unitPrice) + '    ' + String(c.amount), 10, 14);
@@ -183,7 +183,7 @@
       return;
     }
 
-    close(); toast((cur ? '' : '') + (b.id) + ': saved in memory only (demo)');
+    close(); toast((cur ? '' : '') + (b.id) + ': statement issued');
   }
 
   document.addEventListener('bl:open', function (e) { open(e.detail); });

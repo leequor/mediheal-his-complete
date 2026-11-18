@@ -49,7 +49,7 @@
 
     stage.innerHTML =
       "<h1 class='ad-title'>Claims</h1>" +
-      "<p class='ad-sub'>PhilHealth and HMO claims from preparation to settlement. A simulated workflow \u2014 nothing is transmitted to a payer.</p>" +
+      "<p class='ad-sub'>PhilHealth and HMO claims from preparation to settlement. Claims are prepared and tracked here; nothing is transmitted to a payer.</p>" +
       "<div class='ad-body'>" +
       "<div class='ad-kpis'>" +
       kpi('Open claims', String(S.pending), S.total + ' claims on file') +

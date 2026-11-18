@@ -115,9 +115,9 @@
       "<div class='ad-foot'>An inpatient encounter is closed by discharge. An outpatient one is closed here, which is what lets the next visit open a new episode.</div>" +
       '</div>' +
 
-      "<div class='ad-note'><b>Why a charge can be unbilled.</b> A charge is only attached to an invoice through its encounter. " +
-      'If the episode has no invoice — a walk-in visit that was never billed, for example — the charge is still recorded here rather than ' +
-      'being attached to an unrelated invoice or discarded. Assign it once the right invoice exists, and the assignment is written to the audit log.</div>' +
+      "<div class='ad-note'><b>Why a charge can be unbilled.</b> A charge reaches an invoice through the encounter it belongs to. " +
+      'If that episode has no invoice yet — a walk-in visit that has not been billed, for example — the charge is recorded here and waits. ' +
+      'Assign it once the right invoice exists; the assignment is recorded in the audit log.</div>' +
       '</div>';
 
     document.getElementById('chQ').oninput = function (e) {

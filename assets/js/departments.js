@@ -14,7 +14,6 @@
   };
   const search = v => "<div class='dp-search'>" + ICO.search + "<input id='dpq' type='text' placeholder='Search records...' value='" + esc(v || '') + "' aria-label='Search'></div>";
   const tagHtml = a => a.map(t => "<span class='dp-tag'>" + esc(t) + '</span>').join('');
-  const tip = 'Opens a state frame in Figma; not built yet';
 
   function renderList(q) {
     document.title = 'Departments \u00b7 MediHeal';
@@ -60,7 +59,7 @@
       "<h1 class='dp-title'>" + esc(d.dname) + "</h1><div class='dp-sub'>" + esc(d.head + ' \u00b7 ' + d.role) + '</div>' + search('');
     stats.forEach((s, i) => { h += "<div class='dp-card dd-stat' style='left:" + [32, 380.5, 729, 1077.5][i] + "px'><span class='n'>" + s[0] + "</span><span class='l'>" + s[1] + "</span><span class='p'>" + ICO.plus(12, '#1a5379') + '</span></div>'; });
     h += "<div class='dp-occ'><span class='ol'>Bed occupancy</span><b class='op'>" + d.pct + "%</b><div class='tr'><span class='dp-fill' style='width:" + (d.pct * 13.28).toFixed(1) + "px'></span></div><div class='tg'>" + tagHtml(d.dtags || d.tags) + '</div></div>';
-    h += "<section class='dp-duty' style='height:" + (87 + 60 * d.rows.length) + "px'><span class='dp-dl'>" + esc(d.duty.toUpperCase()) + "</span><button class='dp-add' data-act='add' title='" + tip + "'>" + esc(d.add) + '</button>';
+    h += "<section class='dp-duty' style='height:" + (87 + 60 * d.rows.length) + "px'><span class='dp-dl'>" + esc(d.duty.toUpperCase()) + "</span><button class='dp-add' data-act='add'>" + esc(d.add) + '</button>';
     d.rows.forEach((r, i) => {
       h += "<div class='dp-row' data-t='" + esc((r[1] + ' ' + r[2]).toLowerCase()) + "' style='top:" + (73.2 + 60 * i).toFixed(1) + "px'><div class='dp-av'><span>" + esc(r[0]) + "</span></div><b class='dp-dn'>" + esc(r[1]) + "</b><span class='dp-dm'>" + esc(r[2]) + "</span><span class='dp-badge'>On duty</span></div>";
     });

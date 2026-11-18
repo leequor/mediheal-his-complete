@@ -3,7 +3,8 @@
 **As of:** M12 (revenue integration, admissions and bed management).
 **Branch:** `dev/autonomous-milestones`. **`main`:** untouched at `fd5bf9f`. **Deployed:** no.
 **Surface:** 28 static pages, 62 JavaScript modules, 19 stylesheets, 29 test harnesses.
-**Data:** synthetic only. Browser `localStorage`. No server, no network calls, no real patient data.
+**Data:** fictitious only. Held in `sessionStorage` — it survives navigation and refresh within the
+tab and is gone when the tab closes. No server, no network calls, no real patient data.
 
 This document describes what the code actually does. It is written from the repository, not from
 earlier progress reports. Where a capability is simulated, it says so.
@@ -132,6 +133,31 @@ all four properties after a change through the real dialog: the earlier price is
 price applies from its date, an existing charge keeps its snapshot, and a charge raised afterwards
 uses the new price.
 
+### Presentation and copy
+
+Every screen was audited for wording that exposed the build rather than the product. Removed:
+
+- **Milestone labels in the UI** — invoice lines read "from Consultation (M2)" and "from Ward / bed
+  assignment (M3)"; they now read "Consultation — Dr. L. Laureta", "Room and board — private, 3 days".
+- **Source paths on screen** — the Configuration screen printed `assets/js/lab.js · CATALOG` against
+  each read-only row; it now describes what the setting is.
+- **"Figma" in user-facing text** — the invoice fallback said "not in the main Figma frame", the
+  Departments and Profile buttons carried tooltips reading "Opens a state frame in Figma; not built
+  yet" (both buttons do work), and a consultation tooltip said "not drawn in Figma".
+- **Developer notes in dialogs** — the appointment editor's subtitle read "Temporary form. Figma has
+  no edit screen yet."
+- **"Demo" / "synthetic" / "seeded"** — replaced throughout with "sample" and, where a disclosure is
+  genuinely needed, a plain sentence: *"Sample data · all records fictitious"*.
+- **An implementation note on Accounts** that described the password digest and pointed at
+  `docs/AUTH.md`, rewritten as a product note about deactivation and the audit log.
+
+Two labels were aligned with their pages: the navigation item **Staff** became **Attendance** (the
+page heading and title already said Attendance), and the page title of `staff.html` no longer reads
+"Staff – MediHeal HIS".
+
+Internal documentation, source comments and test scripts were left intact — the audit applies to what
+a visitor sees.
+
 ## 3. Simulated, and labelled as such
 
 | Capability | What actually happens |
@@ -164,7 +190,7 @@ These are honest gaps, not bugs:
 | Item | Effect | Status |
 |---|---|---|
 | Client-side auth | Anyone can forge a session | Documented, not fixable in a static demo |
-| `localStorage` | Per-browser, ~5 MB, no transactions | Architectural — see §5.1 |
+| `sessionStorage` | Per-tab, ~5 MB, no transactions | Architectural — see §5.1 and §5.2 |
 | Admin tables below 1440px | Stack into unlabelled blocks | Shared with Laboratory, Pharmacy, Claims, Accounts, Audit, Reports, Admissions, Configuration |
 | Laboratory tariff lives in `lab.js` | Not in the charge master | Deliberate: the catalogue already holds a price per test |
 | Two seeded admissions | Room and board already inside their invoice opening amount | Marked `legacyBilledThrough`; accrual skips those dates |
@@ -172,7 +198,7 @@ These are honest gaps, not bugs:
 
 ### 5.1 Concurrency — what this store cannot do
 
-**`localStorage` is not a database.** Every store write is a read-modify-write of one JSON blob:
+**`sessionStorage` is not a database.** Every store write is a read-modify-write of one JSON blob:
 `get(key)`, mutate in memory, `set(key)`. There is no lock, no transaction, no compare-and-swap and
 no server to serialise writers. The last write wins.
 
@@ -182,18 +208,32 @@ The consequence, stated plainly:
   `occupantOf(bedId)` before writing, and `adt-boundary-check.mjs` §8 proves a second admission and a
   transfer into an occupied bed are both refused. That guard is a check followed by a write, which is
   sufficient because a single tab cannot interleave with itself.
-- **Across two tabs or two devices, that guard is not sufficient.** If both read the store before
-  either writes, both see a free bed, both pass the check, and the later write silently discards the
-  earlier admission. `adt-boundary-check.mjs` §12 demonstrates exactly this: tab A holds a snapshot,
-  tab B admits a patient, tab A writes its stale snapshot back, and tab B's admission is gone.
-- **Two devices are two hospitals.** `localStorage` is per browser profile, so nothing synchronises
-  at all; there is no shared state to conflict over.
+- **Across tabs, there is nothing to conflict over.** Demonstration data is tab-scoped, so two tabs
+  are two independent hospitals with independent datasets. `adt-boundary-check.mjs` §12 asserts that
+  an admission made in one tab is invisible to the other.
+- **This is isolation, not concurrency control.** It works because there is exactly one user. The
+  application does **not** claim that simultaneous real users cannot double-book a bed: with a shared
+  store, two writers reading before either writes would both pass the check.
 
-This project therefore does **not** claim that simultaneous real users cannot double-book a bed. It
-claims only that the application rejects an invalid assignment it can see. A production system needs
-a server, a transaction around the occupancy check, and a unique constraint on
-`(bed_id) WHERE status = 'active'` — none of which exists here. `docs/ARCHITECTURE.md` §11 lists the
-rest of what a real deployment would need.
+A production system needs a server, a transaction around the occupancy check, and a unique constraint
+on `(bed_id) WHERE status = 'active'` — none of which exists here. `docs/ARCHITECTURE.md` §11 lists
+the rest of what a real deployment would need.
+
+### 5.2 Where the data lives, and what survives
+
+| Moment | What happens |
+|---|---|
+| First visit / new tab | The seeded dataset is written to `sessionStorage` on first read |
+| Navigating between pages | Everything is preserved for the tab |
+| Refresh | Everything is preserved |
+| Sign out | Session ends; every record is restored to the seeded dataset; the audit trail is carried across so the session stays readable |
+| "Reset sample data" in the account menu | Same reset, without signing out |
+| Closing the tab | `sessionStorage` is discarded; the next visit starts from the seed |
+
+The only thing that can outlive the tab is the sign-in itself: ticking **Keep me signed in** stores a
+session token in `localStorage` for 30 days. It holds a user id, an email and an expiry — no patient,
+clinical, financial or payroll record. Leaving the box unticked (the default) keeps the session in
+`sessionStorage` too, so nothing at all persists.
 
 ## 6. Verification
 
@@ -212,7 +252,7 @@ Run with `PW=<path to playwright-core>` set (see `README.md`). Counts are the ac
 | `ledger-check.mjs` | 46 | Payments, refunds, coverage, idempotency, invariants |
 | `charges-check.mjs` | 44 | Clinical activity becomes a charge, once; unbilled persistence |
 | `revenue-check.mjs` | 81 | Charge master, consultation billing, ADT, accrual, queue, returns, tariff change |
-| `adt-boundary-check.mjs` | 59 | Noon cutoff edges, transfer pricing, idempotency, reopen, reload, derived occupancy, two-tab lost update |
+| `adt-boundary-check.mjs` | 65 | Noon cutoff edges, transfer pricing, idempotency, reopen, reload, derived occupancy, two-tab lost update |
 | `acceptance-audit.mjs` | 180 | Independent M10 acceptance |
 | `m10-1-audit.mjs` | 77 | Pag-IBIG tiers, wage floor, corrections, negative balances |
 | `m10-2-audit.mjs` | 78 | Wage conversion factors and boundaries |
@@ -223,7 +263,7 @@ Run with `PW=<path to playwright-core>` set (see `README.md`). Counts are the ac
 | `visual-check.mjs` | 28 pages | Pixel diff against `qa/baseline` at 1440 and 1366 |
 | `buttons.mjs` | all pages | 0 dead controls |
 
-**Total: 1,117 assertions across 16 rule-asserting harnesses**, plus a 28-page smoke sweep, a 27-page axe audit, 140 responsive checks and 56 visual baselines (28 pages × 2 widths).
+**Total: 1,123 assertions across 16 rule-asserting harnesses**, plus a 28-page smoke sweep, a 27-page axe audit, 140 responsive checks and 56 visual baselines (28 pages × 2 widths).
 
 ## 7. Where to start reading
 
