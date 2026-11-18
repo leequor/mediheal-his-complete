@@ -64,13 +64,10 @@
 // payroll practitioner. `verify()` reports the age of the table so a stale one is visible.
 (function () {
   var CONFIG = {
-    version: '2026.1',
+    version: '2026.3',
     effectiveFrom: '2025-01-01',
     reviewedOn: '2026-11-18',
     currency: 'PHP',
-    // DOLE factor for a monthly-paid employee: 12 months x 261 working days a year. Used only to
-    // price a day or an hour for absence, undertime and premium pay.
-    workingDaysPerYear: 261,
     hoursPerDay: 8,
     graceMinutes: 15,           // company policy, not statute: lateness inside 15 minutes is not docked
     specialDayPaidWhenNotWorked: true, // company policy: special non-working days are paid here
@@ -175,6 +172,67 @@
     }
   };
 
+  // ---- pay policy ------------------------------------------------------------------------------
+  // TWO DIFFERENT QUESTIONS, TWO DIFFERENT FACTORS. They are not the same divisor because they do
+  // not answer the same question, and collapsing them would either understate the statutory floor
+  // or cut premium pay.
+  //
+  //   wageFloorFactor 365 — the NWPC conversion for a monthly-paid employee, used ONLY to test a
+  //        monthly salary against a daily minimum wage. Source: NWPC FAQ, "How is the equivalent
+  //        monthly rate (EMR) of monthly-paid and daily-paid employees computed?".
+  //   dailyRateFactor 261 — the working-year factor this employer uses to price a day or an hour
+  //        for absence, lateness, undertime, overtime, night differential and premiums.
+  //
+  // The DOLE conversion for a monthly-paid employee's daily rate is 365 (monthly x 12 / 365). This
+  // policy uses 261, which produces a HIGHER daily rate (26,100 -> 1,200.00 rather than 858.08).
+  // That is a company practice more favourable than the statutory conversion for every premium, and
+  // it is retained deliberately: moving to 365 would reduce overtime, night differential and holiday
+  // pay for existing staff, which raises a non-diminution question (Labor Code Art. 100) that a code
+  // change cannot settle. See docs/PAYROLL.md §2A and policyImpact().
+  var POLICIES = [
+    {
+      id: 'MH-PAY-2026.1',
+      effectiveFrom: '2026-01-01',
+      status: 'active',
+      hoursPerDay: 8,
+      dailyRateFactor: 261,
+      dailyRateFactorSource: 'Company practice. DOLE converts a monthly-paid daily rate at 365; 261 is the working-year factor, retained for continuity and non-diminution.',
+      wageFloorFactor: 365,
+      wageFloorFactorSource: 'NWPC FAQ, equivalent monthly rate of monthly-paid employees.',
+      absenceBasis: 'daily rate per day absent',
+      lateBasis: 'hourly rate / 60 per minute',
+      overtimeBasis: 'hourly rate x statutory multiplier',
+      nightBasis: 'hourly rate x 10%',
+      holidayBasis: 'daily rate x statutory premium',
+      leaveBasis: 'paid leave is not converted: the period basic already pays it'
+    },
+    {
+      id: 'MH-PAY-2027.1',
+      effectiveFrom: '2027-01-01',
+      status: 'proposed',
+      hoursPerDay: 8,
+      dailyRateFactor: 365,
+      dailyRateFactorSource: 'Aligns the daily rate with the DOLE conversion. Requires a non-diminution review before it can be activated.',
+      wageFloorFactor: 365,
+      wageFloorFactorSource: 'NWPC FAQ, equivalent monthly rate of monthly-paid employees.',
+      absenceBasis: 'daily rate per day absent',
+      lateBasis: 'hourly rate / 60 per minute',
+      overtimeBasis: 'hourly rate x statutory multiplier',
+      nightBasis: 'hourly rate x 10%',
+      holidayBasis: 'daily rate x statutory premium',
+      leaveBasis: 'paid leave is not converted: the period basic already pays it'
+    }
+  ];
+
+  // The policy in force on a date. `proposed` policies are never returned.
+  function policyFor(asOf) {
+    var d = asOf ? String(asOf).slice(0, 10) : new Date().toISOString().slice(0, 10);
+    var active = POLICIES.filter(function (p) {
+      return p.status === 'active' && p.effectiveFrom <= d;
+    }).sort(function (a, b) { return a.effectiveFrom < b.effectiveFrom ? 1 : -1; });
+    return active[0] || POLICIES[0];
+  }
+
   // Pay frequencies. `periodsPerMonth` apportions monthly statutory amounts to the period.
   var FREQUENCIES = {
     monthly: { key: 'monthly', label: 'Monthly', periodsPerMonth: 1, birTable: 'monthly', daysPerPeriod: 22 },
@@ -271,10 +329,35 @@
   // ---- rates --------------------------------------------------------------------------------
   // Full precision: rounding a rate before multiplying it by 2 hours or 3 days loses centavos.
   // Every amount is rounded once, when it becomes money.
-  function dailyRate(monthlyBasic) {
-    return (Number(monthlyBasic) || 0) * 12 / CONFIG.workingDaysPerYear;
+  function dailyRate(monthlyBasic, asOf) {
+    var p = policyFor(asOf);
+    return (Number(monthlyBasic) || 0) * 12 / p.dailyRateFactor;
   }
-  function hourlyRate(monthlyBasic) { return dailyRate(monthlyBasic) / CONFIG.hoursPerDay; }
+  // The hourly rate divides the daily rate by the employee's OWN normal hours. A part-timer on four
+  // hours a day is paid their daily rate for four hours, so dividing by eight would halve every
+  // overtime and night-differential payment they receive.
+  function normalHoursOf(emp) {
+    var h = emp && emp.schedule && Number(emp.schedule.hoursPerDay);
+    return isFinite(h) && h > 0 ? h : CONFIG.hoursPerDay;
+  }
+  function hourlyRate(monthlyBasic, asOf, hoursPerDay) {
+    var h = Number(hoursPerDay) > 0 ? Number(hoursPerDay) : policyFor(asOf).hoursPerDay;
+    return dailyRate(monthlyBasic, asOf) / h;
+  }
+
+  // The daily rate an employee is actually paid on. A daily- or hourly-paid employee has a stated
+  // rate; deriving it from the monthly equivalent would round-trip through the annual factor and
+  // change it (1,200 a day on a 313-day schedule becomes 1,439.08 if pushed back through 261).
+  function dailyRateOf(emp, asOf) {
+    if (emp && emp.payBasis === 'daily' && emp.dailyRate != null) return Number(emp.dailyRate);
+    if (emp && emp.payBasis === 'hourly' && emp.hourlyRate != null) {
+      return Number(emp.hourlyRate) * normalHoursOf(emp);
+    }
+    return dailyRate(monthlyOf(emp), asOf);
+  }
+  function hourlyRateOf(emp, asOf) {
+    return dailyRateOf(emp, asOf) / normalHoursOf(emp);
+  }
 
   // ---- attendance ----------------------------------------------------------------------------
   // The attendance store hands over counts, not money. An empty summary means "a full period with
@@ -376,8 +459,9 @@
     var allowNonTaxableMonthly = allowMonthly - allowTaxableMonthly;
 
     var summary = opts.attendance || emptySummary(opts.days || f.daysPerPeriod);
-    var daily = dailyRate(monthly);
-    var hourly = hourlyRate(monthly);
+    var policy = policyFor(opts.asOf);
+    var daily = dailyRateOf(emp, opts.asOf);
+    var hourly = hourlyRateOf(emp, opts.asOf);
 
     var periodBasic = round2(monthly / f.periodsPerMonth);
     var allowancePeriod = round2(allowMonthly / f.periodsPerMonth);
@@ -455,6 +539,7 @@
       employeeId: emp.id, employeeName: emp.name, frequency: f.key,
       monthlyBasic: round2(monthly), periodBasic: periodBasic,
       dailyRate: round2(daily), hourlyRate: round2(hourly),
+      policy: { id: policy.id, dailyRateFactor: policy.dailyRateFactor, wageFloorFactor: policy.wageFloorFactor },
       days: {
         scheduled: summary.scheduledDays, worked: summary.workedDays,
         absent: summary.absenceDays, paidLeave: summary.paidLeaveDays,
@@ -561,6 +646,40 @@
     return '\u20b1' + Number(n || 0).toLocaleString('en-PH', { maximumFractionDigits: 0 });
   }
 
+  // What a change of daily-rate factor would do to each employee, so a non-diminution question is
+  // answered with numbers instead of an opinion. Compares the active policy with a proposed one.
+  function policyImpact(employees, proposedId) {
+    var proposed = POLICIES.filter(function (p) { return p.id === proposedId; })[0] ||
+      POLICIES.filter(function (p) { return p.status === 'proposed'; })[0];
+    if (!proposed) return { ok: false, error: 'No proposed policy to compare against.' };
+    var active = policyFor();
+    var rows = (employees || []).map(function (e) {
+      var monthly = monthlyOf(e);
+      var before = monthly * 12 / active.dailyRateFactor;
+      var after = monthly * 12 / proposed.dailyRateFactor;
+      var hourlyBefore = before / active.hoursPerDay;
+      var hourlyAfter = after / proposed.hoursPerDay;
+      return {
+        employeeId: e.id, name: e.name,
+        dailyBefore: round2(before), dailyAfter: round2(after),
+        hourlyBefore: round2(hourlyBefore), hourlyAfter: round2(hourlyAfter),
+        absenceBefore: round2(before), absenceAfter: round2(after),
+        overtime2hBefore: round2(hourlyBefore * 1.25 * 2), overtime2hAfter: round2(hourlyAfter * 1.25 * 2),
+        premiumReduced: round2(hourlyAfter * 1.25 * 2) < round2(hourlyBefore * 1.25 * 2) - 0.005
+      };
+    });
+    return {
+      ok: true,
+      active: { id: active.id, factor: active.dailyRateFactor },
+      proposed: { id: proposed.id, factor: proposed.dailyRateFactor, effectiveFrom: proposed.effectiveFrom, status: proposed.status },
+      rows: rows,
+      affected: rows.filter(function (r) { return r.premiumReduced; }).length,
+      note: rows.some(function (r) { return r.premiumReduced; })
+        ? 'Moving to ' + proposed.dailyRateFactor + ' days lowers the daily and hourly rate, so overtime, night differential and premiums fall for every employee below. That is a potential diminution of an established benefit (Labor Code Art. 100) and needs an approved policy change, not a code change.'
+        : 'No employee would see premium pay fall.'
+    };
+  }
+
   // Age of the table, and every source, so a stale config is visible rather than silent.
   function verify() {
     var from = new Date(CONFIG.effectiveFrom);
@@ -569,10 +688,12 @@
     return {
       version: CONFIG.version, effectiveFrom: CONFIG.effectiveFrom, monthsOld: months,
       reviewedOn: CONFIG.reviewedOn,
+      policy: { id: policyFor().id, dailyRateFactor: policyFor().dailyRateFactor, wageFloorFactor: policyFor().wageFloorFactor },
       sources: {
         sss: CONFIG.sss.source, philhealth: CONFIG.philhealth.source,
         pagibig: CONFIG.pagibig.source, bir: CONFIG.bir.source,
-        labor: CONFIG.labor.source, thirteenth: CONFIG.thirteenth.source
+        labor: CONFIG.labor.source, thirteenth: CONFIG.thirteenth.source,
+        dailyRate: policyFor().dailyRateFactorSource, wageFloor: policyFor().wageFloorFactorSource
       }
     };
   }
@@ -606,7 +727,9 @@
     pagibigMonthly: pagibigMonthly, pagibigEmployerMonthly: pagibigEmployerMonthly,
     statutory: statutory, withholding: withholding, bracketTax: bracketTax,
     dailyRate: dailyRate, hourlyRate: hourlyRate,
-    compute: compute, emptySummary: emptySummary, monthlyOf: monthlyOf,
+    POLICIES: POLICIES, policyFor: policyFor, policyImpact: policyImpact,
+    compute: compute, emptySummary: emptySummary, monthlyOf: monthlyOf, normalHoursOf: normalHoursOf,
+    dailyRateOf: dailyRateOf, hourlyRateOf: hourlyRateOf,
     thirteenthMonth: thirteenthMonth, annualize: annualize,
     verify: verify, auditTables: auditTables
   };

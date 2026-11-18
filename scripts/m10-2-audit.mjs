@@ -189,19 +189,19 @@ console.log('\n--- 5. effective-dated orders ---');
   const before = await mk({ monthlyBasic: 23000, asOf: '2026-09-25' });
   const onDay = await mk({ monthlyBasic: 23000, asOf: '2026-09-26' });
   const jan = await mk({ monthlyBasic: 23000, asOf: '2027-01-20' });
-  const other = await mk({ monthlyBasic: 23000, asOf: '2026-09-26', wage: { region: 'Region VII', sector: 'non-agriculture' } });
+  const other = await mk({ monthlyBasic: 23000, asOf: '2026-09-26', wage: { region: 'Region I', sector: 'non-agriculture' } });
 
   ok('25 September 2026 has no order in force', before.status === 'unknown', before.status);
   ok('26 September 2026 applies NCR-28 at 755', onDay.floor.orderId === 'NCR-28' && onDay.floor.dailyRate === 755,
     JSON.stringify(onDay.floor));
   ok('20 January 2027 still applies 755, not the suspended tranche', jan.floor.dailyRate === 755, jan.floor.dailyRate);
-  ok('a region with no configured order is unknown', other.status === 'unknown', other.status);
+  ok('an unverified region refuses rather than borrowing a rate', other.status === 'unverified', other.status);
 
   const added = await page.evaluate(() => {
-    const r = HIS.wageFloor.addOrder({ id: 'R7-TEST', region: 'Region VII', sector: 'non-agriculture', dailyRate: 600, effectiveFrom: '2026-01-01' });
+    const r = HIS.wageFloor.addOrder({ id: 'R13-TEST', region: 'Region XIII', sector: 'non-agriculture', dailyRate: 600, effectiveFrom: '2026-01-01' });
     const check = HIS.wageFloor.check({
       id: 'T', payBasis: 'monthly', monthlyBasic: 20000,
-      schedule: { daysPerWeek: 5, hoursPerDay: 8 }, wage: { region: 'Region VII', sector: 'non-agriculture' }
+      schedule: { daysPerWeek: 5, hoursPerDay: 8 }, wage: { region: 'Region XIII', sector: 'non-agriculture' }
     }, '2026-09-26');
     return { ok: r.ok, status: check.status, floor: check.floor.dailyRate };
   });

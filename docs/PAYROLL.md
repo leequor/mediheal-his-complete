@@ -104,6 +104,44 @@ moment they become money; rounding a rate before multiplying it by 2 hours loses
 
 ---
 
+## 2A. Two factors, two questions
+
+The system uses **365** for the minimum-wage test and **261** to price a day of pay. That is not an
+oversight, and it is not a claim that both are right. They answer different questions:
+
+| Purpose | Basis | Source |
+|---|---|---|
+| Minimum-wage equivalency (monthly → daily) | **365** | NWPC FAQ, equivalent monthly rate of monthly-paid employees |
+| Daily rate used to price pay | **261** | Company payroll policy `MH-PAY-2026.1` |
+| Hourly rate | daily rate ÷ the employee's **own normal hours** | Labor Code Art. 83 (eight-hour day); a part-timer divides by four, not eight |
+| Unpaid absence | one daily rate per day absent | Company policy |
+| Lateness and undertime | hourly rate ÷ 60 per minute | Company policy |
+| Overtime | hourly rate × statutory multiplier | Labor Code Art. 87 |
+| Night differential | hourly rate × 10% | Labor Code Art. 86 |
+| Holiday premium | daily rate × statutory percentage | Labor Code Art. 94 |
+| Rest-day premium | daily rate × 30% | Labor Code Art. 93 |
+| Leave | not converted: the period basic already pays a paid leave day | Company policy |
+
+**Why they differ.** DOLE converts a monthly-paid employee's daily rate at `monthly × 12 / 365`. This
+employer uses 261, the working-year factor, which produces a **higher** daily rate: ₱26,000 a month
+is ₱1,195.40 a day rather than ₱854.79. Every premium, overtime hour and night hour is paid on that
+higher figure, so the practice is more favourable than the statutory conversion. It is also why an
+absence costs more per day than it would under 365.
+
+**Non-diminution.** Moving the pay factor to 365 would reduce overtime, night differential and
+holiday pay for every employee. That is a potential diminution of an established benefit under Labor
+Code Art. 100, which a code change cannot settle. `HIS.payrollCalc.policyImpact()` quantifies it —
+for the demo roster every employee's daily rate falls and every employee's overtime falls — and the
+alternative is held as a **proposed** policy, `MH-PAY-2027.1`, effective 2027-01-01, which is never
+returned by `policyFor()` until its status is changed to `active`.
+
+**Daily- and hourly-paid employees do not round-trip.** Their daily rate is the rate on the record,
+not `monthlyEquivalent × 12 / 261`. Pushing a daily rate through the annual factor and back changes
+it (₱1,200 on a 313-day schedule became ₱1,439.08), so `dailyRateOf()` returns the stated rate and
+`monthlyOf()` exists only to feed the statutory tables.
+
+---
+
 ## 3. Statutory tables, sources and effective dates
 
 | Item | Rule applied | Source | Effective |
@@ -203,12 +241,21 @@ Company policy, not statute, is marked as such in the config:
 `assets/js/wage-floor.js` holds effective-dated wage orders and answers one question: on this date,
 for this region and sector, what is the daily floor?
 
-**Source.** NWPC daily minimum wage rates, National Capital Region. Wage Order **NCR-28**, effective
-**26 September 2026**: ₱755.00 non-agriculture, ₱718.00 for agriculture and the other covered
-categories. Wage Order **NCR-27** (25 July 2026) is modelled but marked `suspended`: implementation
-awaits final decisions from Pasig RTC 152 and Navotas RTC 287, so it is never applied. The second
-tranche announced under it (₱743.00–₱780.00 on 20 January 2027) is recorded as `contingent` and is
-not applied on its date either.
+**Source.** NWPC daily minimum wage rates. Two regions are verified and enabled; the other fifteen
+are registered but refused — see `docs/WAGE-ORDERS.md`.
+
+* **NCR** — Wage Order **NCR-28**, effective **26 September 2026**: ₱755.00 non-agriculture, ₱718.00
+  agriculture and the other covered categories. Wage Order **NCR-27** (25 July 2026) is marked
+  `suspended` (Pasig RTC 152, Navotas RTC 287) and never applied; its announced second tranche
+  (₱743.00–₱780.00 on 20 January 2027) is `contingent` and not applied on its date either.
+* **Region VII** — Wage Order **ROVII-27**, effective **14 October 2026**: ₱582.00 for Class A
+  (Expanded Metro Cebu: Carcar, Cebu, Danao, Lapulapu, Mandaue, Naga, Talisay; Compostela,
+  Consolacion, Cordova, Liloan, Minglanilla, San Fernando) and ₱542.00 elsewhere. This order splits
+  by **locality**, not by industry, which is why the module cannot use one shape for every region.
+
+A region with no verified category mapping returns `unverified` and publishes the order's range
+without applying a rate. A region whose order splits by category and whose category is missing
+returns `needs-category`.
 
 **No national rate.** `floorFor()` returns a floor only when an order matches the region *and* the
 sector *and* is in force on the date. A region with no configured order returns `unknown`, never a
@@ -358,12 +405,12 @@ the test asserts the released run is byte-identical after a correction is create
   `verify()` reports the age and the payroll footer prints the effective date.
 * **The wage floor covers NCR only**, and only the region/sector split. Regional orders, establishment
   size, partial exemptions and the sector definitions inside an order are not modelled.
-* **The payroll engine's absence and premium rates still use 261** (`dailyRate()` in
-  `payroll-calc.js`), while the wage-floor check uses 365 for a monthly-paid employee. The two answer
-  different questions — what a day of absence costs versus whether the monthly rate meets the daily
-  minimum — but the divergence is a known open question and should be settled by a Philippine payroll
-  practitioner before production. The floor check is the one that decides compliance; the payroll
-  rate decides the amount of a deduction or a premium.
+* **The pay factor is a company policy, not a statutory conversion.** `MH-PAY-2026.1` uses 261 where
+  DOLE publishes 365 for a monthly-paid employee's daily rate. The higher factor favours the employee
+  on premiums and costs them on absences. It is documented, quantified by `policyImpact()`, and held
+  in place pending a non-diminution review — see §2A.
+* **Regional coverage is two of seventeen.** NCR and Region VII are verified from their orders; the
+  rest are registered with their published ranges and refused. `docs/WAGE-ORDERS.md` has the plan.
 * **Circulars 274 and 460 were not read directly.** The 1% Pag-IBIG tier rests on RA 9679 §7; the
   circulars could not be retrieved (reCAPTCHA, and the archived copies unreachable). See §3.
 * **No off-cycle deduction.** An authorised overpayment recovery is recorded as

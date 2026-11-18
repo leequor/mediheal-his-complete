@@ -127,7 +127,7 @@ console.log('\n--- 2. minimum wage ---');
       onDay: wf.floorFor({ asOf: '2026-09-26' }),
       later: wf.floorFor({ asOf: '2027-01-20' }),
       agri: wf.floorFor({ asOf: '2026-09-26', sector: 'agriculture' }),
-      otherRegion: wf.floorFor({ asOf: '2026-09-26', region: 'Region VII' }),
+      otherRegion: wf.floorFor({ asOf: '2026-09-26', region: 'Region I' }),
       ok755: wf.check(emp(22964.58), '2026-09-26'),
       below: wf.check(emp(20000), '2026-09-26'),
       partTime: wf.check(emp(8000, 4), '2026-09-26'),
@@ -145,7 +145,8 @@ console.log('\n--- 2. minimum wage ---');
     JSON.stringify(r.before.suspendedOrder));
   ok('the January 2027 tranche is not applied on its date', r.later.dailyRate === 755, r.later.dailyRate);
   ok('agriculture carries the lower 718 rate', r.agri.dailyRate === 718, r.agri.dailyRate);
-  ok('a region with no order returns unknown rather than a national rate', r.otherRegion.status === 'unknown', r.otherRegion.status);
+  ok('a region whose category mapping is unverified refuses rather than borrowing a rate',
+    r.otherRegion.status === 'unverified' && !!r.otherRegion.publishedRange, r.otherRegion.status);
 
   ok('a monthly rate of 22,964.58 converts to exactly 755.00 a day (365 factor)',
     near(r.ok755.equivalentDaily, 755), r.ok755.equivalentDaily);

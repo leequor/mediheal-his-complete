@@ -184,14 +184,22 @@ Payroll's `summary(empId)` returns `null` unless `status === 'approved'`.
 calculation is never lost. `attendanceFingerprint` is compared with the live timesheet when the run
 is approved; a mismatch blocks approval until the run is recomputed.
 
-### Employee wage metadata (M10.1)
+### Employee compensation configuration (M10.1, extended in M10.3)
 ```
-wage: { region:'NCR', sector:'non-agriculture', establishment:'hospital',
-        classification:'regular', hoursPerDay:8, daysPerWeek:5,
-        exemption:{ code, reference } | absent }
+payBasis: 'monthly' | 'daily' | 'hourly'
+monthlyBasic | dailyRate | hourlyRate
+schedule: { daysPerWeek, hoursPerDay, normalWorkdaysPerMonth, paidRestDays, paidSpecialDays }
+payPolicy: 'MH-PAY-2026.1'
+payEffectiveFrom: '2026-01-01'
+wage: { region:'NCR', sector:'non-agriculture', locality, category:'hospital',
+        effectiveFrom, exemption:{ code, reference } | absent }
 ```
-`hoursPerDay` sets the full-time equivalent for the wage-floor comparison. `exemption` is only
-present when a lawful reason to sit below the floor exists, and it must carry a reference.
+`payBasis` decides the daily-rate method and is never inferred from the salary. `schedule.hoursPerDay`
+is the employee's own normal day: the hourly rate divides the daily rate by it, so a part-timer on
+four hours divides by four. `payPolicy` names the effective-dated policy that supplies the daily-rate
+factor (261 today). `wage.locality` is used where an order splits by area rather than industry, as
+Region VII does. `wage.exemption` is only present when a lawful reason to sit below the floor exists,
+and it must carry a reference.
 
 ### CorrectionRun (M10.1)
 ```
