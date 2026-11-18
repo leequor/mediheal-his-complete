@@ -208,7 +208,9 @@
 .ad-g-chg{grid-template-columns:88px 1.15fr 1.05fr 112px 1fr 76px 92px 148px}
 
 /* bed board */
-.bd-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(102px,1fr));gap:10px;padding:18px 20px 6px}
+/* Two rows are visible at a time; the rest scroll. A 40-bed ward used to push the admission
+   records and every action below the fold. */
+.bd-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(102px,1fr));gap:10px;padding:18px 20px 6px;max-height:162px;overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable}
 .bd-bed{display:flex;flex-direction:column;gap:2px;height:64px;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:#fff;text-align:left;cursor:pointer;font-family:var(--font-inter);overflow:hidden}
 .bd-bed b{font:600 13px/16px var(--font-inter);color:var(--body)}
 .bd-bed small{font:400 11px/14px var(--font-inter);color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}

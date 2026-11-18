@@ -40,6 +40,20 @@ either blocked on something outside this repository or deliberately deferred.
 | Demonstration data persisted indefinitely | Moved from `localStorage` to `sessionStorage` — tab-scoped, discarded when the tab closes. Only an explicitly remembered sign-in token can outlive the tab, and it holds no hospital record. |
 | Page title inconsistencies | `staff.html` used a different separator and product name |
 
+
+### 1.3 Closed in the final QA pass
+
+| Item | Outcome |
+|---|---|
+| Patient portal had no route back to the staff console | **Staff sign in** in the sign-in panel and the landing bar; the staff-account refusal is a link |
+| Appointment KPIs were invented numbers | Counted from the records on every render, with working pagination |
+| One photograph for every staff account | Initials avatars tinted per account |
+| One notification list for every role | Derived per role from the owning module |
+| Dashboards reported unbuilt modules | Real laboratory and pharmacy counts |
+| Payslip, payslip-detail and bed dialogs sat below a 768px window | Centred and clamped to the viewport |
+| Bed and ward were free text | Dependent selects over the real bed inventory |
+| `HIS.departments` had two shapes | Name list is `HIS.deptNames`; objects are `HIS.departments` |
+| Bed board buried the admission records | Two rows visible, the rest scroll |
 ## 2. Highest value next
 
 ### 2.1 Catalogue and bed configuration screens

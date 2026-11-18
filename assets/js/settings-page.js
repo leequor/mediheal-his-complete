@@ -105,8 +105,8 @@
       '</div>' +
 
       "<div class='ad-note'><b>About these prices.</b> The figures are sample tariffs used so that a service can be priced " +
-      'end to end; they are not a published hospital price list. Payer-specific tiers and a VAT rule per line are not ' +
-      'modelled.</div>' +
+      'end to end; they are not a published hospital price list. Payer-specific tiers and a per-line VAT rule are not ' +
+      'configured for this facility.</div>' +
       '</div>';
 
     document.getElementById('cfQ').oninput = function (e) {

@@ -644,7 +644,7 @@
       // demonstration: `signOut()` restores the sample dataset, and a wrong sign-in here should
       // leave the visitor's work intact so they can go back to the staff console.
       HIS.auth.clear();
-      err.textContent = 'That is a staff account. Sign in to the staff console at index.html instead.';
+      err.innerHTML = 'That is a staff account. <a href="index.html">Sign in to the staff console</a> instead.';
       return;
     }
     if (!r.account.patientId) { location.hash = '#home'; return; }

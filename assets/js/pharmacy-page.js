@@ -234,7 +234,7 @@
         }).join('') + '</select></div>' +
         "<div class='ac-f'><label for='rtWhy'>Reason</label><input id='rtWhy' name='reason' placeholder='e.g. patient discharged before use, wrong strength dispensed' required></div>" +
         "<p class='ac-hint'>The whole event is reversed: stock returns to its batch, the charge for that event is voided, and the original dispense row stays on file. " +
-        'Partial returns are not modelled and are refused rather than approximated.</p>',
+        'A partial return is not supported: reverse the whole event, then dispense the correct quantity.</p>',
       onSubmit: function (v, err) {
         var res = HIS.pharmacy.returnDispense(r.id, Number(v.index), v.reason);
         if (!res.ok) { err.textContent = res.error; return true; }

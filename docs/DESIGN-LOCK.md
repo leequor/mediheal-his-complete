@@ -600,3 +600,44 @@ Nine pre-existing pages now differ from the original design, and the distinction
 
 Do not read "all pages match baseline" as "nothing changed since the original". It means the current
 build matches the baseline captured *for this build*.
+
+---
+
+## 17. Final QA pass — what moved, and what only looks as if it moved
+
+No design token, type size, radius, shadow or component was changed. Three pages differ from the
+pre-pass baseline, all for reasons a visitor can see:
+
+| Page | 1440 | 1366 | Cause |
+|---|---|---|---|
+| Admissions | 11.692% | 17.340% | The bed board is capped to two visible rows and scrolls. A 40-bed ward used to push the admission records and every action below the fold. |
+| Appointments | 0.462% | 1.978% | KPI values now count the records, and the fifth card reads **Completed** instead of a walk-in count the data cannot support. |
+| Settings | 0.146% | — | One note sentence reworded. |
+| Audit | — | 0.126% | Header identity and the bell's real unread count. |
+
+### 17.1 Two changes the harness cannot see
+
+The diff metric counts pixels whose channel delta is ≥128. Two intended changes sit below that:
+
+1. **The header avatar.** Every page now draws initials on a tint keyed to the account, replacing one
+   photograph that every account shared. `#dff9ff` → the palette's first tint differs by less than 128
+   per channel, so the sweep reports 0.000% on 24 pages that did in fact change. Do not read "all
+   pages match baseline" as "the header is untouched".
+2. **The bed field on the registration form.** A text input became a dependent select. Placeholder
+   grey and label grey are close enough that the sweep does not flag it.
+
+### 17.2 Dialog placement, stated as a rule
+
+Every action dialog (`.ap-modal`, `.pr-modal`, `.tp-modal`) is now positioned with
+`top:50%; transform: translateY(-50%)` and `max-height: calc(100dvh - 24px); overflow-y:auto`.
+The Figma frames place each dialog at a fixed `y` on a 1024-tall canvas; at a 768-tall desktop window
+that put the primary action — Generate payslips, Assign bed, Confirm reschedule — outside the
+viewport, where it could not be clicked. Width, radius, stroke and every inner coordinate are
+unchanged. This is the only geometry change in the pass and it exists to make a control reachable.
+
+### 17.3 The avatar
+
+`.av-d` is a 42px disc carrying two initials, sized 38px and 36px by the two existing responsive
+breakpoints. Six tints, chosen by hashing the account email, so one person keeps one colour and no two
+accounts share a face. Colour is never the only signal: the initials themselves identify the person,
+and the disc carries an `aria-label` with the full name.

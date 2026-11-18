@@ -118,7 +118,7 @@ await page.waitForTimeout(400);
 
   // Re-saving the same consultation must not bill twice. The saved-state dialog has to be dismissed
   // first, which is what a user would do.
-  await page.click("#tpmodal [data-close]");
+  await page.click("#tpmodal .tp-m-x");
   await page.waitForTimeout(150);
   await page.click("[data-modal='dx']");
   await page.waitForSelector("[data-ok='1']");

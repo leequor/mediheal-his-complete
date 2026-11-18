@@ -18,13 +18,14 @@
 //   node scripts/buttons.mjs
 //   FRESH=1 BASE=https://leequor.github.io/mediheal-his node scripts/buttons.mjs
 import http from 'node:http';
+import net from 'node:net';
 import { readFile, readdir, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const BASE = (process.env.BASE || 'http://127.0.0.1:8788').replace(/\/$/, '');
+let BASE = (process.env.BASE || 'http://127.0.0.1:8788').replace(/\/$/, '');
 const CDP = process.env.CDP || 'http://127.0.0.1:9333';
 const PW = process.env.PW || 'playwright-core';
 const FRESH = !!process.env.FRESH;
@@ -55,7 +56,21 @@ if (/127\.0\.0\.1|localhost/.test(BASE)) {
       res.end(body);
     } catch { res.writeHead(404).end('404'); }
   });
-  await new Promise(r => server.listen(port, r));
+  // Windows allows a second bind on a port another process already holds, and keeps routing to the
+  // first socket — the sweep would then audit a stranger's server. Probe first, fall back if taken.
+  const free = await new Promise(res => {
+    const probe = net.connect(port, '127.0.0.1');
+    const done = v => { try { probe.destroy(); } catch (e) { /* gone */ } res(v); };
+    probe.once('connect', () => done(false));
+    probe.once('error', () => done(true));
+    probe.setTimeout(500, () => done(true));
+  });
+  if (free) await new Promise(r => server.listen(port, r));
+  else {
+    await new Promise(r => server.listen(0, r));
+    BASE = 'http://127.0.0.1:' + server.address().port;
+    console.log('buttons: port ' + port + ' is already in use; serving on ' + server.address().port);
+  }
 }
 
 const pages = (await readdir(ROOT)).filter(f => f.endsWith('.html') && (!ONLY || f.indexOf(ONLY) > -1)).sort();

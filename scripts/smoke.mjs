@@ -15,12 +15,13 @@
 // It serves the repo itself on BASE (no GitHub Pages lag) and drives a browser already listening
 // on CDP - start one with its OWN --user-data-dir, never the default Chrome profile.
 import http from 'node:http';
+import net from 'node:net';
 import { readFile, readdir } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const BASE = process.env.BASE || 'http://127.0.0.1:8788';
+let BASE = process.env.BASE || 'http://127.0.0.1:8788';
 const CDP = process.env.CDP || 'http://127.0.0.1:9333';
 const PW = process.env.PW || 'playwright-core';
 const WIDTHS = [1440, 1200, 1000, 800, 390];
@@ -50,7 +51,26 @@ const server = http.createServer(async (req, res) => {
     res.end(body);
   } catch { res.writeHead(404).end('404'); }
 });
-await new Promise(r => server.listen(port, r));
+// If the port is already taken, serving on it would silently test whatever else is listening
+// (which is how a foreign 404 once looked like 27 broken pages). Fall back to an ephemeral port.
+// Windows lets a second socket bind a port that another process already holds, and the OS keeps
+// routing new connections to the first one. listen() therefore succeeds while every request is
+// answered by the stranger — which is how a foreign 404 once looked like 27 broken pages. Probe
+// the port first and serve on an ephemeral one when something is already there.
+const free = await new Promise(res => {
+  const probe = net.connect(port, '127.0.0.1');
+  const done = v => { try { probe.destroy(); } catch (e) { /* already gone */ } res(v); };
+  probe.once('connect', () => done(false));
+  probe.once('error', () => done(true));
+  probe.setTimeout(500, () => done(true));
+});
+if (free) {
+  await new Promise(r => server.listen(port, r));
+} else {
+  await new Promise(r => server.listen(0, r));
+  BASE = 'http://127.0.0.1:' + server.address().port;
+  console.log('smoke: port ' + port + ' is already in use; serving on ' + server.address().port);
+}
 
 const pages = (await readdir(ROOT)).filter(f => f.endsWith('.html')).sort();
 const browser = await (async () => {

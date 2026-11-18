@@ -57,7 +57,7 @@
   .profile .nm { font-size: 12.5px !important; }
   /* was 9.5px — below the 12px secondary floor. Tightened tracking keeps it inside the header. */
   .profile small { font-size: 12px !important; letter-spacing: .02em !important; }
-  .avatar { width: 38px !important; height: 38px !important; }
+  .avatar, .profile .av-d { width: 38px !important; height: 38px !important; }
 
   /* drawer: full-width sheet on small screens */
   .drawer { width: min(430px, 86vw) !important; }
@@ -267,7 +267,7 @@
      the account menu. This is what stops the header overflowing at 390px. */
   .profile > div { display: none !important; }
   .hd .brand { font-size: 16px !important; }
-  .avatar { width: 36px !important; height: 36px !important; }
+  .avatar, .profile .av-d { width: 36px !important; height: 36px !important; }
 }
 
 /* ---- module pages (Treatment, Nursing, Consultation, Personnel, Pharmacy, Attendance)

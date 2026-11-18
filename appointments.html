@@ -7,7 +7,7 @@
 <style>
 /* Figma 2027:3041 Reschedule and 2027:3286 Cancel: Action modal 680x568 at (380,252) */
 .ap-scrim{position:absolute;left:0;top:0;width:1440px;height:100%;background:rgba(11,42,61,.35);z-index:1000}
-.ap-modal{position:absolute;left:380px;top:252px;width:680px;height:568px;background:#fff;border-radius:16px;box-shadow:inset 0 0 0 1px #c8dcea,0 20px 50px rgba(15,30,46,.25);z-index:1001}
+.ap-modal{position:fixed;left:50%;margin-left:-340px;top:50%;transform:translateY(-50%);max-height:calc(100dvh - 24px);overflow-y:auto;overflow-x:hidden;width:680px;height:568px;background:#fff;border-radius:16px;box-shadow:inset 0 0 0 1px #c8dcea,0 20px 50px rgba(15,30,46,.25);z-index:1001}
 .ap-modal>*{position:absolute}
 .ap-x{left:616px;top:24px;width:32px;height:32px;border:0;border-radius:8px;background:#f6fafd;box-shadow:inset 0 0 0 1px #c8dcea;color:#1b4e6b;font:500 18px/30px Inter,sans-serif;padding:0;cursor:pointer}
 .ap-t{left:32px;top:28px;font:500 22px/27.5px Lexend,sans-serif;color:#15405a;white-space:nowrap}
@@ -38,46 +38,84 @@ textarea.ap-i{height:88px;padding:12px 14px;line-height:20px;resize:none;font-fa
     <div class='a-grid a-th'><span>PATIENT NAME</span><span>DATE &amp; TIME</span><span>APPOINTMENT TYPE</span><span>DOCTOR</span><span>STATUS</span><span>ACTIONS</span></div>
     <div id='rows'></div>
     <div class='a-foot'><span id='count'></span>
-      <div class='a-pages'><button disabled aria-label='Previous page'>&lsaquo;</button><button class='on'>1</button><button disabled>2</button><button disabled>3</button><button disabled aria-label='Next page'>&rsaquo;</button></div>
+      <div class='a-pages' id='pages'></div>
     </div>
   </section>
 </div>
-<script src='assets/js/data.js'></script><script src='assets/js/store.js'></script><script src='assets/js/audit.js'></script><script src='assets/js/kit.js'></script><script src='assets/js/data-records.js'></script><script src='assets/js/registry.js'></script><script src='assets/js/icons.js'></script><script src='assets/js/ui.js'></script><script src='assets/js/accounts.js'></script><script src='assets/js/auth.js'></script><script src='assets/js/rbac.js'></script><script src='assets/js/shell.js'></script>
+<script src='assets/js/data.js'></script><script src='assets/js/store.js'></script><script src='assets/js/audit.js'></script><script src='assets/js/kit.js'></script><script src='assets/js/data-records.js'></script><script src='assets/js/data-departments.js'></script><script src='assets/js/data-billing.js'></script><script src='assets/js/ledger.js'></script><script src='assets/js/tariffs.js'></script><script src='assets/js/encounters.js'></script><script src='assets/js/charges.js'></script><script src='assets/js/lab.js'></script><script src='assets/js/pharmacy.js'></script><script src='assets/js/claims.js'></script><script src='assets/js/admissions.js'></script><script src='assets/js/data-attendance.js'></script><script src='assets/js/registry.js'></script><script src='assets/js/icons.js'></script><script src='assets/js/ui.js'></script><script src='assets/js/accounts.js'></script><script src='assets/js/auth.js'></script><script src='assets/js/rbac.js'></script><script src='assets/js/shell.js'></script>
 <script>
 const $ = id => document.getElementById(id);
-const T = HIS.apptTotals;
-// Appointments saved by appointment-form.html (localStorage key mh_appts_extra via HIS.store, same browser only).
+// Appointments saved by appointment-form.html (session key mh_appts_extra via HIS.store, same tab).
 HIS.store.get('mh_appts_extra', []).forEach(r => HIS.appointments.push(r));
 $('sicon').innerHTML = svg('search', 16);
 $('picon').innerHTML = svg('plus', 16);
 // [label, value, icon, icon bg, icon color, width, height, left]
+// The five cards are the Figma layout. Their VALUES are counted from HIS.appointments on every
+// render, never typed in, so cancelling an appointment moves the numbers. "Walk-in" was a Figma
+// placeholder with no record behind it — a walk-in is not distinguishable from a booked visit in
+// this dataset — so that card reports Completed, which is a real status here.
 const K = [
-  ['Total Appointments', T.total, 'calendar-check', '#dbeafe', '#2563eb', 224, 126, 148],
-  ['Confirmed', T.confirmed, 'check-circle', '#d1fae5', '#10b981', 197, 126, 392],
-  ['Pending Approval', T.pending, 'clock', '#fef3c7', '#f59e0b', 232, 126, 609],
-  ['Cancelled', T.cancelled, 'x-circle', '#fee2e2', '#ef4444', 194, 126, 861],
-  ['Walk-In', T.walkin, 'person-circle', '#1e293b', '#ffffff', 183, 126, 1075]
+  ['Total Appointments', 'total', 'calendar-check', '#dbeafe', '#2563eb', 224, 126, 148],
+  ['Confirmed', 'Confirmed', 'check-circle', '#d1fae5', '#10b981', 197, 126, 392],
+  ['Pending Approval', 'Pending', 'clock', '#fef3c7', '#f59e0b', 232, 126, 609],
+  ['Cancelled', 'Cancelled', 'x-circle', '#fee2e2', '#ef4444', 194, 126, 861],
+  ['Completed', 'Completed', 'person-circle', '#1e293b', '#ffffff', 183, 126, 1075]
 ];
-$('kpis').innerHTML = K.map(k => "<div class='akpi' style='left:" + k[7] + 'px;width:' + k[5] + 'px;height:' + k[6] + "px'><div class='at'><span>" + k[0] + "</span><i style='background:" + k[3] + ';color:' + k[4] + "'>" + svg(k[2], 20) + "</i></div><div class='aval'>" + k[1] + '</div></div>').join('');
+function kpiCount(key) {
+  const list = HIS.appointments;
+  return String(key === 'total' ? list.length : list.filter(a => a.status === key).length);
+}
+function paintKpis() {
+  $('kpis').innerHTML = K.map(k => "<div class='akpi' style='left:" + k[7] + 'px;width:' + k[5] + 'px;height:' + k[6] + "px'><div class='at'><span>" + k[0] + "</span><i style='background:" + k[3] + ';color:' + k[4] + "'>" + svg(k[2], 20) + "</i></div><div class='aval'>" + kpiCount(k[1]) + '</div></div>').join('');
+}
 
-const state = { q: '', stat: 'Status: All', doc: 'Doctor: All Drs.' };
-makeDropdown($('dd-stat'), { options: ['Status: All', ...HIS.apptStatuses], onChange: v => { state.stat = v; render(); } });
-makeDropdown($('dd-doc'), { options: ['Doctor: All Drs.', ...HIS.doctors], onChange: v => { state.doc = v; render(); } });
+const PAGE = 8;
+const state = { q: '', stat: 'Status: All', doc: 'Doctor: All Drs.', page: 1 };
+makeDropdown($('dd-stat'), { options: ['Status: All', ...HIS.apptStatuses], onChange: v => { state.stat = v; state.page = 1; render(); } });
+makeDropdown($('dd-doc'), { options: ['Doctor: All Drs.', ...HIS.doctors], onChange: v => { state.doc = v; state.page = 1; render(); } });
 document.querySelectorAll('.a-dd').forEach(d => d.classList.add('light'));
 
-function render() {
+function filtered() {
   const q = state.q.trim().toLowerCase();
-  const list = HIS.appointments.map((a, i) => Object.assign({}, a, { i })).filter(a =>
+  return HIS.appointments.map((a, i) => Object.assign({}, a, { i })).filter(a =>
     (state.stat === 'Status: All' || a.status === state.stat) &&
     (state.doc === 'Doctor: All Drs.' || a.doctor === state.doc) &&
     (!q || (a.patient + ' ' + a.doctor + ' ' + a.kind).toLowerCase().includes(q)));
-  $('rows').innerHTML = list.length ? list.map(a =>
+}
+
+function render() {
+  paintKpis();
+  const list = filtered();
+  const pages = Math.max(1, Math.ceil(list.length / PAGE));
+  if (state.page > pages) state.page = pages;
+  if (state.page < 1) state.page = 1;
+  const from = (state.page - 1) * PAGE;
+  const slice = list.slice(from, from + PAGE);
+
+  $('rows').innerHTML = slice.length ? slice.map(a =>
     "<div class='a-grid a-row'><span class='nm'>" + a.patient + '</span><span>' + a.when + "</span><span class='ty'>" + a.kind + '</span><span>' + a.doctor + '</span>' +
     "<span><span class='a-pill " + a.status + "'>" + a.status + '</span></span>' +
     "<span class='a-act'><button class='a-ib' data-edit='" + a.i + "' aria-label='Edit appointment for " + a.patient + "'>" + svg('edit', 16) + "</button><button class='a-ib' data-more='" + a.i + "' aria-label='More actions'>" + svg('more', 16) + '</button></span></div>').join('')
-    : "<div class='empty'>No appointments match these filters.</div>";
-  $('count').textContent = 'Showing ' + (list.length ? '1-' + list.length : '0') + ' of ' + T.total + ' appointments';
+    : "<div class='empty'>" + (HIS.appointments.length ? 'No appointments match these filters.' : 'No appointments booked yet.') + '</div>';
+
+  $('count').textContent = list.length
+    ? 'Showing ' + (from + 1) + '\u2013' + (from + slice.length) + ' of ' + list.length + ' appointment' + (list.length === 1 ? '' : 's')
+    : 'No appointments to show';
+
+  // Real page controls: they only appear when there is more than one page of results.
+  const p = $('pages');
+  if (pages < 2) { p.innerHTML = ''; return; }
+  let h = "<button data-p='" + (state.page - 1) + "'" + (state.page === 1 ? ' disabled' : '') + " aria-label='Previous page'>&lsaquo;</button>";
+  for (let i = 1; i <= pages; i++) h += "<button data-p='" + i + "'" + (i === state.page ? " class='on'" : '') + '>' + i + '</button>';
+  h += "<button data-p='" + (state.page + 1) + "'" + (state.page === pages ? ' disabled' : '') + " aria-label='Next page'>&rsaquo;</button>";
+  p.innerHTML = h;
 }
+$('pages').onclick = e => {
+  const b = e.target.closest('button[data-p]');
+  if (!b || b.disabled) return;
+  state.page = +b.dataset.p;
+  render();
+};
 
 function toInputs(when) {
   const parts = when.split(' \u2022 ');
@@ -85,12 +123,22 @@ function toInputs(when) {
   const p = n => String(n).padStart(2, '0');
   return { date: dt.getFullYear() + '-' + p(dt.getMonth() + 1) + '-' + p(dt.getDate()), time: p(dt.getHours()) + ':' + p(dt.getMinutes()) };
 }
+// The patient is chosen from the registry rather than typed, so an appointment cannot be filed
+// against a name that exists nowhere else. Existing appointment names are kept in the list so the
+// seeded records still resolve.
+function patientOptions(current) {
+  const set = [];
+  HIS.patients.forEach(p => { if (p.name && !set.includes(p.name)) set.push(p.name); });
+  HIS.appointments.forEach(a => { if (a.patient && !set.includes(a.patient)) set.push(a.patient); });
+  if (current && !set.includes(current)) set.unshift(current);
+  return set;
+}
 function form(a) {
   a = a || {};
   openModal({
     title: a.patient ? 'Edit Appointment' : 'New Appointment / Walk-In', sub: 'Update the details below and save to keep the appointment.',
     saveLabel: a.patient ? 'Save changes' : 'Create',
-    body: "<label>Patient</label><input name='patient' required value='" + HIS.kit.esc(a.patient || '') + "'>" +
+    body: "<label>Patient</label><select name='patient' required>" + opts(patientOptions(a.patient), a.patient) + '</select>' +
       "<div class='row'><div><label>Date</label><input name='date' type='date' required value='" + (a.date || '2026-08-31') + "'></div><div><label>Time</label><input name='time' type='time' required value='" + (a.time || '09:00') + "'></div></div>" +
       "<label>Type</label><select name='kind'>" + opts(HIS.apptKinds, a.kind) + '</select>' +
       "<div class='row'><div><label>Doctor</label><select name='doctor'>" + opts(HIS.doctors, a.doctor) + "</select></div><div><label>Status</label><select name='status'>" + opts(HIS.apptStatuses, a.status || 'Pending') + '</select></div></div>',
@@ -104,7 +152,7 @@ function form(a) {
   });
 }
 
-$('q').oninput = e => { state.q = e.target.value; render(); };
+$('q').oninput = e => { state.q = e.target.value; state.page = 1; render(); };
 $('new').onclick = () => { location.href = 'appointment-form.html'; };
 $('rows').onclick = e => {
   const ed = e.target.closest('[data-edit]');
