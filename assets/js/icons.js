@@ -27,6 +27,7 @@ const ICON_PATHS = {
   'peso': "<text x='12' y='18' text-anchor='middle' font-size='18' font-weight='700' fill='currentColor' stroke='none' font-family='Inter'>\u20b1</text>",
   'branches': "<circle cx='12' cy='5' r='2'/><circle cx='5' cy='19' r='2'/><circle cx='19' cy='19' r='2'/><path d='M12 7v5M5 17v-3a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v3'/>",
   'receipt': "<path d='M5 3h14v18l-3-2-2 2-2-2-2 2-2-2-3 2zM8 8h8M8 12h8'/>",
+  'claim': "<path d='M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8zM14 3v5h5'/><path d='m9 15 2 2 4-4'/>",
   'chart': "<path d='M3 3v18h18'/><path d='M7 16v-5M12 16V7M17 16v-9'/>",
   'shield': "<path d='M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6z'/><path d='m9 12 2 2 4-4'/>",
   'key': "<circle cx='7.5' cy='15.5' r='4.5'/><path d='m10.8 12.2 8-8M16 3.5l4.5 4.5M14 6l3 3'/>"

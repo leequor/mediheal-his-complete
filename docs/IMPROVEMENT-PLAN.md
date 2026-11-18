@@ -85,6 +85,29 @@ Size S-M + Figma-blocked.
 9.3 Wire the smoke script into a GitHub Action (or a documented pre-push checklist).
 Size M.
 
+## Phase 10 - Claims, payroll correctness and attendance (M10, done)
+
+10.1 Claim lifecycle: 13 states, role-gated transitions, document checklist, status history,
+     follow-up dates. `claims.html`, `assets/js/claims.js`. **Done.**
+10.2 Settlement through the ledger only, idempotent by claim id. Approval never counts as cash.
+     **Done.**
+10.3 Payroll frequency: monthly, semi-monthly, weekly and daily, each with its own Annex E table.
+     **Done.**
+10.4 Salary master as a monthly rate; period amount derived. The M8 doubling removed. **Done.**
+10.5 Attendance register for the pay period, with timesheet approval, corrections and history;
+     payroll refuses an unapproved period. **Done.**
+10.6 Overtime, night differential, rest-day and holiday premiums with Labor Code sources. **Done.**
+10.7 13th month on basic only, the P90,000 exemption, and a year-end annualisation. **Done.**
+10.8 Payroll run lifecycle with version history, duplicate-period guard and printable payslips.
+     **Done.**
+10.9 Ledger idempotency and `invariants()` / `reconcile()`. **Done.**
+10.10 Tests: `payroll-check`, `claims-check`, `ledger-check` with hand-calculated fixtures.
+     **Done.**
+
+Still open after M10: a real payer integration (see `docs/CLAIMS.md` §6), claim-to-remittance
+matching, biometric attendance import, CBA and regional wage rates, BIR 2316 and the alphalist,
+loan amortisation, and a bank payment file.
+
 ## Blocked on new Figma frames (ask the owner, do not invent)
 - Mobile / phone layout (Phase 8.1).
 - Patient portal and any patient-facing screen.

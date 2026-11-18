@@ -141,10 +141,19 @@
   // ---- writes -------------------------------------------------------------------------------
   // Record money against an invoice. Returns { ok, transaction } or { ok:false, error }.
   // `amount` is in PESOS for the caller's convenience; it is converted once, here.
+  //
+  // `idempotencyKey` makes a retry safe: a second call with a key already on file returns the
+  // original transaction instead of posting a second payment. A double-submitted form is the most
+  // common way a ledger gains a duplicate.
   function recordPayment(input) {
     input = input || {};
     var bill = billById(input.invoiceId);
     if (!bill) return { ok: false, error: 'Invoice not found.' };
+    var key = String(input.idempotencyKey || '').trim();
+    if (key) {
+      var dup = all().filter(function (t) { return t.idempotencyKey === key; })[0];
+      if (dup) return { ok: true, transaction: dup, duplicate: true, balance: balanceOf(bill) };
+    }
     var amount = Number(input.amount);
     if (!isFinite(amount) || amount <= 0) return { ok: false, error: 'Enter an amount greater than zero.' };
     if (METHODS.indexOf(input.method) < 0) return { ok: false, error: 'Choose a valid payment method.' };
@@ -167,6 +176,7 @@
       // An electronic payment cannot be marked settled by the hospital in a static demo.
       status: electronic ? 'pending' : 'posted',
       notes: String(input.notes || '').trim(),
+      idempotencyKey: key || undefined,
       seeded: false
     };
     if (electronic && !tx.reference) {
@@ -174,7 +184,7 @@
     }
     rows.push(tx);
     save(rows);
-    if (window.HIS.audit) {
+    if (window.HIS.audit && !input.silent) {
       HIS.audit.append({
         who: actorName(), role: roleLabel(),
         what: 'Payment recorded \u2014 ' + peso(amount) + ' via ' + tx.method + ' on ' + bill.id +
@@ -260,12 +270,21 @@
   // share, and the patient's own balance reflects the reduction.
   //
   // Every row needs a basis and a reference, because a discount without a reason is a leak.
+  //
+  // `sourceId` is the id of whatever produced the row (a claim, an adjustment batch). It is unique:
+  // a second posting for the same source returns the first transaction instead of adding a second.
+  // That is what stops a re-settled claim from crediting the invoice twice.
   var COVERAGE_KINDS = ['coverage', 'discount', 'adjustment'];
 
   function recordCoverage(input) {
     input = input || {};
     var bill = billById(input.invoiceId);
     if (!bill) return { ok: false, error: 'Invoice not found.' };
+    var sourceId = String(input.sourceId || '').trim();
+    if (sourceId) {
+      var existing = all().filter(function (t) { return t.sourceId === sourceId && t.status !== 'void'; })[0];
+      if (existing) return { ok: true, transaction: existing, duplicate: true, balance: balanceOf(bill) };
+    }
     var kind = COVERAGE_KINDS.indexOf(input.kind) > -1 ? input.kind : 'coverage';
     var amount = Number(input.amount);
     if (!isFinite(amount) || amount <= 0) return { ok: false, error: 'Enter an amount greater than zero.' };
@@ -290,11 +309,12 @@
       status: 'posted',
       notes: String(input.notes || '').trim(),
       basis: String(input.basis || '').trim(),
+      sourceId: sourceId || undefined,
       seeded: false
     };
     rows.push(tx);
     save(rows);
-    if (window.HIS.audit) {
+    if (window.HIS.audit && !input.silent) {
       HIS.audit.append({
         who: actorName(), role: roleLabel(),
         what: (kind === 'discount' ? 'Discount applied' : kind === 'coverage' ? 'Coverage applied' : 'Adjustment applied') +
@@ -360,6 +380,88 @@
       .sort(function (a, b) { return b.amount - a.amount; });
   }
 
+  // ---- invariants ---------------------------------------------------------------------------
+  // These must hold after every write. A failure is a bug in a write path, not a data-entry
+  // problem: no screen should be able to produce one. Each check is named so a test can assert on
+  // the code rather than on a sentence.
+  function invariants() {
+    var problems = [];
+    var rows = all();
+    var bySource = {};
+
+    rows.forEach(function (t) {
+      if (!isFinite(t.amount) || t.amount < 0) {
+        problems.push({ code: 'negative-amount', transaction: t.id, detail: String(t.amount) });
+      }
+      if (t.sourceId) {
+        if (bySource[t.sourceId]) {
+          problems.push({ code: 'duplicate-source', sourceId: t.sourceId, a: bySource[t.sourceId], b: t.id });
+        } else { bySource[t.sourceId] = t.id; }
+      }
+    });
+
+    bills().forEach(function (b) {
+      var amountC = toCentavos(b.amount);
+      var s = sums(b.id);
+      var balanceC = amountC - s.net - s.covered;
+      if (balanceC < 0) problems.push({ code: 'negative-balance', invoice: b.id, detail: toPesos(balanceC) });
+      if (s.covered > amountC) problems.push({ code: 'over-covered', invoice: b.id, detail: toPesos(s.covered) + ' of ' + toPesos(amountC) });
+      if (s.net > amountC) problems.push({ code: 'over-collected', invoice: b.id, detail: toPesos(s.net) + ' of ' + toPesos(amountC) });
+      // charge = collected + covered + outstanding, to the centavo.
+      if (Math.abs((s.net + s.covered + balanceC) - amountC) > 0) {
+        problems.push({ code: 'identity', invoice: b.id, detail: (s.net + s.covered + balanceC) + ' vs ' + amountC });
+      }
+      var paid = 0, refunded = 0;
+      settled(rows.filter(function (t) { return t.invoiceId === b.id; })).forEach(function (t) {
+        if (t.kind === 'payment') paid += t.amount;
+        if (t.kind === 'refund') refunded += t.amount;
+      });
+      if (refunded > paid) problems.push({ code: 'refund-exceeds-payment', invoice: b.id, detail: toPesos(refunded) + ' of ' + toPesos(paid) });
+    });
+
+    // A pending electronic intent must never be counted as money.
+    rows.forEach(function (t) {
+      if (t.status === 'pending' && t.kind === 'payment') {
+        var b = billById(t.invoiceId);
+        if (b && paidOf(b) > balanceOf(b) + toPesos(t.amount) + 1) {
+          problems.push({ code: 'pending-counted', transaction: t.id });
+        }
+      }
+    });
+
+    return problems;
+  }
+
+  // Cross-module reconciliation. Billing, Reports, the patient portal and the cashier all call
+  // totals(); this proves they add up to the per-invoice detail and to the payment methods.
+  function reconcile() {
+    var t = totals();
+    var collectedC = 0, coveredC = 0, billedC = 0;
+    bills().forEach(function (b) {
+      billedC += toCentavos(b.amount);
+      var s = sums(b.id);
+      collectedC += s.net;
+      coveredC += s.covered;
+    });
+    var methodSum = byMethod().reduce(function (a, m) { return a + toCentavos(m.amount); }, 0);
+    var coverageRows = settled(all()).filter(function (x) { return x.kind === 'coverage'; });
+    return {
+      billed: toPesos(billedC),
+      collected: toPesos(collectedC),
+      covered: toPesos(coveredC),
+      outstanding: toPesos(billedC - collectedC - coveredC),
+      totalsMatch: Math.abs(toCentavos(t.collected) - collectedC) === 0 &&
+        Math.abs(toCentavos(t.covered) - coveredC) === 0 &&
+        Math.abs(toCentavos(t.billed) - billedC) === 0,
+      methodSum: toPesos(methodSum),
+      methodMatchesCollected: Math.abs(methodSum - collectedC) <= 1,
+      coverageRows: coverageRows.length,
+      coverageTotal: toPesos(coverageRows.reduce(function (a, x) { return a + x.amount; }, 0)),
+      // Coverage is a payer's share, never a collection: the two must never be added together.
+      collectedPlusCovered: toPesos(collectedC + coveredC)
+    };
+  }
+
   // ---- helpers ------------------------------------------------------------------------------
   function peso(n) {
     return '\u20b1' + Number(n || 0).toLocaleString('en-PH', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
@@ -382,6 +484,7 @@
     paidOf: paidOf, balanceOf: balanceOf, statusOf: statusOf, pendingOf: pendingOf,
     recordPayment: recordPayment, confirm: confirm, void: voidTx, refund: refund,
     recordCoverage: recordCoverage, COVERAGE_KINDS: COVERAGE_KINDS, sums: sums,
-    coveredOf: coveredOf, totals: totals, byMethod: byMethod, byPayer: byPayer
+    coveredOf: coveredOf, totals: totals, byMethod: byMethod, byPayer: byPayer,
+    invariants: invariants, reconcile: reconcile
   };
 })();

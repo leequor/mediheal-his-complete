@@ -75,8 +75,8 @@
 .pr-o.on{background:#e8f4fb;color:#1c6d9c;font-weight:600}
 .pr-o:hover{background:#f1f7fb}
 /* action modals: Figma 2030:8616, 4008:3346, 4008:3317 (680x438 at (380,453)), 2030:8351 payslip (680x568 at (380,388)) */
-.pr-scrim{position:absolute;left:0;top:0;width:1440px;height:1345px;background:rgba(11,42,61,.35);z-index:1000}
-.pr-modal{position:absolute;left:380px;width:680px;background:#fff;box-shadow:inset 0 0 0 1px #c8dcea,0 20px 50px rgba(15,30,46,.25);border-radius:16px;z-index:1001}
+.pr-scrim{position:fixed;inset:0;background:rgba(11,42,61,.35);z-index:1000}
+.pr-modal{position:fixed;left:50%;margin-left:-340px;width:680px;max-height:calc(100vh - 32px);background:#fff;box-shadow:inset 0 0 0 1px #c8dcea,0 20px 50px rgba(15,30,46,.25);border-radius:16px;z-index:1001}
 .pr-modal>*{position:absolute}
 .pr-m-x{left:616px;top:24px;width:32px;height:32px;border:0;border-radius:8px;background:#f6fafd;box-shadow:inset 0 0 0 1px #c8dcea;color:#1b4e6b;font:500 18px/30px Inter,sans-serif;padding:0;cursor:pointer}
 .pr-m-t{left:32px;top:28px;font:500 22px/27.5px Lexend,sans-serif;color:#15405a;white-space:nowrap}
@@ -91,3 +91,43 @@
 .pr-m-ok:hover{background:#185f88}
 .pr-tip{position:fixed;z-index:2000;left:50%;bottom:28px;transform:translateX(-50%);background:#15405a;color:#fff;font:600 13px/16px Inter,sans-serif;padding:10px 16px;border-radius:10px}
 @media print{.pr .pr-reg>*:not(.pr-th):not(.pr-r):not(.pr-tot){display:none!important}.pr-ml,.pr-scrim,.pr-modal{display:none!important}}
+
+/* ============================================================================
+   M10 — run lifecycle, payslip itemisation and timesheet review.
+   Same tokens and type scale as the rest of the screen; no new colours.
+   ============================================================================ */
+.pr-link{border:0;background:transparent;padding:0;font:600 11px/13.31px Inter,sans-serif;color:#1c6d9c;cursor:pointer;text-decoration:underline;text-underline-offset:2px}
+.pr-link:hover{color:#185f88}
+.pr-m-body{position:absolute;left:32px;top:96px;width:616px;bottom:80px;overflow-y:auto;padding-right:4px}
+.pr-mv-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px 16px}
+.pr-mv{background:#f6fafd;border-radius:8px;box-shadow:inset 0 0 0 1px #c8dcea;padding:8px 12px;min-width:0}
+.pr-mv .k{display:block;font:600 10px/13px Inter,sans-serif;letter-spacing:.04em;text-transform:uppercase;color:#6f8890}
+.pr-mv .v{display:block;margin-top:2px;font:600 13px/17px Inter,sans-serif;color:#1c2b30;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pr-slip-list{margin-top:14px;max-height:236px;overflow-y:auto;background:#f6fafd;border-radius:8px;box-shadow:inset 0 0 0 1px #c8dcea;padding:8px 12px}
+.pr-slip-row{display:flex;justify-content:space-between;gap:16px;font:400 12px/21px Inter,sans-serif;color:#1c2b30}
+.pr-slip-row span:first-child{min-width:0}
+.pr-slip-row span:last-child{font-variant-numeric:tabular-nums;white-space:nowrap}
+.pr-slip-row.tot{margin-top:4px;padding-top:4px;border-top:1px solid #c8dcea;font-weight:700;color:#1b4e6b}
+.pr-slip-note{margin-top:14px;font:400 11.5px/17px Inter,sans-serif;color:#6f8890}
+.pr-slip-note b{color:#1b4e6b}
+.pr-ts-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}
+.pr-ts-who{font:400 12px/16px Inter,sans-serif;color:#6f8890}
+.pr-ts-who b{color:#1b4e6b;text-transform:capitalize}
+.pr-ts-grid,.pr-ts-row{display:grid;grid-template-columns:1.5fr 42px 46px 54px 38px 74px 128px;gap:8px;align-items:center}
+.pr-ts-grid{height:30px;font:600 10px/12px Inter,sans-serif;letter-spacing:.05em;text-transform:uppercase;color:#5b8db8;border-bottom:1px solid #e3edf3}
+.pr-ts-row{min-height:38px;border-bottom:1px solid #eef4f9;font:400 12px/16px Inter,sans-serif;color:#1c2b30}
+.pr-ts-row small{font:400 10.5px/14px Inter,sans-serif;color:#6f8890}
+.pr-ts-row .ok{color:#1c6d9c;font-weight:600}
+.pr-ts-row .warn{color:#a6460a;font-weight:600}
+.pr-ts-row.bad{background:#fdf1f0}
+.pr-mini{height:26px;margin-left:6px;padding:0 8px;display:inline-block;vertical-align:middle;border:0;border-radius:7px;background:#fff;box-shadow:inset 0 0 0 1px #c8dcea;font:600 11px Inter,sans-serif;color:#1b4e6b;cursor:pointer}
+.pr-mini.pri{background:#1c6d9c;box-shadow:inset 0 0 0 1px #1c6d9c;color:#fff}
+.pr-mini:hover{background:#e8f4fb}
+.pr-mini.pri:hover{background:#185f88}
+/* the timesheet detail table needs one more column than the list */
+.pr-ts-grid.det,.pr-ts-row.det{grid-template-columns:52px 1.1fr 52px 52px 44px 34px 34px 62px}
+.pr-seg{display:inline-flex;background:#fff;border:1px solid #c8dcea;border-radius:10px;padding:3px;margin-bottom:12px}
+.pr-seg button{border:0;background:transparent;height:30px;padding:0 14px;border-radius:8px;font:600 12px Inter,sans-serif;color:#6f8890;cursor:pointer}
+.pr-seg button.on{background:#1c6d9c;color:#fff}
+.pr-ts-grid.th,.pr-ts-row.th{grid-template-columns:1.35fr 44px 88px 82px 80px 84px 76px}
+.pr-ts-row.th.tot{border-top:1px solid #c8dcea;border-bottom:0;font-weight:700;color:#1b4e6b}
