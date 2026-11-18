@@ -93,3 +93,54 @@
 .ac-hint{display:block;margin-top:4px;font:400 11.5px/16px var(--font-inter);color:var(--muted)}
 .ac-f select:disabled{color:#8a97a6}
 .ad-tr.ac-g2 .ac-edit{height:26px;padding:0 9px;font-size:11.5px}
+
+/* ============================================================================
+   M6 — laboratory and pharmacy.
+   These screens use the same admin format as Audit / Reports / Accounts, so the only new
+   rules are the grid tracks, a name+meta cell, a critical-result strip, a key/value list and
+   a ghost button. No new colour, radius or type size.
+   ============================================================================ */
+
+/* name + meta cell (same shape as .ac-who on Accounts) */
+.ad-who{min-width:0}
+.ad-who b{display:block;font:600 13px/17px var(--font-inter);color:var(--body);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ad-who small{display:block;font:400 11.5px/15px var(--font-inter);color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* grids */
+.ad-g-lab{grid-template-columns:104px 1.15fr 1.5fr 76px 108px 108px 132px}
+.ad-g-rx{grid-template-columns:86px 1.2fr 1.6fr 92px 104px 104px 132px}
+.ad-g-stock{grid-template-columns:1.5fr 96px 82px 76px 100px 1fr 132px}
+
+/* critical-result strip: the one thing on this screen that must not be missed */
+.ad-alert{margin-bottom:20px;border:1px solid #f0c2bd;border-radius:12px;background:#fdf1f0;padding:14px 18px}
+.ad-alert>b{display:block;margin-bottom:8px;font:600 13px/18px var(--font-inter);color:var(--red-fg)}
+.ad-alert-row{display:flex;align-items:center;gap:14px;padding:6px 0;border-top:1px solid #f6d9d5;font:400 12.5px/18px var(--font-inter);color:var(--body)}
+.ad-alert-row:first-of-type{border-top:0}
+.ad-alert-row span:first-child{flex:1 1 auto;min-width:0;font-weight:600}
+.ad-alert-row span:nth-child(2){flex:0 0 auto;color:var(--red-fg);font-weight:600}
+.ad-alert-row .ad-btn{height:32px;padding:0 12px;font-size:12px;flex:none}
+
+/* read-only key/value list inside a modal */
+.ad-kv{display:grid;grid-template-columns:1fr 1fr;gap:0 20px;margin-top:6px}
+.ad-kv div{padding:7px 0;border-bottom:1px solid #eef4f9}
+.ad-kv dt{margin:0 0 1px;font:600 11px var(--font-inter);letter-spacing:.03em;text-transform:uppercase;color:var(--muted)}
+.ad-kv dd{margin:0;font:400 13px/18px var(--font-inter);color:var(--body);word-break:break-word}
+
+/* secondary action inside a table row */
+.ad-btn.ghost{background:transparent;border-color:transparent;color:var(--primary);padding:0 8px}
+.ad-btn.ghost:hover{background:#e8f4fb;border-color:var(--line)}
+
+/* row actions are smaller than the toolbar button */
+.ad-tr .ad-btn{height:32px;padding:0 12px;font-size:12px}
+
+/* segmented control for the pharmacy tabs */
+.ad-seg{display:inline-flex;background:#fff;border:1px solid var(--line);border-radius:10px;padding:3px;margin-right:auto}
+.ad-seg button{border:0;background:transparent;height:32px;padding:0 14px;border-radius:8px;font:600 12.5px var(--font-inter);color:var(--muted);cursor:pointer}
+.ad-seg button.on{background:var(--primary);color:#fff}
+.ad-seg button:focus-visible{outline:2px solid var(--primary);outline-offset:1px}
+
+/* M6 column tuning after inspecting the rendered screens: the Ordered column wrapped to two
+   lines and the Qty column split '30 of 30 tablet' across lines. */
+.ad-g-lab{grid-template-columns:118px 1.15fr 1.3fr 74px 102px 128px 134px}
+.ad-g-rx{grid-template-columns:84px 1.15fr 1.5fr 116px 100px 128px 152px}
+.ad-g-stock{grid-template-columns:1.45fr 92px 120px 70px 116px 1fr 148px}

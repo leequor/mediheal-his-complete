@@ -130,7 +130,7 @@
     var inv = invoiceSummary(p.id);
     var plan = planFor(p.id);
     var meds = plan && plan.f && plan.f.meds && plan.f.meds !== 'None scheduled' ? plan.f.meds.split(',') : [];
-    var labs = labFor(p.id).filter(function (o) { return o.status === 'Completed' || o.resultStatus === 'Validated'; });
+    var labs = labFor(p.id).filter(function (o) { return o.status === 'Validated'; });
 
     var h = "<h1 class='pt-h1'>" + greeting() + ', ' + esc(String(p.first || p.name).split(' ')[0]) + '</h1>';
     h += "<p class='pt-sub'>" + esc(p.id) + ' \u00b7 ' + esc(p.type) + ' \u00b7 ' + esc(p.dept || 'Unassigned department') +
@@ -216,7 +216,10 @@
 
   R.medical = function (ctx) {
     var p = ctx.patient;
-    var c = consultFor(p.id), plan = planFor(p.id), nurse = nursingFor(p.id), labs = labFor(p.id);
+    var c = consultFor(p.id), plan = planFor(p.id), nurse = nursingFor(p.id);
+    // Only a VALIDATED result may be shown to the patient. An entered draft is the laboratory's
+    // working copy; releasing it would show a number nobody has checked.
+    var labs = labFor(p.id).filter(function (o) { return o.status === 'Validated'; });
 
     var h = "<h1 class='pt-h1'>My medical record</h1><p class='pt-sub'>" + esc(p.name) + ' \u00b7 ' + esc(p.id) +
       ' \u00b7 ' + esc(p.bloodType || '\u2014') + ' \u00b7 allergy: ' + esc(p.allergies || 'None recorded') + '</p>';
@@ -279,11 +282,14 @@
     } else if (!labs.length) {
       labBody = empty('No laboratory results', 'A result appears here only after a medical technologist validates it.');
     } else {
+      // The lab record nests the reading under `result`; reading o.value here would silently show
+      // blanks, which is how a portal and a laboratory drift apart.
       labBody = "<table class='pt-tbl'><thead><tr><th>Test</th><th>Result</th><th>Reference</th><th>Flag</th><th>Validated</th></tr></thead><tbody>" +
         labs.map(function (o) {
-          return '<tr><td>' + esc(o.test) + '</td><td>' + esc(o.resultValue || '\u2014') + ' ' + esc(o.unit || '') +
-            '</td><td>' + esc(o.reference || '\u2014') + '</td><td>' +
-            badge(o.flag || 'Normal', o.flag === 'Critical' ? 'err' : o.flag === 'Abnormal' ? 'warn' : 'ok') +
+          var r = o.result || {};
+          return '<tr><td>' + esc(o.test) + '</td><td>' + esc(r.value || '\u2014') + ' ' + esc(r.unit || '') +
+            '</td><td>' + esc(r.reference || '\u2014') + '</td><td>' +
+            badge(r.flag || 'Normal', r.flag === 'Critical' ? 'err' : r.flag === 'Abnormal' ? 'warn' : 'ok') +
             '</td><td>' + esc(manilaDate(o.validatedAt)) + '</td></tr>';
         }).join('') + '</tbody></table>';
     }

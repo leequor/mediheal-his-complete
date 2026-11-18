@@ -26,8 +26,8 @@
   "attendance": {
     "width": 1440,
     "height": 1635,
-    "bytes": 469136,
-    "sha256": "ba6860afc1e96c18d7922eb8ac0a865c849e044e6d3ea6c9c898ca89e63e31ef"
+    "bytes": 477756,
+    "sha256": "044906bb4ee9e575d8e11574871b25d05a343e3efdf5712608ff3e834f56e70e"
   },
   "audit": {
     "width": 1440,
@@ -65,6 +65,12 @@
     "bytes": 704158,
     "sha256": "e1e7596d4c10e43c3c3c3112bee1862e912dc8e4a5e8c25896e57d6cc6f5d08b"
   },
+  "laboratory": {
+    "width": 1440,
+    "height": 1120,
+    "bytes": 452921,
+    "sha256": "e2190d82d145bd6c01afcd948ba277efe8d2c16980fbd121c5c77ab4b7b4f20f"
+  },
   "nursing": {
     "width": 1440,
     "height": 1262,
@@ -91,9 +97,9 @@
   },
   "pharmacy": {
     "width": 1440,
-    "height": 1262,
-    "bytes": 388878,
-    "sha256": "95f882807bc322edee1539713d949151330a4618723b772a76b2f320e3130348"
+    "height": 1120,
+    "bytes": 535443,
+    "sha256": "17ed8d4f6902dbe22b91dca36c9a196959bd78e56f4856d4faa8836753801c5e"
   },
   "portal": {
     "width": 1440,

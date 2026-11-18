@@ -43,7 +43,10 @@ const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } })
 
 // Pages that are aliases, not real destinations: pharmacy.html redirects to treatment, staff.html
 // to personnel. Asking for the alias must land on the target, not on itself.
-const ALIAS = { pharmacy: 'treatment', staff: 'personnel' };
+// Pages that intentionally forward somewhere else. pharmacy used to be here because
+// pharmacy.html was a redirect to treatment.html?modal=pharmacy; M6 replaced it with a real
+// screen, so the alias was removed rather than left to mask a future redirect.
+const ALIAS = { staff: 'personnel' };
 const expectStem = s => ALIAS[s] || s;
 
 // Read the registry + seeded accounts once, so this check cannot drift from the app.

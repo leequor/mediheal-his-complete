@@ -149,9 +149,15 @@
   }
 
   // ---- modals: every field is the Figma text for PT-99213; for the other plans the fields are blank or derived from the plan ----
-  function stockBox(n) {
-    var over = n > st.stock;
-    return { bt: over ? '\u2715 Not enough stock' : '\u2713 Stock available', bx: over ? 'Only ' + st.stock + ' tablets are on hand.' : st.stock + ' tablets on hand. ' + (n > 0 ? 'After dispensing, ' + (st.stock - n) + ' tablets remain in the Pharmacy stock.' : 'Enter a quantity to see the remaining stock.') };
+  // M6: stock is the pharmacy store's answer, not a counter on this page. The old `st.stock` was a
+  // hardcoded 240 that no dispensing screen ever decremented.
+  function onHand(drug) {
+    return (window.HIS.pharmacy && HIS.pharmacy.available) ? HIS.pharmacy.available(drug) : st.stock;
+  }
+  function stockBox(n, drug) {
+    var have = onHand(drug);
+    var over = n > have;
+    return { bt: over ? '\u2715 Not enough stock' : '\u2713 Stock available', bx: over ? 'Only ' + have + ' are on hand.' : have + ' on hand. ' + (n > 0 ? 'After dispensing, ' + (have - n) + ' remain in the pharmacy stock.' : 'Enter a quantity to see the remaining stock.') };
   }
   function spec(kind, p) {
     var G = p.id === 'PT-99213', f = p.f;
@@ -159,11 +165,11 @@
     var sub1 = p.name + ' \u00b7 ' + p.id + ' \u00b7 Allergy: ' + al + ' \u00b7 BP ' + bp;
     var dx = p.sub.split(' \u00b7 ')[0];
     if (kind === 'pharmacy') {
-      var med = G ? 'Atorvastatin 40 mg tablet' : String(f.meds || '').split(/,\s*/)[0].replace(NA, ''), sb = stockBox(G ? 30 : 0);
+      var med = G ? 'Atorvastatin 40 mg tablet' : String(f.meds || '').split(/,\s*/)[0].replace(NA, ''), sb = stockBox(G ? 30 : 0, med);
       return { title: 'Dispense medication', ro: [1], ok: 'Dispense', req: [0, 2],
         sub: G ? 'Isabel Geliz \u00b7 Cardiology \u00b7 Ward 3, Bed 12' : p.name + ' \u00b7 ' + f.department + ' \u00b7 ' + String(f.care).replace(' \u00b7 ', ' '),
         l: ['Medication', 'Stock check', 'Quantity to dispense', 'Dispensed by', 'Prescription', 'Pharmacist notes'],
-        v: [med, 'In stock \u00b7 ' + st.stock + ' tablets', G ? '30 tablets (30 days)' : '', 'Pharmacist on duty',
+        v: [med, 'In stock \u00b7 ' + onHand(med),  G ? '30 tablets (30 days)' : '', 'Pharmacist on duty',
           G ? 'Atorvastatin 40 mg once daily at night \u00b7 Dr. Laurice Laureta' : (med ? med + ' \u00b7 ' + f.attending : ''),
           G ? 'Counsel the patient: take at night, report muscle pain. Stock is updated after dispensing.' : ''],
         bt: sb.bt, bx: sb.bx };
@@ -246,9 +252,23 @@
     if (bad) { tip(kind === 'status' ? 'Enter the new status (a reason is required to cancel)' : 'Fill in the highlighted fields'); return; }
     var msg;
     if (kind === 'pharmacy') {
-      var n = qtyOf(v[2]);
-      if (n < 1 || n > st.stock) { document.querySelector('#tpmodal [data-i="2"]').classList.add('bad'); tip(n > st.stock ? 'Only ' + st.stock + ' tablets in stock' : 'Enter a quantity to dispense'); return; }
-      st.stock -= n; st.disp = { sub: s.sub, med: v[0], qty: v[2], by: v[3] || 'Pharmacist on duty', left: st.stock };
+      var n = qtyOf(v[2]), have = onHand(v[0]);
+      if (n < 1 || n > have) { document.querySelector('#tpmodal [data-i="2"]').classList.add('bad'); tip(n > have ? 'Only ' + have + ' on hand' : 'Enter a quantity to dispense'); return; }
+      // M6: this dispenses against the real pharmacy store — it finds the prescription the doctor
+      // raised and the first non-expired batch, and refuses if either is missing.
+      var ph = window.HIS.pharmacy;
+      var rx = ph && ph.rx().filter(function (r) {
+        return r.patientId === p.id && r.drug === v[0] && r.status !== 'Dispensed' && r.status !== 'Rejected';
+      })[0];
+      var batch = ph && ph.batchesFor(v[0]).filter(function (b) { return !ph.isExpired(b) && b.qty >= n; })[0];
+      if (!rx || !batch) {
+        tip(!rx ? 'No open prescription for ' + v[0] + '. Raise one with Prescribe medication first.'
+          : 'No single batch of ' + v[0] + ' holds ' + n + '. Split the quantity in Pharmacy.');
+        return;
+      }
+      var res = ph.dispense(rx.id, { batchId: batch.id, qty: n });
+      if (!res.ok) { tip(res.error); return; }
+      st.disp = { sub: s.sub, med: v[0], qty: v[2], by: v[3] || 'Pharmacist on duty', left: onHand(v[0]) };
       f.next = 'Medication dispensed'; st.modal = 'dispensed'; render(); return;
     }
     if (kind === 'summary') {
@@ -258,8 +278,31 @@
     if (kind === 'rx') {
       var nm = v[0].replace(/\s+tablets?$/i, '');
       if (f.meds.toLowerCase().indexOf(nm.split(' ')[0].toLowerCase()) < 0) f.meds += ', ' + nm;
-      f.next = 'Dispense at pharmacy'; msg = nm + ' sent to pharmacy';
-    } else if (kind === 'order') { f.next = 'Awaiting result: ' + v[0].replace(/\s*\(.*\)$/, ''); msg = v[0] + ' ordered (' + (v[2] || 'Routine') + ')'; }
+      f.next = 'Dispense at pharmacy';
+      // M6: the prescription is a real pharmacy order, so the pharmacist has work in their queue
+      // and the patient portal can list it. Quantity comes from the duration field when it says
+      // "N tablets", otherwise it falls back to 30.
+      var rxq = (String(v[4] || '').match(/(\d+)\s*tablet/i) || [])[1];
+      var made = (window.HIS.pharmacy && HIS.pharmacy.createRx) ? HIS.pharmacy.createRx({
+        patientId: p.id, drug: v[0],
+        dosage: [v[1], v[3]].filter(Boolean).join(' \u00b7 '),
+        qty: Number(rxq) || 30, unit: /tablet/i.test(v[0]) ? 'tablet' : 'unit',
+        notes: v[5], orderedBy: f.attending
+      }) : null;
+      msg = made && made.ok ? nm + ' sent to pharmacy (' + made.prescription.id + ')'
+        : nm + ' added to the plan \u00b7 pharmacy order not raised';
+    } else if (kind === 'order') {
+      var testName = v[0].replace(/\s*\(.*\)$/, '').trim();
+      var prio = /stat/i.test(v[2]) ? 'STAT' : /urgent/i.test(v[2]) ? 'Urgent' : 'Routine';
+      f.next = 'Awaiting result: ' + testName;
+      // M6: the order lands in the laboratory queue. A test the catalogue does not hold is NOT
+      // silently invented — the plan records it and the message says it was not ordered.
+      var lo = (window.HIS.lab && HIS.lab.create) ? HIS.lab.create({
+        patientId: p.id, test: testName, priority: prio, notes: v[5], orderedBy: f.attending
+      }) : null;
+      msg = lo && lo.ok ? testName + ' ordered (' + lo.order.id + ')'
+        : testName + ' recorded on the plan \u00b7 not in the laboratory catalogue';
+    }
     else if (kind === 'proc') { f.procs = v[0] + ' \u00b7 ' + v[3]; msg = v[0] + ' scheduled for ' + v[3]; }
     else if (kind === 'bed') { f.care = 'Inpatient \u00b7 ' + v[0].replace(/^Inpatient\s+/i, '') + ', ' + v[1].replace(/\s*\(.*\)$/, ''); p.type = 'Inpatient'; msg = 'Bed assigned: ' + v[0] + ', ' + v[1].replace(/\s*\(.*\)$/, ''); }
     else { p.pstat = /complet/i.test(v[2]) ? 'done' : /cancel/i.test(v[2]) ? 'stop' : ''; msg = 'Status updated to ' + v[2]; }
