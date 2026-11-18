@@ -134,21 +134,41 @@ console.log('\n--- 2. pharmacy dispense ---');
 }
 
 // =================================================================================================
-// 3. NO OPEN INVOICE — THE ORDER STILL WORKS, THE CHARGE DOES NOT
+// 3. NO INVOICE ON THE EPISODE — THE CHARGE IS STILL RECORDED, IN THE UNBILLED QUEUE
 // =================================================================================================
-console.log('\n--- 3. no open invoice ---');
+// M12 CHANGED THE RULE THIS SECTION ASSERTS. M11 discarded a charge when the patient had no open
+// invoice, which lost the revenue and made a performed service invisible. The brief for M12 is
+// explicit: "Every valid billable service must produce a persistent charge record even when there is
+// no invoice." The assertions below therefore check the stronger rule, not a weaker one.
+console.log('\n--- 3. no invoice on the episode ---');
 await page.goto(BASE + '/laboratory.html', { waitUntil: 'load' });
 await page.waitForTimeout(300);
 {
   const r = await page.evaluate(() => {
-    // PT-99215's only invoice is fully paid.
-    const before = HIS.charges.all().length;
+    // PT-99215's only invoice (BL-8800) is fully paid and its episode is closed.
+    const before = {
+      charges: HIS.charges.all().length,
+      unbilled: HIS.charges.unbilled().length,
+      billed: HIS.ledger.totals().billed
+    };
     const order = HIS.lab.create({ patientId: 'PT-99215', test: 'Hemoglobin', priority: 'Routine' });
-    return { ok: order.ok, billing: order.order.billing, charges: HIS.charges.all().length, before };
+    const charge = HIS.charges.byId(order.order.chargeId);
+    return {
+      ok: order.ok, billing: order.order.billing, before,
+      after: { charges: HIS.charges.all().length, unbilled: HIS.charges.unbilled().length, billed: HIS.ledger.totals().billed },
+      charge: charge && { id: charge.id, amount: charge.amount, invoiceId: charge.invoiceId, status: charge.billingStatus, reason: charge.unbilledReason, encounterId: charge.encounterId },
+      enc: order.order.encounterId
+    };
   });
   ok('the order is still created', r.ok === true);
-  ok('no charge is raised against a settled invoice', r.charges === r.before, r.charges - r.before);
-  ok('the order records why it was not billed', /No open invoice/.test(r.billing || ''), r.billing);
+  ok('a charge is still recorded when no invoice exists', r.after.charges === r.before.charges + 1, r.before.charges + ' -> ' + r.after.charges);
+  ok('the charge is marked unbilled rather than attached to an unrelated invoice',
+    r.charge && r.charge.invoiceId === null && r.charge.status === 'unbilled', r.charge && r.charge.status);
+  ok('the charge names the encounter it happened in', r.charge && r.charge.encounterId === r.enc, r.charge && r.charge.encounterId);
+  ok('the charge records why it is unbilled', r.charge && /no invoice/i.test(r.charge.reason || ''), r.charge && r.charge.reason);
+  ok('no invoice total moved', near(r.after.billed, r.before.billed), r.after.billed - r.before.billed);
+  ok('it appears in the unbilled queue', r.after.unbilled === r.before.unbilled + 1, r.after.unbilled);
+  ok('the order reports itself as unbilled, not billed', r.billing === 'unbilled', r.billing);
 }
 
 // =================================================================================================
@@ -213,7 +233,7 @@ console.log('\n--- 6. ledger integrity ---');
       identity: Math.round(HIS.ledger.invoiceAmount(b) * 100) - HIS.ledger.sums(b.id).net - HIS.ledger.sums(b.id).covered - Math.round(HIS.ledger.balanceOf(b) * 100)
     }));
     const rec = HIS.ledger.reconcile();
-    return { rows, rec, inv: HIS.ledger.invariants(), stats: HIS.charges.stats() };
+    return { rows, rec, inv: HIS.ledger.invariants(), stats: HIS.charges.stats(), crec: HIS.charges.reconcile() };
   });
   ok('every invoice still satisfies total = collected + covered + outstanding',
     r.rows.every(x => x.identity === 0), JSON.stringify(r.rows.filter(x => x.identity !== 0)));
@@ -221,8 +241,14 @@ console.log('\n--- 6. ledger integrity ---');
     r.rec.billed);
   ok('collections are unaffected by charges', r.rec.collected === 100700, r.rec.collected);
   ok('no invariant is broken', r.inv.length === 0, JSON.stringify(r.inv));
-  ok('the charge stats report two active charges totalling 100 and one void',
-    r.stats.charges === 2 && near(r.stats.total, 100) && r.stats.voided === 1, JSON.stringify(r.stats));
+  // Two pharmacy dispenses plus one laboratory order are assigned; the third laboratory order has no
+  // invoice on its episode, so it is in the queue and not on any bill.
+  ok('the charge stats separate billed from unbilled',
+    r.stats.charges === 3 && near(r.stats.total, 280) && r.stats.voided === 1 &&
+    r.stats.unbilledCount === 1 && near(r.stats.unbilledTotal, 180),
+    JSON.stringify(r.stats));
+  ok('the charge ledger reconciles against the invoices', r.crec.problems.length === 0, JSON.stringify(r.crec.problems));
+  ok('every active charge names an encounter', r.crec.withoutEncounter === 0, r.crec.withoutEncounter);
 }
 
 // =================================================================================================

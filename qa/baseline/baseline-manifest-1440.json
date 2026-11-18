@@ -5,6 +5,12 @@
     "bytes": 454859,
     "sha256": "ce4ff4a53e33153ca2ac5a54c5bd7050ef5c3fb865cd2673512bf8b3795254ee"
   },
+  "admissions": {
+    "width": 1440,
+    "height": 1121,
+    "bytes": 422657,
+    "sha256": "1198f77e5b631c7d529410994526a81c1710def096e4eec5f698978f6359b051"
+  },
   "appointment-confirmed": {
     "width": 1440,
     "height": 1120,
@@ -41,6 +47,12 @@
     "bytes": 462645,
     "sha256": "8e4748598bd8e6c8b95c6057195920698486dd9b8d0f9b2b342e3c49645b5856"
   },
+  "charges": {
+    "width": 1440,
+    "height": 1134,
+    "bytes": 394034,
+    "sha256": "acbad86046201b36d4e85a93cdf911e877dcf3dfde7ef5493987daf51185b994"
+  },
   "claims": {
     "width": 1440,
     "height": 1181,
@@ -74,8 +86,8 @@
   "laboratory": {
     "width": 1440,
     "height": 1120,
-    "bytes": 453839,
-    "sha256": "023efaa5568293e952dbf0c7e5dbd397918ba3b04e6b0f431c56996c517c1125"
+    "bytes": 456425,
+    "sha256": "a17dac2957a970a5d49530a47f60bd199b1f71842d5d55459d76bade89a529fb"
   },
   "nursing": {
     "width": 1440,
@@ -98,8 +110,8 @@
   "personnel": {
     "width": 1440,
     "height": 1262,
-    "bytes": 430369,
-    "sha256": "f65e96d18c6096539955aacb4c5af43cd14ef959b6f0a806079e72e96ded426e"
+    "bytes": 436732,
+    "sha256": "08691ad0cc634d2ad3af1e11181f2a37c2dff2b526a0b614126b13527c5e7e96"
   },
   "pharmacy": {
     "width": 1440,
@@ -116,8 +128,8 @@
   "profile": {
     "width": 1440,
     "height": 1332,
-    "bytes": 458084,
-    "sha256": "70133434814c83d76ffb02663e8fd396ba2f5bd8ce2c3af6d061ed81be284ac3"
+    "bytes": 450955,
+    "sha256": "e4e8aa9bf868739b768981c25de281315980f8ad4066609beb1b2f2d108a61ed"
   },
   "registration-form": {
     "width": 1440,
@@ -133,9 +145,9 @@
   },
   "reports": {
     "width": 1440,
-    "height": 1120,
-    "bytes": 403499,
-    "sha256": "cbf965f9aad697218067dd367f587e0a0ef09b1dc32e919c67b002033d99d99d"
+    "height": 1523,
+    "bytes": 437528,
+    "sha256": "93242a8977c18b982a60b1c0d343e0d398d055c711795333889ce23131f3c195"
   },
   "staff": {
     "width": 1440,
