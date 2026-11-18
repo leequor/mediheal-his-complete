@@ -326,7 +326,10 @@
       }
       A.synced = A.date + ' \u00b7 ' + nowTime();
       A.syncedCount = ready; A.dirty = false; save();
-      st.ok = { t: 'Synced to payroll', m: ready + ' approved timesheets now feed the ' + A.period + ' pay period. Open Payroll to calculate the run.' }; st.modal = 'ok'; render();
+      // Count period timesheets, not the daily register: the two are different records and the
+      // confirmation used to quote the daily figure as if it were the payroll input.
+      var tsCount = HIS.employees.all().length - un.length;
+      st.ok = { t: 'Synced to payroll', m: tsCount + ' approved timesheets now feed the ' + A.period + ' pay period. Open Payroll to calculate the run.' }; st.modal = 'ok'; render();
     }
     else if (a === 'review') { st.emp = rev[0]; st.modal = 'review'; render(); }
     else if (a === 'reviewleave') { var rl = st.emp; A.leaves.push({ name: rl.name, type: 'Emergency leave', range: A.date, days: 1, status: 'Approved' }); rl.status = 'On leave'; rl.reviewed = true; A.dirty = true; save(); st.modal = ''; render(); tip('Leave approved for ' + rl.name); }
