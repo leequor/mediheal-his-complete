@@ -35,7 +35,7 @@
 .bl-none{left:32px;top:430px;width:400px;text-align:center;font:500 13px/18px var(--font-inter);color:#8a97a6}
 
 /* invoice column (452,316) 956x577 */
-.bl-inv{left:452px;top:316px;width:956px;height:577px;border-radius:16px;background:#fff;box-shadow:0 4px 16px rgba(27,78,107,.08)}
+.bl-inv{left:452px;top:316px;width:956px;height:calc(577px + var(--bl-extra,0px));border-radius:16px;background:#fff;box-shadow:0 4px 16px rgba(27,78,107,.08)}
 .bl-inv>*{position:absolute}
 .bl-ih{left:28px;top:26px;width:900px;height:63.6px;border-bottom:1px solid #eef2f5}
 .bl-ih>*{position:absolute;white-space:nowrap}
@@ -49,7 +49,7 @@
 .bl-tr>*{position:absolute;white-space:nowrap;top:11.4px}
 .bl-tr.h>*{top:0}
 .bl-tr .c1{left:0}.bl-tr .c2{right:307.9px;text-align:right}.bl-tr .c3{right:160.4px;text-align:right}.bl-tr .c4{right:0;text-align:right}
-.bl-tot{left:28px;top:343.2px;width:900px}
+.bl-tot{left:28px;top:calc(343.2px + var(--bl-extra,0px));width:900px}
 .bl-tot div{position:relative;height:26px;font:400 13px/16px var(--font-inter);color:#8a97a6}
 .bl-tot div>*{position:absolute;top:5px;white-space:nowrap}
 .bl-tot div>b{right:0;font-weight:600;color:#152d47}
@@ -57,8 +57,12 @@
 .bl-tot .gt>*{top:10.8px}
 .bl-tot .gt>b{font-weight:600}
 .bl-tot .pd>b{color:#1c9a5c}.bl-tot .bd>b{color:#c47f0e}
-.bl-act{left:28px;top:512.2px;width:900px;height:38.8px}
+.bl-act{left:28px;top:calc(512.2px + var(--bl-extra,0px));width:900px;height:38.8px}
 .bl-btn{position:absolute;top:0;width:216px;height:38.8px;border-radius:10px;background:#fff;box-shadow:inset 0 0 0 1px #d9e2ea;border:0;padding:0;font:700 13px/38.8px var(--font-inter);color:#152d47;text-align:center;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}
 .bl-btn:hover{background:#f6fafd}
 .bl-tip{position:fixed;z-index:50;left:50%;bottom:28px;transform:translateX(-50%);background:#152d47;color:#fff;font:600 13px/16px var(--font-inter);padding:10px 16px;border-radius:10px}
 @media print{.bl>*:not(#blinv){display:none!important}#blinv .bl-inv{left:0;top:0}.bl-act{display:none}}
+
+/* M11 — charges add rows to the invoice table. The panel, the totals block and the action row shift
+   down by one row height per charge so nothing overlaps. With no charges --bl-extra is 0 and the
+   geometry is exactly the Figma frame. */

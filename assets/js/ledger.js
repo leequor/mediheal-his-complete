@@ -109,6 +109,16 @@
     return { paid: paid, refunded: refunded, net: paid - refunded, covered: covered, credited: credited };
   }
 
+  // The invoice's total charge: its opening amount from data-billing plus every active charge a
+  // clinical module raised. A charge is a PRICE, not money, so it raises what is owed and never
+  // touches `collected`.
+  function invoiceCentavos(bill) {
+    if (!bill) return 0;
+    var extra = (window.HIS && HIS.charges) ? HIS.charges.totalFor(bill.id) : 0;
+    return toCentavos(bill.amount) + toCentavos(extra);
+  }
+  function invoiceAmount(bill) { return bill ? toPesos(invoiceCentavos(bill)) : 0; }
+
   function paidCentavos(invoiceId) { return sums(invoiceId).net; }
   function coveredCentavos(invoiceId) { return sums(invoiceId).covered; }
 
@@ -123,7 +133,7 @@
   }
   function balanceOf(bill) {
     if (!bill) return 0;
-    return toPesos(toCentavos(bill.amount) - paidCentavos(bill.id) - coveredCentavos(bill.id));
+    return toPesos(invoiceCentavos(bill) - paidCentavos(bill.id) - coveredCentavos(bill.id));
   }
 
   // Status is DERIVED, never stored independently: an invoice cannot claim "Paid" while its
@@ -381,7 +391,7 @@
     });
     var billedC = 0, collectedC = 0, coveredC = 0;
     list.forEach(function (b) {
-      billedC += toCentavos(b.amount);
+      billedC += invoiceCentavos(b);
       var s = sums(b.id);
       collectedC += s.net;
       coveredC += s.covered;
@@ -442,7 +452,7 @@
     });
 
     bills().forEach(function (b) {
-      var amountC = toCentavos(b.amount);
+      var amountC = invoiceCentavos(b);
       var s = sums(b.id);
       var balanceC = amountC - s.net - s.covered;
       if (balanceC < 0) problems.push({ code: 'negative-balance', invoice: b.id, detail: toPesos(balanceC) });
@@ -484,7 +494,7 @@
     var t = totals();
     var collectedC = 0, coveredC = 0, billedC = 0;
     bills().forEach(function (b) {
-      billedC += toCentavos(b.amount);
+      billedC += invoiceCentavos(b);
       var s = sums(b.id);
       collectedC += s.net;
       coveredC += s.covered;
@@ -529,6 +539,7 @@
     all: all, save: save, seed: seed,
     forInvoice: forInvoice, forPatient: forPatient, settled: settled,
     paidOf: paidOf, balanceOf: balanceOf, statusOf: statusOf, pendingOf: pendingOf,
+    invoiceAmount: invoiceAmount, invoiceCentavos: invoiceCentavos,
     recordPayment: recordPayment, confirm: confirm, void: voidTx, refund: refund,
     recordCoverage: recordCoverage, COVERAGE_KINDS: COVERAGE_KINDS, sums: sums,
     recordCredit: recordCredit, creditOf: creditOf,

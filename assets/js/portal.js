@@ -114,7 +114,7 @@
     var bills = HIS.registry.invoicesFor(patientId);
     var billed = 0, paid = 0;
     bills.forEach(function (b) {
-      billed += Number(b.amount) || 0;
+      billed += Number(HIS.ledger.invoiceAmount(b)) || 0;
       paid += HIS.ledger.paidOf(b);
     });
     return { bills: bills, billed: billed, paid: paid, balance: Math.round((billed - paid) * 100) / 100 };
@@ -327,9 +327,9 @@
         }).join('');
       } else {
         body += "<tr><td>Summary charges (no itemised lines recorded for this invoice)</td><td class='num'>1</td><td class='num'>" +
-          Number(b.amount).toLocaleString('en-PH') + "</td><td class='num'>" + Number(b.amount).toLocaleString('en-PH') + '</td></tr>';
+          Number(HIS.ledger.invoiceAmount(b)).toLocaleString('en-PH') + "</td><td class='num'>" + Number(HIS.ledger.invoiceAmount(b)).toLocaleString('en-PH') + '</td></tr>';
       }
-      body += "<tr><td colspan='3' class='num'><b>Total</b></td><td class='num'><b>" + money(b.amount) + '</b></td></tr>';
+      body += "<tr><td colspan='3' class='num'><b>Total</b></td><td class='num'><b>" + money(HIS.ledger.invoiceAmount(b)) + '</b></td></tr>';
       body += "<tr><td colspan='3' class='num'>Paid</td><td class='num'>" + money(paid) + '</td></tr>';
       body += "<tr><td colspan='3' class='num'><b>Balance</b></td><td class='num'><b>" + money(bal) + '</b></td></tr>';
       body += '</tbody></table>';
@@ -369,7 +369,7 @@
       tiles.push({ id: 'slip:' + i, title: 'Appointment slip', sub: a.when + ' \u00b7 ' + a.kind });
     });
     bills.forEach(function (b) {
-      tiles.push({ id: 'statement:' + b.id, title: 'Statement ' + b.id, sub: money(b.amount) + ' \u00b7 ' + HIS.ledger.statusOf(b) });
+      tiles.push({ id: 'statement:' + b.id, title: 'Statement ' + b.id, sub: money(HIS.ledger.invoiceAmount(b)) + ' \u00b7 ' + HIS.ledger.statusOf(b) });
       HIS.ledger.forInvoice(b.id).filter(function (t) { return t.status === 'posted'; }).forEach(function (t) {
         tiles.push({ id: 'receipt:' + t.id, title: 'Receipt ' + t.id, sub: money(HIS.ledger.toPesos(t.amount)) + ' \u00b7 ' + t.method });
       });
@@ -490,7 +490,7 @@
       });
       if (!(b.items || []).length) rows.push(['Summary charges - no itemised lines recorded', 9, 13]);
       rows.push(['', 9, 8]);
-      rows.push(['TOTAL: PHP ' + Number(b.amount).toLocaleString('en-PH'), 10, 15]);
+      rows.push(['TOTAL: PHP ' + Number(HIS.ledger.invoiceAmount(b)).toLocaleString('en-PH'), 10, 15]);
       rows.push(['PAID: PHP ' + HIS.ledger.paidOf(b).toLocaleString('en-PH'), 10, 15]);
       rows.push(['BALANCE: PHP ' + HIS.ledger.balanceOf(b).toLocaleString('en-PH'), 10, 18]);
       rows.push(['', 9, 10]);

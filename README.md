@@ -57,6 +57,7 @@ node scripts/m10-1-audit.mjs      # Pag-IBIG tiers, wage floor, corrections, neg
 node scripts/m10-2-audit.mjs      # wage conversion factors, classifications, boundary cases
 node scripts/m10-3-audit.mjs      # divisor policy per purpose, eight compensation types, regional orders
 node scripts/m10-4-audit.mjs      # hour classification, absence basis, Article 83 applicability
+node scripts/charges-check.mjs    # clinical activity becomes a billable charge, once
 node scripts/mobile-audit.mjs     # rendered text size and touch targets at 5 widths
 ```
 

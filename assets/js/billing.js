@@ -71,7 +71,7 @@
     document.getElementById('bldt').textContent = 'Date: ' + st.date + '  \u25be';
     var h = '';
     v.forEach(function (b, i) {
-      h += "<div class='bl-row" + (b.id === st.sel ? ' on' : '') + "' data-id='" + b.id + "' style='top:" + (430 + 93.6 * i).toFixed(1) + "px' tabindex='0'><span class='nm'>" + esc(b.name) + "</span><span class='m1'>" + b.id + ' \u00b7 ' + b.pt + "</span><span class='m2'>" + esc(b.dept) + ' \u00b7 ' + b.date + "</span><span class='bp'>" + pill(statusOf(b)) + "</span><span class='am'>" + peso(b.amount) + '</span></div>';
+      h += "<div class='bl-row" + (b.id === st.sel ? ' on' : '') + "' data-id='" + b.id + "' style='top:" + (430 + 93.6 * i).toFixed(1) + "px' tabindex='0'><span class='nm'>" + esc(b.name) + "</span><span class='m1'>" + b.id + ' \u00b7 ' + b.pt + "</span><span class='m2'>" + esc(b.dept) + ' \u00b7 ' + b.date + "</span><span class='bp'>" + pill(statusOf(b)) + "</span><span class='am'>" + peso(HIS.ledger.invoiceAmount(b)) + '</span></div>';
     });
     if (!v.length) h = "<div class='bl-none'>No bills match</div>";
     document.getElementById('bllist').innerHTML = h;
@@ -82,7 +82,9 @@
   function invoice(b) {
     var el = document.getElementById('blinv');
     if (!b) { el.innerHTML = ''; return; }
-    var items = b.items, sub, vat, total = b.amount;
+    var items = b.items, sub, vat, total = HIS.ledger.invoiceAmount(b);
+    var charges = (window.HIS.charges ? HIS.charges.forInvoice(b.id) : []).filter(function (c) { return c.status !== 'void'; });
+    var chargeTotal = charges.reduce(function (t, c) { return t + c.amount; }, 0);
     // M7: paid and balance come from the transaction ledger (HIS.ledger), never from a stored
     // field on the invoice. `b.paid` is still written by the payment modal for backwards
     // compatibility but is no longer read for display.
@@ -93,11 +95,21 @@
     h += "<div class='bl-tb'><div class='bl-tr h'><span class='c1'>Description \u00b7 charge source</span><span class='c2'>Qty</span><span class='c3'>Rate (\u20b1)</span><span class='c4'>Amount</span></div>";
     if (items) items.forEach(function (r) { h += "<div class='bl-tr'><span class='c1'>" + esc(r[0]) + "</span><span class='c2'>" + r[1] + "</span><span class='c3'>" + num(r[2]) + "</span><span class='c4'>" + num(r[3]) + '</span></div>'; });
     else h += "<div class='bl-tr'><span class='c1' style='color:#8a97a6'>Line items for this bill are not in the main Figma frame (estimated summary)</span><span class='c2'>1</span><span class='c3'>" + num(sub) + "</span><span class='c4'>" + num(sub) + '</span></div>';
-    h += "</div><div class='bl-tot'><div><span>Subtotal</span><b>" + peso(sub) + "</b></div><div><span>VAT (12%)</span><b>" + peso(vat) + "</b></div><div class='gt'><span>Grand total</span><b>" + peso(total) + "</b></div>" +
+    // Charges raised by clinical modules, each naming the module it came from.
+    charges.forEach(function (c) {
+      h += "<div class='bl-tr'><span class='c1'>" + esc(c.description) + ' \u00b7 ' + esc(c.sourceLabel) +
+        "</span><span class='c2'>" + c.qty + "</span><span class='c3'>" + num(c.unitPrice) + "</span><span class='c4'>" + num(c.amount) + '</span></div>';
+    });
+    h += "</div><div class='bl-tot'><div><span>Subtotal</span><b>" + peso(sub) + "</b></div><div><span>VAT (12%)</span><b>" + peso(vat) + "</b></div>" +
+      (chargeTotal > 0 ? "<div><span>Charges raised (" + charges.length + ")</span><b>" + peso(chargeTotal) + "</b></div>" : '') +
+      "<div class='gt'><span>Grand total</span><b>" + peso(total) + "</b></div>" +
       (covered > 0 ? "<div class='pd'><span>Coverage / discounts</span><b>" + peso(covered) + '</b></div>' : '') +
       "<div class='pd'><span>Paid</span><b>" + peso(paid) + "</b></div><div class='bd'><span>Balance due</span><b>" + peso(bal) + '</b></div></div>';
     h += "<div class='bl-act'><button class='bl-btn' data-act='dl' style='left:0'>" + DL + "Download</button><button class='bl-btn' data-modal='pay' style='left:228px'>Record payment</button><button class='bl-btn' data-modal='cov' style='left:456px'>Coverage and discounts</button><button class='bl-btn' data-modal='fin' style='left:684px'>Final statement</button></div></section>";
     el.innerHTML = h;
+    // Grow the panel by one row (38.8px) per charge; zero charges leaves the Figma geometry intact.
+    var panel = el.querySelector('.bl-inv');
+    if (panel) panel.style.setProperty('--bl-extra', (charges.length * 38.8) + 'px');
   }
 
   var tipT;

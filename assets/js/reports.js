@@ -22,7 +22,7 @@
 
   function build() {
     var bills = ((HIS.billing || {}).bills || []).slice();
-    var billed = bills.reduce(function (s, b) { return s + b.amount; }, 0);
+    var billed = bills.reduce(function (s, b) { return s + HIS.ledger.invoiceAmount(b); }, 0);
     var collected = bills.reduce(function (s, b) { return s + paidOf(b); }, 0);
     // M7: coverage and discounts reduce the charge but are not collections, so the outstanding
     // figure must subtract them or the report overstates what patients still owe.
@@ -35,7 +35,7 @@
     bills.forEach(function (b) {
       var k = b.type || 'Unspecified';
       byType[k] = byType[k] || { n: 0, billed: 0, collected: 0, covered: 0 };
-      byType[k].n++; byType[k].billed += b.amount; byType[k].collected += paidOf(b);
+      byType[k].n++; byType[k].billed += HIS.ledger.invoiceAmount(b); byType[k].collected += paidOf(b);
       byType[k].covered += HIS.ledger.coveredOf(b);
     });
 
@@ -58,9 +58,9 @@
         return "<div class='ad-tr ad-g-rep'>" +
           "<span><b>" + esc(b.id) + '</b> <span class="mu">' + esc(b.name) + '</span></span>' +
           "<span class='mu'>" + esc(b.type || '\u2014') + '</span>' +
-          "<span class='num'>" + peso(b.amount) + '</span>' +
+          "<span class='num'>" + peso(HIS.ledger.invoiceAmount(b)) + '</span>' +
           "<span class='num'>" + peso(p) + '</span>' +
-          "<span class='num'>" + peso(b.amount - p) + '</span>' +
+          "<span class='num'>" + peso(HIS.ledger.balanceOf(b)) + '</span>' +
           "<span>" + HIS.kit.pill(s, PILL[s]) + '</span></div>';
       }).join('') : "<div class='ad-empty'><b>No invoices</b>The demo ledger is empty.</div>") +
       "<div class='ad-foot'>Balance = billed \u2212 collected. Status is derived, never stored separately.</div>" +
