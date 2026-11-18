@@ -16,7 +16,7 @@
   var fmt = function (n) { return '\u20b1' + Number(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); };
   var fmt0 = function (n) { return '\u20b1' + Math.round(Number(n || 0)).toLocaleString('en-US'); };
   var ALL_D = 'All departments', ALL_S = 'All payment statuses';
-  var st = { q: '', dept: ALL_D, status: ALL_S, menu: '', modal: '', emp: null, sel: {}, tsEmp: null, tsTab: 'timesheets', annualEmp: null };
+  var st = { q: '', dept: ALL_D, status: ALL_S, menu: '', modal: '', emp: null, sel: {}, tsEmp: null, tsTab: 'timesheets', annualEmp: null, corrId: null, corrReason: '' };
   HIS.prState = st;
 
   // One run per period. Created on first load; afterwards the stored run is reused so a reload
@@ -168,12 +168,62 @@
     h += field('Run status', stageTxt + ' \u00b7 version ' + run.version);
     h += '</div>';
     if (run.blocked.length) {
-      h += "<div class='pr-slip-note'><b>" + run.blocked.length + ' timesheet' + (run.blocked.length === 1 ? '' : 's') + ' still need approval.</b> ' +
-        esc(run.blocked.map(function (b) { return b.name; }).join(', ')) + '. Payroll cannot be approved until every timesheet is approved.</div>';
+      h += "<div class='pr-slip-note'><b>" + run.blocked.length + ' employee' + (run.blocked.length === 1 ? '' : 's') + ' cannot be paid.</b> ' +
+        esc(run.blocked.map(function (b) { return b.name + ' — ' + b.reason; }).join('; ')) + '</div>';
     } else {
-      h += "<div class='pr-slip-note'>" + esc(step ? step.note : 'This run is released. Nothing further to process.') + '</div>';
+      h += "<div class='pr-slip-note'>" + esc(step ? step.note : 'This run is released and final. Corrections are raised as a separate run.') + '</div>';
     }
+
+    // Wage floor. One line, not one per employee: the period either has an order in force or it
+    // does not, and repeating it eight times would bury the figure that matters.
+    var floors = run.lines.map(function (l) { return l.wageFloor; }).filter(Boolean);
+    var unknown = floors.filter(function (f) { return f.status === 'unknown'; })[0];
+    var exempt = floors.filter(function (f) { return f.status === 'exempt'; });
+    if (unknown) {
+      h += "<div class='pr-slip-note'><b>Wage floor not applicable to this period.</b> " + esc(unknown.explanation) + '</div>';
+    } else if (exempt.length) {
+      h += "<div class='pr-slip-note'><b>" + exempt.length + ' employee(s) below the floor under an exemption.</b> ' +
+        esc(exempt.map(function (f) { return f.employeeId; }).join(', ')) + '</div>';
+    } else if (floors.length) {
+      h += "<div class='pr-slip-note'>Every rate is at or above the <b>" + esc(floors[0].floor.orderId) +
+        '</b> floor of ' + fmt(floors[0].floor.dailyRate) + ' a day.</div>';
+    }
+
+    if (run.status === 'released') h += correctionsBlock();
     return h;
+  }
+
+  function correctionsFor(runId) {
+    return HIS.payrollCorrections.list().filter(function (c) { return c.originalRunId === runId; });
+  }
+
+  function correctionActions(c) {
+    var h = '';
+    if (c.status === 'draft') h += "<button class='pr-mini pri' data-corr='review' data-id='" + c.id + "'>Review</button>";
+    if (c.status === 'reviewed') h += "<button class='pr-mini pri' data-corr='approve' data-id='" + c.id + "'>Approve</button>";
+    if (c.status === 'approved') h += "<button class='pr-mini pri' data-corr='release' data-id='" + c.id + "'>Release</button>";
+    if (c.status === 'released') h += "<button class='pr-mini' data-corr='pdf' data-id='" + c.id + "'>Statement</button>";
+    h += "<button class='pr-mini' data-corr='detail' data-id='" + c.id + "'>Open</button>";
+    return h;
+  }
+
+  function correctionsBlock() {
+    var cs = correctionsFor(run.id);
+    var h = "<div class='pr-sect'><h4>Correction runs</h4>";
+    if (!cs.length) {
+      h += "<div class='pr-slip-note'>No correction has been raised against this run. The released payroll is a historical record and is never edited.</div>";
+    } else {
+      cs.forEach(function (c) {
+        h += "<div class='pr-corr-row'><span><b>" + esc(c.id) + '</b> · ' + esc(c.reason) +
+          '<br><small>' + c.totals.employees + ' employee(s) · underpayment ' + fmt(c.totals.underpayment) +
+          ' · overpayment ' + fmt(c.totals.overpayment) + ' · ' + esc(c.status) + '</small></span>' +
+          '<span>' + correctionActions(c) + '</span></div>';
+      });
+    }
+    if (run.status === 'released') {
+      h += "<button class='pr-mini pri' data-corr='new' style='margin-top:10px'>Create correction run</button>";
+    }
+    return h + '</div>';
   }
 
   function field(label, value) {
@@ -285,7 +335,7 @@
     if (st.modal === 'proc') {
       var step = NEXT[run.status];
       return { y: 130, h: 620, t: 'Process payments', s: per + ' \u00b7 ' + (run.status === 'released' ? 'Released' : 'Review before releasing funds'),
-        ok: step ? step.label : 'Close', c: 'Cancel', body: procBody(), wide: 1 };
+        ok: step ? step.label : 'Close', c: step ? 'Cancel' : null, body: procBody(), wide: 1 };
     }
     if (st.modal === 'export') return { y: 453, h: 438, t: 'Export payroll', s: per + ' \u00b7 All employees', ok: 'Export file', c: 'Cancel',
       f: [['File format', 'CSV (opens in Excel)'], ['Records', run.lines.length + ' employees'], ['Pay period', run.periodLabel],
@@ -293,6 +343,39 @@
     if (st.modal === 'gen') return { y: 453, h: 438, t: 'Generate payslips', s: per + ' \u00b7 One payslip per employee', ok: 'Generate payslips', c: 'Cancel',
       f: [['Employees', run.lines.length + ' payslips'], ['Total net pay', fmt(T.net)], ['Pay period', run.periodLabel],
         ['Delivery', 'Download (PDF per employee)'], ['Includes', 'Every earning and deduction line, plus the employer contribution block']] };
+    if (st.modal === 'corr-new') {
+      return {
+        y: 200, h: 420, t: 'Correction run', s: 'Against ' + run.id + ' · ' + run.periodLabel,
+        ok: 'Create correction', c: 'Cancel', wide: 1,
+        body: "<div class='pr-slip-note'>Every employee in the released run is recomputed from the current approved timesheet. Only those with a difference are included; the original payroll is not changed.</div>" +
+          "<label class='pr-fld'><span>Reason for the correction</span><textarea id='corrReason' rows='3' placeholder='e.g. night differential omitted for EMP-005 on 25 August'>" + esc(st.corrReason) + "</textarea></label>"
+      };
+    }
+    if (st.modal === 'corr-detail') {
+      var c = HIS.payrollCorrections.get(st.corrId);
+      if (!c) return { y: 200, h: 300, t: 'Correction', s: 'Not found', ok: 'Close', c: null, body: "<div class='pr-slip-note'>That correction no longer exists.</div>", wide: 1 };
+      var rows = c.lines.map(function (l) {
+        return "<div class='pr-corr-line'><span><b>" + esc(l.employeeName) + '</b> · ' + l.employeeId +
+          '<br><small>original ' + fmt(l.originalNet) + ' → corrected ' + fmt(l.correctedNet) +
+          (l.alreadyCorrected ? ' · already corrected ' + fmt(l.alreadyCorrected) : '') + '</small></span>' +
+          '<span class="' + (l.kind === 'underpayment' ? 'pr-corr-due' : 'pr-corr-rec') + '">' +
+          (l.kind === 'underpayment' ? '+' : '−') + fmt(Math.abs(l.difference)) + '</span></div>';
+      }).join('');
+      var rec = c.lines.filter(function (l) { return l.kind === 'overpayment'; });
+      return {
+        y: 170, h: Math.min(560, 300 + c.lines.length * 52), t: c.id + ' · ' + c.status, s: esc(c.reason), ok: 'Close', c: null, wide: 1,
+        body: rows +
+          "<div class='pr-slip-note'>Underpayments " + fmt(c.totals.underpayment) + ' · overpayments ' +
+          fmt(c.totals.overpayment) + ' · net ' + fmt(c.totals.net) + '. ' +
+          (rec.length ? 'An overpayment is recorded as a receivable; it is not deducted without a written authorisation.' : '') + '</div>' +
+          (c.status === 'released' ? "<button class='pr-mini' data-corr='pdf' data-id='" + c.id + "'>Download statement</button>" : '') +
+          rec.map(function (l) {
+            return "<div class='pr-corr-row'><span>" + esc(l.employeeName) + ' · recovery ' + esc(l.recovery.status) + '</span>' +
+              (l.recovery.authorized ? "<span class='pr-corr-ok'>" + esc(l.recovery.reference) + '</span>'
+                : "<span><button class='pr-mini' data-corr='authorize' data-id='" + c.id + "' data-emp='" + l.employeeId + "'>Authorise recovery</button></span>") + '</div>';
+          }).join('')
+      };
+    }
     if (st.modal === 'timesheets') {
       var tabBar = "<div class='pr-seg'><button data-tab='timesheets' class='" + (st.tsTab === 'timesheets' ? 'on' : '') + "'>Timesheets</button>" +
         "<button data-tab='thirteenth' class='" + (st.tsTab === 'thirteenth' ? 'on' : '') + "'>13th month</button></div>";
@@ -358,6 +441,36 @@
       if (id === 'all') { var on = !v.every(function (x) { return st.sel[x.id]; }); v.forEach(function (x) { st.sel[x.id] = on; }); } else st.sel[id] = !st.sel[id];
       render(); return;
     }
+    var corr = T.closest('[data-corr]');
+    if (corr) {
+      var cact = corr.dataset.corr, cid = corr.dataset.id;
+      if (cact === 'new') { st.corrReason = ''; st.modal = 'corr-new'; render(); return; }
+      if (cact === 'detail') { st.corrId = cid; st.modal = 'corr-detail'; render(); return; }
+      if (cact === 'pdf') {
+        var pdf = HIS.payrollCorrections.statementPdf(cid);
+        tip(pdf.ok ? 'Correction statement downloaded' : pdf.error);
+        return;
+      }
+      if (cact === 'review' || cact === 'approve' || cact === 'release') {
+        var rr = HIS.payrollCorrections[cact](cid, 'Via the payroll screen');
+        tip(rr.ok ? 'Correction ' + cid + ' ' + cact + 'd' : rr.error);
+        st.modal = 'proc'; render(); return;
+      }
+      if (cact === 'authorize') {
+        HIS.kit.modal({
+          title: 'Authorise overpayment recovery',
+          sub: 'Recovery needs a written authorisation on file. Nothing is deducted by this action.',
+          body: "<label style='display:block;margin-top:10px;font:600 12px Inter,sans-serif;color:#1b4e6b'>Authorisation reference<input name='reference' style='display:block;width:100%;margin-top:5px;height:36px;border:1px solid #c8dcea;border-radius:8px;padding:0 10px;font:400 13px Inter,sans-serif'></label>",
+          saveLabel: 'Record authorisation',
+          onSave: function (data) {
+            var ar = HIS.payrollCorrections.authorizeRecovery(cid, corr.dataset.emp, data);
+            tip(ar.ok ? 'Recovery authorised' : ar.error);
+            render();
+          }
+        });
+        return;
+      }
+    }
     var tb = T.closest('[data-tab]');
     if (tb) { st.tsTab = tb.dataset.tab; st.tsEmp = null; st.annualEmp = null; render(); return; }
     var an = T.closest('[data-annual]');
@@ -397,6 +510,15 @@
       } else if (k === 'export') {
         download('payroll-' + run.periodId.replace(/\//g, '-') + '-v' + run.version + '.csv', HIS.payrollRuns.csv(run.id));
         tip('Payroll exported as CSV');
+      } else if (k === 'corr-new') {
+        var reasonEl = document.getElementById('corrReason');
+        var res = HIS.payrollCorrections.create({ originalRunId: run.id, reason: reasonEl ? reasonEl.value : '' });
+        if (!res.ok) { tip(res.error); return; }
+        st.corrId = res.correction.id;
+        st.modal = 'corr-detail';
+        tip('Correction ' + res.correction.id + ' created');
+        render();
+        return;
       } else if (k === 'slip') {
         var pr = HIS.payrollRuns.payslipPdf(st.emp.id);
         tip(pr.ok ? 'Payslip PDF downloaded' : pr.error);
@@ -404,6 +526,9 @@
       st.modal = ''; st.tsEmp = null; render();
     }
   });
-  stage.addEventListener('input', function (e) { if (e.target.id === 'prq') { st.q = e.target.value; st.caret = e.target.selectionStart; render(true); } });
+  stage.addEventListener('input', function (e) {
+    if (e.target.id === 'prq') { st.q = e.target.value; st.caret = e.target.selectionStart; render(true); }
+    if (e.target.id === 'corrReason') st.corrReason = e.target.value;
+  });
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && (st.menu || st.modal)) { st.menu = ''; st.modal = ''; st.tsEmp = null; render(); } });
 })();

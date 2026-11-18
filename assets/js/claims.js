@@ -121,7 +121,7 @@
         id: 'CLM-2026-0001', patientId: 'PT-99213', patientName: 'Isabel Geliz V. Ramos',
         invoiceId: 'BL-8801', payer: 'PhilHealth', payerType: 'philhealth', memberRef: '12-345678901-2',
         coverage: { type: 'case-rate', description: 'Case rate — medical admission, no complication' },
-        claimAmount: 4000, requestedAmount: 4000, approvedAmount: 4000, patientShare: 13360,
+        claimAmount: 4000, requestedAmount: 4000, approvedAmount: 4000, patientShare: 3360,
         documents: docsFor('philhealth', true),
         preparedAt: '2026-08-26T09:10:00+08:00', submittedAt: '2026-08-27T14:30:00+08:00',
         followUpAt: '2026-09-05', status: 'approved', officer: 'Rowena Lim',
@@ -172,7 +172,7 @@
         id: 'CLM-2026-0004', patientId: 'PT-99213', patientName: 'Isabel Geliz V. Ramos',
         invoiceId: 'BL-8801', payer: 'Maxicare', payerType: 'hmo', memberRef: 'MX-771-330-19',
         coverage: { type: 'loa', description: 'Letter of authorisation — professional fees' },
-        claimAmount: 3000, requestedAmount: 3000, approvedAmount: 0, patientShare: 17360,
+        claimAmount: 3000, requestedAmount: 3000, approvedAmount: 0, patientShare: 7360,
         documents: docsFor('hmo', [0, 2]),
         preparedAt: '2026-08-30T09:00:00+08:00',
         followUpAt: '2026-08-30', status: 'additional-info', officer: 'Rowena Lim',
@@ -189,7 +189,7 @@
         id: 'CLM-2026-0005', patientId: 'PT-99213', patientName: 'Isabel Geliz V. Ramos',
         invoiceId: 'BL-8801', payer: 'PhilHealth', payerType: 'philhealth', memberRef: '12-345678901-2',
         coverage: { type: 'case-rate', description: 'Case rate — first tranche, professional fees' },
-        claimAmount: 1500, requestedAmount: 1500, approvedAmount: 1500, patientShare: 15860,
+        claimAmount: 1500, requestedAmount: 1500, approvedAmount: 1500, patientShare: 5860,
         documents: docsFor('philhealth', true),
         preparedAt: '2026-08-20T09:00:00+08:00', submittedAt: '2026-08-21T10:00:00+08:00',
         followUpAt: '2026-08-28', status: 'approved', officer: 'Rowena Lim',
@@ -323,18 +323,38 @@
     }
 
     // Settlement is the only transition that moves money.
+    //
+    // Coverage is capped at what is still outstanding. A payer can approve more than the patient
+    // owes — because the patient paid part of the bill, or an earlier claim already covered it —
+    // and posting the full approval would drive the invoice below zero. The excess is recorded on
+    // the claim as `unapplied`, separately from the ledger, so it is visible without inventing a
+    // cash refund or a negative balance.
     if (action === 'settle') {
       if (!claim.approvedAmount || claim.approvedAmount <= 0) {
         return { ok: false, error: 'There is no approved amount to settle.' };
       }
       if (claim.settlement) return { ok: false, error: 'This claim is already settled by ' + claim.settlement.transactionId + '.' };
+      var bill = (HIS.billing.bills || []).filter(function (b) { return b.id === claim.invoiceId; })[0];
+      if (!bill) return { ok: false, error: 'The invoice behind this claim no longer exists.' };
+      var balance = HIS.ledger.balanceOf(bill);
+      var applied = Math.round(Math.min(claim.approvedAmount, Math.max(0, balance)) * 100) / 100;
+      var unapplied = Math.round((claim.approvedAmount - applied) * 100) / 100;
+      if (applied <= 0) {
+        return { ok: false, error: 'Nothing is outstanding on ' + bill.id + '; the ' + peso(claim.approvedAmount) + ' approval cannot be applied.' };
+      }
       var res = HIS.ledger.recordCoverage({
-        invoiceId: claim.invoiceId, kind: 'coverage', amount: claim.approvedAmount,
+        invoiceId: claim.invoiceId, kind: 'coverage', amount: applied,
         payer: claim.payer, reference: claim.id, basis: claim.coverage.description,
         sourceId: claim.id
       });
       if (!res.ok) return { ok: false, error: res.error };
-      claim.settlement = { transactionId: res.transaction.id, amount: claim.approvedAmount, at: res.transaction.at };
+      claim.settlement = {
+        transactionId: res.transaction.id, amount: applied, unapplied: unapplied, at: res.transaction.at
+      };
+      claim.unappliedAmount = unapplied;
+      claim.unappliedReason = unapplied > 0
+        ? 'Approved ' + peso(claim.approvedAmount) + ' but only ' + peso(applied) + ' was outstanding on ' + bill.id + '.'
+        : '';
     }
 
     if (action === 'approve' || action === 'partial') {
@@ -345,7 +365,10 @@
       }
       claim.approvedAmount = Math.round(approved * 100) / 100;
       var bill = (HIS.billing.bills || []).filter(function (b) { return b.id === claim.invoiceId; })[0];
-      claim.patientShare = bill ? Math.max(0, Math.round((bill.amount - claim.approvedAmount) * 100) / 100) : 0;
+      // What the patient still owes after this claim, measured against what is outstanding now —
+      // not against the original charge, which would ignore payments already received.
+      var outstanding = bill ? HIS.ledger.balanceOf(bill) : 0;
+      claim.patientShare = Math.max(0, Math.round((outstanding - claim.approvedAmount) * 100) / 100);
       claim.decisionAt = new Date().toISOString();
     }
 

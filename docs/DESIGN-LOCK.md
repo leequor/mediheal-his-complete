@@ -431,3 +431,24 @@ and is a **data** correction, not a layout change: M8 printed the monthly salary
 period (₱30,000 for a ₱60,000 monthly salary). Same columns, same widths, same row heights.
 
 Every other page matches its baseline at 0.000%.
+
+---
+
+## 14. M10.1 — correction and wage-floor overlays
+
+No page geometry changed. The only visual additions are inside the existing Payroll dialog and the
+Claims screen, and every one uses an existing class or an existing token value.
+
+| Addition | Where | Styling |
+|---|---|---|
+| Wage-floor note | `Process payments` dialog, below the run status | `.pr-slip-note`, the same 11.5px muted text used elsewhere in that dialog |
+| Correction runs block | `Process payments` dialog, only when the run is released | `.pr-sect` heading in the existing 12px uppercase label style, `.pr-corr-row` on the existing 12.5px body size |
+| Correction detail | new overlay, 680px wide, height `300 + 52 × employees` capped at 560 | `.pr-corr-line`, `.pr-corr-due` (`#1c6d9c`), `.pr-corr-rec` (`#a6460a`, already used by the attendance warning) |
+| Reason field | correction form | `.pr-fld`, same border, radius and background as `.pr-m-i` |
+
+At 1366 the M9.2 responsive layer reflows both dialogs to 520px and stacks the internals, exactly as
+it does for the payslip and timesheet dialogs. Verified at both widths: no clipping, no horizontal
+overflow, no console errors.
+
+The correction detail dialog sizes to its content (`300 + 52 × employees`, capped at 560) rather
+than using one fixed height, because a one-line correction in a 560px box looked like an error.

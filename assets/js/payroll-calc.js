@@ -88,9 +88,19 @@
       salaryFloor: 10000, salaryCeiling: 100000
     },
     pagibig: {
-      source: 'HDMF Circular No. 460 (Fund Salary Credit cap 10,000)',
-      effectiveFrom: '2024-02-01',
-      employeeRate: 0.02, employerRate: 0.02, fundSalaryCap: 10000
+      // TWO effective dates, because two instruments set two different things.
+      //   RA 9679 s.7 fixes the rates: 1% for a monthly compensation of 1,500 or less, 2% above,
+      //   employer 2% of every covered employee. That tier is statutory and still in force.
+      //   The law lets the Board raise the maximum monthly compensation (then 5,000); HDMF
+      //   Circular No. 460 exercised that power and set it to 10,000.
+      // The circular could not be retrieved directly (the Pag-IBIG site answers with a reCAPTCHA
+      // and the archived copy was unreachable), so the 1% tier rests on the statute, which a
+      // circular cannot override. Flagged for HDMF confirmation in docs/PAYROLL.md.
+      source: 'RA 9679 s.7 (rates); HDMF Circular No. 460 (fund salary cap 10,000)',
+      effectiveFrom: '2009-07-21',
+      capEffectiveFrom: '2024-02-01',
+      employeeRate: 0.02, lowRate: 0.01, lowThreshold: 1500,
+      employerRate: 0.02, fundSalaryCap: 10000
     },
     bir: {
       source: 'BIR Annex E, RR No. 11-2018 (effective January 1, 2023 and onwards)',
@@ -198,9 +208,19 @@
     var c = CONFIG.philhealth;
     return round2(clamp(Number(monthly), c.salaryFloor, c.salaryCeiling) * c.employeeRate);
   }
+  // Employee share. The 1% tier is decided on the monthly compensation, not on the capped fund
+  // salary: an employee on 1,500 contributes 1% of 1,500, one on 1,501 contributes 2% of 1,501.
   function pagibigMonthly(monthly) {
     var c = CONFIG.pagibig;
-    return round2(Math.min(Number(monthly), c.fundSalaryCap) * c.employeeRate);
+    var m = Number(monthly) || 0;
+    var rate = m <= c.lowThreshold ? c.lowRate : c.employeeRate;
+    return round2(Math.min(m, c.fundSalaryCap) * rate);
+  }
+
+  // Employer share. Always 2%, with no low tier — RA 9679 s.7 sets one rate for all employers.
+  function pagibigEmployerMonthly(monthly) {
+    var c = CONFIG.pagibig;
+    return round2(Math.min(Number(monthly) || 0, c.fundSalaryCap) * c.employerRate);
   }
 
   // Monthly employee and employer shares, plus the employer-only EC contribution. The employer
@@ -213,14 +233,15 @@
     var pagEe = pagibigMonthly(monthly);
     var sssEr = round2(msc(monthly) * c.sss.employerRate);
     var philEr = round2(clamp(Number(monthly), c.philhealth.salaryFloor, c.philhealth.salaryCeiling) * c.philhealth.employerRate);
-    var pagEr = round2(Math.min(Number(monthly), c.pagibig.fundSalaryCap) * c.pagibig.employerRate);
+    var pagEr = pagibigEmployerMonthly(monthly);
     return {
       employee: { sss: sssEe, philhealth: philEe, pagibig: pagEe, total: round2(sssEe + philEe + pagEe) },
       employer: { sss: sssEr, philhealth: philEr, pagibig: pagEr, ec: c.sss.ecEmployer,
         total: round2(sssEr + philEr + pagEr + c.sss.ecEmployer) },
       msc: msc(monthly),
       philhealthBase: clamp(Number(monthly), c.philhealth.salaryFloor, c.philhealth.salaryCeiling),
-      pagibigBase: Math.min(Number(monthly), c.pagibig.fundSalaryCap)
+      pagibigBase: Math.min(Number(monthly), c.pagibig.fundSalaryCap),
+      pagibigRate: pagibigRate(monthly)
     };
   }
 
@@ -414,7 +435,7 @@
     lines.push({ label: 'Gross pay', amount: gross, kind: 'total' });
     lines.push({ label: 'SSS \u2014 5% of MSC ' + peso0(stat.msc) + ', employee share', amount: -sss, kind: 'deduction' });
     lines.push({ label: 'PhilHealth \u2014 2.5% of ' + peso0(stat.philhealthBase) + ', employee share', amount: -phil, kind: 'deduction' });
-    lines.push({ label: 'Pag-IBIG \u2014 2% of ' + peso0(stat.pagibigBase) + ', employee share', amount: -pag, kind: 'deduction' });
+    lines.push({ label: 'Pag-IBIG \u2014 ' + Math.round(pagibigRate(monthly) * 100) + '% of ' + peso0(stat.pagibigBase) + ', employee share', amount: -pag, kind: 'deduction' });
     lines.push({ label: 'Withholding tax \u2014 BIR ' + f.label.toLowerCase() + ' table', amount: -tax, kind: 'deduction' });
     if (other) lines.push({ label: 'Other authorised deductions', amount: -other, kind: 'deduction' });
     lines.push({ label: 'Net pay', amount: net, kind: 'total' });
@@ -520,6 +541,11 @@
     };
   }
 
+  function pagibigRate(monthly) {
+    var c = CONFIG.pagibig;
+    return (Number(monthly) || 0) <= c.lowThreshold ? c.lowRate : c.employeeRate;
+  }
+
   function peso0(n) {
     return '\u20b1' + Number(n || 0).toLocaleString('en-PH', { maximumFractionDigits: 0 });
   }
@@ -565,7 +591,8 @@
 
   HIS.payrollCalc = {
     CONFIG: CONFIG, FREQUENCIES: FREQUENCIES,
-    msc: msc, sssMonthly: sssMonthly, philhealthMonthly: philhealthMonthly, pagibigMonthly: pagibigMonthly,
+    msc: msc, sssMonthly: sssMonthly, philhealthMonthly: philhealthMonthly,
+    pagibigMonthly: pagibigMonthly, pagibigEmployerMonthly: pagibigEmployerMonthly,
     statutory: statutory, withholding: withholding, bracketTax: bracketTax,
     dailyRate: dailyRate, hourlyRate: hourlyRate,
     compute: compute, emptySummary: emptySummary,

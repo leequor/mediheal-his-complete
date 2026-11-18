@@ -29,6 +29,7 @@
     // (with version history), the claim lifecycle and the 13th-month register.
     attendancePeriod: 'mh_attendance_period',
     payrollRuns: 'mh_payroll_runs',
+    payrollCorrections: 'mh_payroll_corrections',
     claims: 'mh_claims',
     thirteenth: 'mh_thirteenth'
   };

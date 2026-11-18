@@ -110,7 +110,7 @@ moment they become money; rounding a rate before multiplying it by 2 hours loses
 |---|---|---|---|
 | SSS | 15% of the Monthly Salary Credit; employee 5%, employer 10%; MSC floor ₱5,000, ceiling ₱35,000, brackets ₱500 wide | SSS Circular No. 2024-006 | 2025-01-01 |
 | PhilHealth | 5% of monthly basic; employee 2.5%, employer 2.5%; floor ₱10,000, ceiling ₱100,000 | PhilHealth Circular No. 2024-0031 | 2025-01-01 |
-| Pag-IBIG | 2% employee + 2% employer of the Fund Salary Credit, capped at ₱10,000 (max ₱200 each) | HDMF Circular No. 460 | 2024-02-01 |
+| Pag-IBIG | Employee 1% at ₱1,500 or less, 2% above; employer 2%; Fund Salary Credit capped at ₱10,000 | RA 9679 §7 (rates) · HDMF Circular No. 460 (cap) | 2009-07-21 · 2024-02-01 |
 | Withholding | Annex "E", RR No. 11-2018 — daily, weekly, semi-monthly, monthly and annual tables | BIR | 2023-01-01 |
 | Overtime | +25% ordinary day; +30% on a rest day or holiday | Labor Code Art. 87 | 1974-11-01 |
 | Night differential | +10% of the regular wage, 10:00 PM – 6:00 AM | Labor Code Art. 86 | 1974-11-01 |
@@ -145,6 +145,29 @@ A bracket runs from `MSC − 250` to `MSC + 249.99`:
 M8 used `ceil(salary / 500) × 500`, which puts 12,249 in the 12,500 bracket. The corrected rule is
 `ceil((salary − 249.99) / 500) × 500`, clamped.
 
+### The Pag-IBIG tier, and what could not be verified
+
+The M10 audit reported the 1% tier as missing. It is now implemented, but the evidence needs to be
+stated precisely because the two circulars could not be read directly.
+
+* **RA 9679 §7** is unambiguous and is the primary source: employees earning **not more than
+  ₱1,500 a month contribute 1%**, those earning more contribute 2%, **every employer contributes
+  2%**, and the maximum monthly compensation used for the computation was ₱5,000, *"Provided, That
+  this maximum may be fixed from time to time by the Board of Trustees"*.
+* **HDMF Circular No. 274** implements RA 9679's membership guidelines. It is the instrument that
+  would have restated the tier.
+* **HDMF Circular No. 460** (2024) exercised the Board's power and raised the maximum to ₱10,000.
+
+Both circulars sit behind a reCAPTCHA on `pagibigfund.gov.ph`; the archived copies were unreachable
+from this environment, so neither PDF was read. The implementation therefore rests on the statute,
+which a circular cannot override: the 1% tier applies, and only the cap moved. **This should still
+be confirmed against Circular 274 and 460 by HDMF or a Philippine payroll practitioner** — if 460
+silently dropped the tier (there is no indication it did), the ₱1,500 boundary in
+`CONFIG.pagibig.lowThreshold` is the one line to change.
+
+The tier is decided on the **monthly compensation**, not on the capped fund salary: ₱1,500 → 1% of
+₱1,500 = ₱15; ₱1,501 → 2% of ₱1,501 = ₱30.02. The employer share has no tier.
+
 ### Employee versus employer
 
 `statutory()` returns both sides. The payslip shows the employee share as a deduction and the
@@ -175,7 +198,45 @@ Company policy, not statute, is marked as such in the config:
 
 ---
 
-## 5. Overtime, night differential, holidays
+## 5. Minimum wage
+
+`assets/js/wage-floor.js` holds effective-dated wage orders and answers one question: on this date,
+for this region and sector, what is the daily floor?
+
+**Source.** NWPC daily minimum wage rates, National Capital Region. Wage Order **NCR-28**, effective
+**26 September 2026**: ₱755.00 non-agriculture, ₱718.00 for agriculture and the other covered
+categories. Wage Order **NCR-27** (25 July 2026) is modelled but marked `suspended`: implementation
+awaits final decisions from Pasig RTC 152 and Navotas RTC 287, so it is never applied. The second
+tranche announced under it (₱743.00–₱780.00 on 20 January 2027) is recorded as `contingent` and is
+not applied on its date either.
+
+**No national rate.** `floorFor()` returns a floor only when an order matches the region *and* the
+sector *and* is in force on the date. A region with no configured order returns `unknown`, never a
+default. Before 26 September 2026 there is no NCR order in this file, so the August 2026 demo period
+reports `unknown` and the Payroll screen says so rather than implying a floor it cannot prove.
+
+**Conversion.** Monthly rates become a daily equivalent with the same 261-day factor the engine
+uses, never by dividing by 30:
+
+```
+daily equivalent = monthly × 12 / 261 / FTE      FTE = paid hours a day / 8
+```
+
+A part-timer on four hours a day is compared on a full-time-equivalent basis, which is what dividing
+by FTE tests: ₱8,000 a month for half days is ₱735.63 a day FTE and is below the floor.
+
+**Enforcement.** `payrollRuns.computeLines()` blocks an employee whose rate is below the floor — no
+line is produced and the reason is shown in the run — and `approve`/`release` re-check every
+employee live. An employee below the floor with a recorded exemption (`wage.exemption.code` plus a
+`reference`) is reported as `exempt` instead of blocked. `unknown` is a warning, not a block.
+
+**Not modelled:** regional wage orders other than NCR, establishment-size exemptions, partial
+exemptions, and the sector definitions inside a wage order. A hospital's HR and legal team must
+apply those.
+
+---
+
+## 6. Overtime, night differential, holidays
 
 Premiums are **additions** to the period basic, which already pays every scheduled day including
 regular holidays. A regular holiday actually worked therefore adds 100%, bringing the day to 200%.
@@ -204,7 +265,7 @@ Code. The payslip reports `otEligible: false` rather than silently dropping the 
 
 ---
 
-## 6. 13th month and year-end
+## 7. 13th month and year-end
 
 `thirteenthMonth(employee, { months })` returns `basicEarned / 12` on **basic salary only**. A rice
 allowance is a de minimis benefit and is excluded; a professional allowance is excluded too, because
@@ -227,7 +288,7 @@ The annual table is consistent with the monthly one at every boundary: 250,000 /
 
 ---
 
-## 7. Worked examples (all asserted in `scripts/payroll-check.mjs`)
+## 8. Worked examples (all asserted in `scripts/payroll-check.mjs`)
 
 | Case | Monthly | Frequency | Gross | SSS | PhilHealth | Pag-IBIG | Tax | Net |
 |---|---|---|---|---|---|---|---|---|
@@ -242,20 +303,42 @@ difference from the published bracket rounding, not from the model.
 
 ---
 
-## 8. Known limitations
+## 9. Off-cycle corrections
+
+A released payroll is a historical record and is never edited. `assets/js/payroll-corrections.js`
+adds a linked correction run:
+
+1. pick the released run and give a reason (at least eight characters);
+2. every employee in the run is recomputed from the **current approved** timesheet;
+3. `difference = corrected net − original net − corrections already released for that employee`;
+4. employees with no difference are skipped and listed;
+5. the correction is fingerprinted from the run, the differences and the reason, so the same
+   correction cannot be raised twice;
+6. review → approve → release, each audited;
+7. an adjustment statement per employee, downloadable as a PDF.
+
+**Underpayment** is payable. **Overpayment** is a receivable and is **not** deducted automatically:
+`release()` records it with `recovery.status = 'unrecorded'`. Turning it into a deduction needs
+`authorizeRecovery()` with a written reference, and even then this demo only marks it
+`authorized-pending-deduction` — there is no future run to deduct from.
+
+The original run is never touched: the correction stores `originalRunId` and `originalVersion`, and
+the test asserts the released run is byte-identical after a correction is created and released.
+
+---
+
+## 10. Known limitations
 
 * The tables are dated 2025-01-01 and reviewed 2026-11-18. A new circular makes them stale;
   `verify()` reports the age and the payroll footer prints the effective date.
-* **No minimum-wage check.** The engine will compute payroll for any monthly rate. The current NCR
-  floor is Wage Order No. NCR-28, effective 26 September 2026: ₱718.00–₱755.00 a day for
-  non-agriculture. (NCR-27, effective 25 July 2026, is under a court injunction and carries a
-  further step to ₱743.00–₱780.00 on 20 January 2027.) The lowest salary in the demo is ₱1,195.40 a
-  day, so no demo record breaches the floor — but nothing in the code would stop one that did.
-  Regional wage orders differ and are not modelled.
-* **Pag-IBIG's 1% tier is not implemented.** Long-standing HDMF rules give an employee earning
-  ₱1,500 a month or less a 1% share rather than 2%. The engine applies 2% at every level. The tier
-  is unreachable at the NCR minimum wage, so no demo record is affected, but the rule is missing and
-  would need confirmation against HDMF Circular No. 460 before being added.
+* **The wage floor covers NCR only**, and only the region/sector split. Regional orders, establishment
+  size, partial exemptions and the sector definitions inside an order are not modelled.
+* **Circulars 274 and 460 were not read directly.** The 1% Pag-IBIG tier rests on RA 9679 §7; the
+  circulars could not be retrieved (reCAPTCHA, and the archived copies unreachable). See §3.
+* **No off-cycle deduction.** An authorised overpayment recovery is recorded as
+  `authorized-pending-deduction`; nothing deducts it, because the demo has no subsequent period.
+* **Corrections are per run, not per period.** A second released run for the same period cannot
+  exist, so a correction always points at the one released run.
 * Overtime is paid at the statutory minimum. A CBA may provide more, and Art. 93 says the higher
   rate governs.
 * Holiday premiums use the 2026 holiday list only.

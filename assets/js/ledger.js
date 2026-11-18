@@ -86,6 +86,9 @@
     return rows.filter(function (t) { return t.status === 'posted'; });
   }
 
+  // Kinds that reduce the charge without being money received.
+  var COVERAGE_KINDS = ['coverage', 'discount', 'adjustment'];
+
   // One place that defines what each transaction kind does to a balance.
   //   payment   -> money received
   //   refund    -> money returned, so it reduces what was received
@@ -95,13 +98,15 @@
   //   adjustment-> a correction that reduces the charge
   function sums(invoiceId) {
     var rows = settled(forInvoice(invoiceId));
-    var paid = 0, refunded = 0, covered = 0;
+    var paid = 0, refunded = 0, covered = 0, credited = 0;
     rows.forEach(function (t) {
       if (t.kind === 'payment') paid += t.amount;
       else if (t.kind === 'refund') refunded += t.amount;
-      else covered += t.amount;   // coverage | discount | adjustment
+      else if (t.kind === 'credit') credited += t.amount;      // money held, not applied
+      else if (COVERAGE_KINDS.indexOf(t.kind) > -1) covered += t.amount;
+      // Anything else is not money and is ignored rather than silently counted.
     });
-    return { paid: paid, refunded: refunded, net: paid - refunded, covered: covered };
+    return { paid: paid, refunded: refunded, net: paid - refunded, covered: covered, credited: credited };
   }
 
   function paidCentavos(invoiceId) { return sums(invoiceId).net; }
@@ -274,8 +279,6 @@
   // `sourceId` is the id of whatever produced the row (a claim, an adjustment batch). It is unique:
   // a second posting for the same source returns the first transaction instead of adding a second.
   // That is what stops a re-settled claim from crediting the invoice twice.
-  var COVERAGE_KINDS = ['coverage', 'discount', 'adjustment'];
-
   function recordCoverage(input) {
     input = input || {};
     var bill = billById(input.invoiceId);
@@ -324,6 +327,44 @@
       });
     }
     return { ok: true, transaction: tx, balance: balanceOf(bill) };
+  }
+
+  // ---- credits -------------------------------------------------------------------------------
+  // Money a patient has paid that is not applied to an invoice: a deposit, a round-amount
+  // overpayment, a prepayment. It is recorded, never netted off the charge, so a balance can never
+  // go negative. `creditOf()` is the only place that reads it.
+  function recordCredit(input) {
+    input = input || {};
+    var bill = billById(input.invoiceId);
+    if (!bill) return { ok: false, error: 'Invoice not found.' };
+    var amount = Number(input.amount);
+    if (!isFinite(amount) || amount <= 0) return { ok: false, error: 'Enter a credit amount greater than zero.' };
+    if (!String(input.reference || '').trim()) {
+      return { ok: false, error: 'A credit needs a reference (OR number, deposit slip, or receipt).' };
+    }
+    var rows = all();
+    var tx = {
+      id: nextId(rows), kind: 'credit', invoiceId: bill.id, patientId: bill.pt,
+      method: input.method || 'Cash', reference: String(input.reference).trim(),
+      amount: toCentavos(amount), at: new Date().toISOString(),
+      cashier: input.cashier || actorName(), status: 'posted',
+      notes: String(input.notes || '').trim(), seeded: false
+    };
+    rows.push(tx);
+    save(rows);
+    if (window.HIS.audit && !input.silent) {
+      HIS.audit.append({
+        who: actorName(), role: roleLabel(),
+        what: 'Patient credit recorded — ' + peso(amount) + ' on ' + bill.id + ' (' + tx.reference + '); not applied to the balance',
+        entity: 'invoice:' + bill.id, before: peso(balanceOf(bill)), after: peso(balanceOf(bill))
+      });
+    }
+    return { ok: true, transaction: tx, credit: toPesos(sums(bill.id).credited) };
+  }
+
+  function creditOf(bill) {
+    if (!bill) return 0;
+    return toPesos(sums(bill.id).credited);
   }
 
   // ---- aggregates ---------------------------------------------------------------------------
@@ -417,6 +458,11 @@
         if (t.kind === 'refund') refunded += t.amount;
       });
       if (refunded > paid) problems.push({ code: 'refund-exceeds-payment', invoice: b.id, detail: toPesos(refunded) + ' of ' + toPesos(paid) });
+      // A credit is money held, never a reduction of the charge: if it were counted as coverage the
+      // balance would fall below zero.
+      if (s.credited > 0 && balanceC < 0) {
+        problems.push({ code: 'credit-applied-to-balance', invoice: b.id, detail: toPesos(s.credited) });
+      }
     });
 
     // A pending electronic intent must never be counted as money.
@@ -455,6 +501,7 @@
         Math.abs(toCentavos(t.billed) - billedC) === 0,
       methodSum: toPesos(methodSum),
       methodMatchesCollected: Math.abs(methodSum - collectedC) <= 1,
+      credits: toPesos(bills().reduce(function (a, b) { return a + sums(b.id).credited; }, 0)),
       coverageRows: coverageRows.length,
       coverageTotal: toPesos(coverageRows.reduce(function (a, x) { return a + x.amount; }, 0)),
       // Coverage is a payer's share, never a collection: the two must never be added together.
@@ -484,6 +531,7 @@
     paidOf: paidOf, balanceOf: balanceOf, statusOf: statusOf, pendingOf: pendingOf,
     recordPayment: recordPayment, confirm: confirm, void: voidTx, refund: refund,
     recordCoverage: recordCoverage, COVERAGE_KINDS: COVERAGE_KINDS, sums: sums,
+    recordCredit: recordCredit, creditOf: creditOf,
     coveredOf: coveredOf, totals: totals, byMethod: byMethod, byPayer: byPayer,
     invariants: invariants, reconcile: reconcile
   };

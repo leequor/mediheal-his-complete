@@ -22,6 +22,8 @@ synthetic. Nothing here is a hospital database.
 | `HIS.employees` (`assets/js/employees.js`) | the salary master (in code, not storage) | store a per-period amount |
 | `HIS.attendancePeriod` (`assets/js/attendance-period.js`) | `mh_attendance_period` — one record per employee per day, plus the timesheet status | compute money |
 | `HIS.payrollRuns` (`assets/js/payroll-runs.js`) | `mh_payroll_runs` — runs, versions, blocked lists | recompute statutory tables itself |
+| `HIS.wageFloor` (`assets/js/wage-floor.js`) | the effective-dated wage orders (in code) | set anyone's pay |
+| `HIS.payrollCorrections` (`assets/js/payroll-corrections.js`) | `mh_payroll_corrections` — correction runs linked to a released run | edit the released run |
 | `HIS.claims` (`assets/js/claims.js`) | `mh_claims` — claim records and their history | post money; it asks the ledger |
 | `HIS.pharmacy` (`assets/js/pharmacy.js`) | `mh_rx`, `mh_stock` | dispense expired stock |
 
@@ -48,6 +50,7 @@ before M7.
 | `mh_profile_requests` | `ProfileRequest[]` | patient portal |
 | `mh_attendance_period` | `{ period, records[], timesheets{} }` | Attendance, Payroll → Timesheets |
 | `mh_payroll_runs` | `{ runs[] }` | Payroll |
+| `mh_payroll_corrections` | `{ corrections[] }` | Payroll → corrections |
 | `mh_claims` | `{ claims[], version, seededAt }` | Claims |
 
 `HIS.store.reset()` deliberately leaves `mh_regs_extra` and `mh_appts_extra` alone: they hold work
@@ -142,6 +145,10 @@ The stores enforce these. Do not add a screen that can break one.
 12. A settlement posts exactly one `coverage` row; the claim id is the ledger `sourceId`.
 13. An invoice satisfies `charge = collected + covered + outstanding` to the centavo, and no balance
     is negative (`ledger.invariants()`).
+14. A `credit` transaction never reduces a balance and is never counted as collected or covered.
+15. A claim settlement posts at most the outstanding balance; the excess is `unappliedAmount`.
+16. A released payroll is never mutated. Corrections are separate records linked by `originalRunId`.
+17. A correction cannot be created twice from the same run, differences and reason (fingerprint).
 
 ---
 
@@ -176,6 +183,32 @@ Payroll's `summary(empId)` returns `null` unless `status === 'approved'`.
 `versions[]` holds a deep copy of the lines and totals before each recompute, so an earlier
 calculation is never lost. `attendanceFingerprint` is compared with the live timesheet when the run
 is approved; a mismatch blocks approval until the run is recomputed.
+
+### Employee wage metadata (M10.1)
+```
+wage: { region:'NCR', sector:'non-agriculture', establishment:'hospital',
+        classification:'regular', hoursPerDay:8, daysPerWeek:5,
+        exemption:{ code, reference } | absent }
+```
+`hoursPerDay` sets the full-time equivalent for the wage-floor comparison. `exemption` is only
+present when a lawful reason to sit below the floor exists, and it must carry a reference.
+
+### CorrectionRun (M10.1)
+```
+{ id:'CR-0001', originalRunId, originalVersion, periodId, periodLabel, frequency,
+  reason, status:'draft'|'reviewed'|'approved'|'released',
+  lines:[{ employeeId, originalNet, correctedNet, alreadyCorrected, difference,
+           kind:'underpayment'|'overpayment', payable, receivable,
+           recovery:{ status, authorized, reference, method } | null,
+           components:{ basic, overtime, night, premium, allowances, sss, philhealth, pagibig, tax },
+           attendance:{ absenceDays, lateMinutes, overtimeHours, nightHours } }],
+  skipped:[{ employeeId, reason }],
+  totals:{ employees, underpayment, overpayment, net },
+  fingerprint, createdAt, createdBy, history[] }
+```
+`fingerprint` is the duplicate guard: the original run, the per-employee differences and the reason.
+`alreadyCorrected` is what earlier released corrections paid for the same employee and run, so a
+second correction pays the increment only.
 
 ### Claim (M10)
 See `docs/CLAIMS.md` §1. The one field the ledger cares about is `settlement.transactionId`: a claim
