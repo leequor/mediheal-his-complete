@@ -70,6 +70,7 @@ node scripts/a11y-check.mjs             # axe audit, 27 pages
 node scripts/responsive-check.mjs       # 28 pages × 5 widths, no overflow
 node scripts/buttons.mjs                # dead-control sweep
 node scripts/qa-check.mjs                # 91 presentation and interaction checks
+node scripts/qa-final-check.mjs          # 68 end-to-end acceptance checks
 node scripts/mobile-audit.mjs           # rendered text size and touch targets at 5 widths
 ```
 

@@ -42,6 +42,7 @@ no overlap, no console error.
 | Suite | Result |
 |---|---|
 | `qa-check.mjs` (new) | **91 / 91** |
+| `qa-final-check.mjs` (new) | **68 / 68** |
 | `revenue-check` | 81 / 81 |
 | `charges-check` | 44 / 44 |
 | `adt-boundary-check` | 65 / 65 |
@@ -61,7 +62,7 @@ no overlap, no console error.
 | `buttons` | **0 anomalies** |
 | `visual` | 28 pages, 0.000% at 1440 and 1366 |
 
-**1,208 assertions across 17 rule-asserting harnesses. 0 failures, 0 skips.**
+**1,138 assertions across 17 rule-asserting harnesses, plus 144 role checks — 1,282 in all. 0 failures, 0 skips.**
 
 `qa-check.mjs` is new and covers only what this pass changed: the two sign-in routes, patient
 sign-out, appointment counts and pagination, per-account avatars, per-role notifications, dashboard
@@ -74,15 +75,19 @@ Measured against the state at `69c9a63`, captured in a throwaway worktree:
 
 | Page | 1440 | 1366 | Cause |
 |---|---|---|---|
-| Admissions | 11.692% | 17.340% | Bed board capped to two visible rows |
+| Admissions | 11.692% | 17.379% | Bed board capped to two visible rows |
 | Appointments | 0.462% | 1.978% | KPI values and the fifth card's label |
 | Settings | 0.146% | — | One note sentence reworded |
 | Audit | — | 0.126% | Header identity and the bell's real unread count |
-| 24 other pages | 0.000% | 0.000% | — |
+| 24 other pages | 0.000% | 0.000% | below the threshold — see below |
 
-The remaining pages are pixel-identical because the avatar tint sits under the harness's 128-level
-hard-pixel threshold, not because nothing changed: every page's header now draws initials instead of
-a photograph. That is recorded here rather than described as "no visual change".
+**What the percentage does not say.** The harness only counts pixels whose channel delta is ≥128, so a
+0.000% row is not "unchanged". Compared by SHA-256 instead, only `index` is byte-identical at both
+widths. The other 27 pages differ because **every shell page now draws an initials avatar where it
+used to draw one shared photograph**, and the portal sign-in gained a staff link. Page *height* is
+unchanged at 1440 on all 28 pages, and at 1366 only two pages reflow: Admissions (1597 → 1449 px) and
+Appointments (1762 → 1738 px).
+
 
 ## 5. Still open, and why
 
@@ -100,3 +105,72 @@ a photograph. That is recorded here rather than described as "no visual change".
   tables; fixing one would create a second responsive pattern.
 - **`localStorage` is not a database.** The session is per browser profile with no transaction. Two
   tabs are two demonstrations, not two writers.
+
+---
+
+## 6. Final acceptance verification (`qa-final-check.mjs`, 68 assertions)
+
+The provisional acceptance asked for five things to be proven end to end rather than asserted from a
+distance. Each is now a test.
+
+### 6.1 Generate payslips — the output, not the message
+
+The dialog is opened, its stated figures checked against the run (8 payslips, ₱162,574.21 net), the
+proceeding button clicked, and **every file it produces is read from disk**:
+
+- 8 downloads, one per employee, each named `payslip-EMP-0NN-<run>.pdf`, no employee twice.
+- Every file starts `%PDF-1.4` and ends `%%EOF`, contains `PAYSLIP`, contains a `NET PAY` line, and
+  names its employee. Smallest is over 600 bytes — none is a stub.
+- The confirmation says "8 payslips downloaded", and the dialog closes.
+
+**Duplicate submission.** Two clicks on the proceeding button before the dialog is removed produce
+**8 downloads, not 16**.
+
+**Validation.** With `payslipPdf` forced to fail on the third employee, the confirmation says
+**"7 payslips downloaded"** — the count is what happened, not a fixed sentence.
+
+**Short window.** At 560px tall the dialog fits inside the window with no scroll and the action is
+reachable. At 380px it stays inside the window, scrolls to its end, and the action still produces all
+8 files after scrolling.
+
+### 6.2 Notifications
+
+Read one → badge falls by exactly one, exactly one row is marked read, the subtitle agrees. Mark all →
+badge hidden, every row read, button disables. Switch account → the next role gets its own domain, its
+own unread count, **no inherited read marks**, and no shared notification with the previous role.
+
+### 6.3 Fresh-session isolation
+
+Visitor A records a ₱500 payment, then signs out. A **new browser context** (a new visitor) sees an
+audit trail containing only their own sign-in — the previous visitor's payment and its audit entry are
+gone, and the invoice is back at its seeded amount.
+
+Closing the tab is the other exit: a tariff change made in tab 1 is written in that tab, and a new tab
+in the same browser is not signed in, has no tariff store, and starts from the seeded price list.
+
+### 6.4 Departments as the department head
+
+The account lands on `departments.html` with no script error, renders 8 cards, and the "Total
+departments" card reads **8** — proving it counts the object list, not the old 7-entry string list.
+`HIS.departments` is an array of objects with `.name`; `HIS.deptNames` is a separate array of strings.
+Opening a card shows that department, Back returns to the list, and search narrows the visible cards
+while the empty state stays hidden.
+
+### 6.5 Both sign-in routes
+
+Patient page → **Staff sign in** (on screen without scrolling) → staff console. Staff page → patient
+portal → back. No redirect loop. A doctor account in the portal is refused with an actionable link; a
+patient account on the staff console resolves to the `patient` role whose home is the portal.
+
+---
+
+## 7. Baselines — both kept
+
+| Baseline | Manifest | State |
+|---|---|---|
+| Previous, accepted | `qa/baseline-previous/baseline-manifest-{1440,1366}.json` | `69c9a63` |
+| Current, approved | `qa/baseline/baseline-manifest-{1440,1366}.json` | `c7ec7ce` |
+
+Both manifests are committed; the PNGs are regenerated on demand (`DESIGN-LOCK.md` §17.4 has the exact
+commands). The complete list of intentional differences is the four rows in §4 of this report plus the
+two sub-threshold changes recorded in §17.1 — nothing else moved.
