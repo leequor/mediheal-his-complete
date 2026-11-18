@@ -144,3 +144,149 @@ the external integrations that cannot be built without credentials.
 
 No new milestone is needed to finish this. The remaining items are listed, sized and ranked in
 `docs/COMPLETION-ROADMAP.md`.
+
+---
+
+# M12 closeout
+
+A focused acceptance pass. No new milestone, no new feature area: verify what shipped, fix what the
+verification exposed, and write down what is still limited.
+
+## 1. Configuration — what is actually administrable
+
+The screen said "Configuration" and showed a bed count, which implied more than it delivers. The
+subtitle now states the boundary in one sentence, the KPI reads "Beds in service · read-only", and
+the second card is headed "Seeded from code — not editable here". `PROJECT-STATUS.md` §2 carries the
+same boundary as a create / edit / deactivate / view table.
+
+| Setting | Create | Edit | Deactivate | View |
+|---|---|---|---|---|
+| Service tariff price | append an effective-dated row | never | never — superseded, not deleted | current + full history |
+| Tariff code | not from the screen | no | no | yes |
+| Laboratory catalogue, beds, payroll policy, departments | no | no | no | count only, read-only |
+| User accounts | yes | yes | deactivate | yes |
+| Pharmacy stock | receive | adjust | dispose | yes |
+| Bed state / assignment | admit | transfer, cleaning, maintenance | discharge | yes |
+
+The catalogue and the bed inventory are **not** made editable here. Adding a test or a bed needs a
+catalogue editor, validation, and a decision about orders already placed against a retired test;
+half-building that would be worse than an honest boundary. It stays as `COMPLETION-ROADMAP.md` §2.1.
+
+Effective dating is verified, not asserted: after a change made through the real dialog, the earlier
+price is unchanged, the new price applies from its date, an existing charge keeps its snapshot, and a
+charge raised afterwards uses the new price (`revenue-check.mjs` §9, 6 assertions).
+
+## 2. The defect the boundary tests found
+
+`bedAt()` answered "which bed was the patient in at this instant?" by starting from
+`admission.bedId` — but that field is overwritten by every transfer. So after a transfer, re-accruing
+an earlier day priced it at the **destination** rate. A Private→Ward step-down made the first night
+bill at ₱1,200 instead of ₱2,800.
+
+The existing suites could not see it: they posted the early days *before* transferring, so the
+duplicate guard skipped them and the wrong rate was never computed. The new suite transfers first and
+accrues afterwards, which is the ordering a back-dated accrual or a late discharge produces.
+
+Fixed by making the base segment `transfers[0].from`. `adt-boundary-check.mjs` §4 now pins both
+directions: a transfer at 11:00 changes that same day's rate, a transfer at 15:00 does not.
+
+## 3. Boundary and idempotency coverage — `adt-boundary-check.mjs`, 59 assertions
+
+One fresh browser context per case, so no case can inherit another's store.
+
+| Case | Asserts |
+|---|---|
+| Admission day | billable at 09:00 and at 15:00, at the admitting bed rate |
+| Noon cutoff | not billable at 11:59, billable at 12:01, and only the new day posts |
+| Discharge day | 11:00 discharge → not billable; 13:00 discharge → billable |
+| Transfer before cutoff | that day is re-rated to the destination bed |
+| Transfer after cutoff | that day keeps its rate; the new rate starts the next day |
+| Repeated accrual | 2nd and 3rd post nothing, report skips, one room charge per date |
+| Repeated discharge | refused, no extra charge, status unchanged |
+| Reopen | bed back to occupied, original discharge kept in history |
+| Reload ×3 | same admission, same bed, no new charge, occupancy unchanged |
+| Duplicate bed | second admission and transfer into an occupied bed both refused |
+| Derived occupancy | removing the admission frees the bed with no other write; the bed-state store never holds "occupied" |
+| Invoice association | pre-link charges stay unbilled; post-link charges land on the invoice; total is exact |
+| History | transfer keeps `from`/`to`; day-one charge untouched by the move and the discharge |
+
+## 4. Concurrency — stated, not glossed
+
+`localStorage` has no lock, no transaction and no compare-and-swap. Every write is
+`get → mutate → set` on one JSON blob, last write wins.
+
+- Within one tab the duplicate-bed guard is real, and §8 above proves it.
+- Across two tabs it is not. §12 of the suite holds a snapshot in tab A, admits a patient in tab B,
+  writes A's stale snapshot back, and shows **tab B's admission is gone**.
+
+So the project does not claim that simultaneous users cannot double-book a bed. `PROJECT-STATUS.md`
+§5.1 states this, `docs/ADMISSIONS.md` repeats it, and the test demonstrates the failure rather than
+asserting safety.
+
+## 5. Visual results — 1440 and 1366, reported separately
+
+Two baselines exist now and they answer different questions.
+
+**A. Against the M12 baseline (the state this milestone left):** all 28 pages match at **both**
+1440 and 1366 — 0.000%, 0 hard pixels. This proves the closeout changed nothing except the
+Configuration copy, which was re-captured deliberately.
+
+**B. Against the ORIGINAL pre-M12 baseline** (captured from `43cbf84` in a throwaway worktree, so the
+comparison is reproducible rather than remembered):
+
+| Page | 1440 | 1366 |
+|---|---|---|
+| **Laboratory** | **4.744%**, 16,173 px ≥128, box (187,560) 1164×408 | **1.741%**, 10,657 px ≥128, box (0,1121) 1366×1423 |
+| **Reports** | **34.746%**, 602,238 px ≥128, box (0,170) 1440×1353 | **28.383%**, 638,332 px ≥128, box (0,68) 1366×2000 |
+| 22 other pre-existing pages | 0.000% | 0.000% |
+| admissions, charges, settings | no original baseline — new screens | no original baseline — new screens |
+
+The two differences are intentional and were reviewed on screen:
+
+- **Laboratory** — a ghost "Cancel" action on every non-validated row, with a stated billing
+  consequence. The action column widened 134 → 232 px and the Test column narrowed so every row stays
+  on one line. The diff box is the table body only; the header, KPI strip and critical-result strip
+  are unchanged.
+- **Reports** — a second KPI strip (unbilled charges, beds occupied, beds available, active
+  admissions) and an "Unbilled charges by source" card, because the page reported revenue without
+  reporting revenue that had not reached a bill. Everything below the first strip therefore moved
+  down, which is why the percentage is large.
+
+**Not claimed:** that every page has zero visual differences. Two pages differ from the original
+design by design, and three pages did not exist in the original.
+
+**Known layout limitation, unchanged.** At 1366 the admin tables (Laboratory, Pharmacy, Claims,
+Accounts, Audit, Reports, Admissions, Configuration) stack into blocks without per-field captions.
+It is measured, it is in `DESIGN-LOCK.md` §15.5, and it was not fixed here: adding captions to one
+table and not the others would create a second responsive pattern, which the design contract
+forbids.
+
+## 6. Final regression
+
+| Suite | Result |
+|---|---|
+| `adt-boundary-check.mjs` (new) | **59 / 59** |
+| `revenue-check.mjs` | 81 / 81 |
+| `charges-check.mjs` | 44 / 44 |
+| `clinical-check.mjs` | 53 / 53 |
+| `finance-check.mjs` | 31 / 31 |
+| `ledger-check.mjs` | 46 / 46 |
+| `claims-check.mjs` | 41 / 41 |
+| `portal-check.mjs` | 40 / 40 |
+| `auth-check.mjs` | 25 / 25 |
+| `payroll-check.mjs` | 89 / 89 |
+| `acceptance-audit.mjs` | 180 / 180 |
+| `m10-1..4` | 77 / 78 / 75 / 54 |
+| `roles-check.mjs` | 144 checks |
+| `smoke.mjs` | 28 pages clean |
+| `a11y-check.mjs` | 27 pages, 0 violations |
+| `responsive-check.mjs` | 140 checks, no overflow |
+| `buttons.mjs` | 0 anomalies |
+| `visual-check.mjs` | 28 pages, 0.000% at 1440 and 1366 |
+
+**1,117 assertions across 16 rule-asserting harnesses. 0 failures, 0 skips** (the only "skips" are
+the three new pages having no pre-M12 baseline to compare against, which is expected).
+
+## 7. Repository state
+
+`dev/autonomous-milestones` · `main` still `fd5bf9f` · not merged · not deployed · nothing pushed.

@@ -262,12 +262,22 @@
   }
 
   // ---- transfers -------------------------------------------------------------------------------
+  // Which bed the patient was in at an instant.
+  //
+  // The fallback for "before any transfer" must be the bed they were ADMITTED to, not the bed they
+  // are in now: `admission.bedId` is overwritten by every transfer, so using it as the base made a
+  // later re-accrual price the earlier days at the destination rate. The admitting bed is
+  // `transfers[0].from` once a transfer exists.
   function bedAt(admission, when) {
     var t = new Date(when).getTime();
-    var seg = { bedId: admission.bedId, bedLabel: admission.bedLabel, bedType: admission.bedType, ward: admission.ward, at: admission.admittedAt };
-    (admission.transfers || []).forEach(function (x) {
+    var tr = admission.transfers || [];
+    var base = tr.length
+      ? tr[0].from
+      : { bedId: admission.bedId, bedLabel: admission.bedLabel, bedType: admission.bedType, ward: admission.ward };
+    var seg = { bedId: base.bedId, bedLabel: base.bedLabel, bedType: base.bedType, ward: base.ward };
+    tr.forEach(function (x) {
       if (new Date(x.at).getTime() <= t) {
-        seg = { bedId: x.to.bedId, bedLabel: x.to.bedLabel, bedType: x.to.bedType, ward: x.to.ward, at: x.at };
+        seg = { bedId: x.to.bedId, bedLabel: x.to.bedLabel, bedType: x.to.bedType, ward: x.to.ward };
       }
     });
     return seg;

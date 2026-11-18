@@ -437,10 +437,19 @@ await page.waitForTimeout(300);
     const t = HIS.tariffs.priceFor('CONS-MED', '2026-08-31');
     const t2 = HIS.tariffs.priceFor('CONS-MED', '2026-09-01');
     const charge = HIS.charges.all().filter(c => c.source === 'consultation')[0];
+    // Raise a NEW charge for a different encounter and check it uses the new price, while the
+    // earlier charge keeps the old one. That is the whole point of effective dating.
+    const enc = HIS.encounters.open({ patientId: 'PT-99214', kind: 'outpatient', dept: 'General Medicine' });
+    const fresh = HIS.charges.add({
+      patientId: 'PT-99214', encounterId: enc.encounter.id, source: 'consultation',
+      sourceId: enc.encounter.id, code: 'CONS-MED', description: 'Consultation — General Medicine',
+      qty: 1, unitPrice: HIS.tariffs.priceFor('CONS-MED', new Date().toISOString()).price
+    });
     return {
       today: t && t.price, fromSept: t2 && t2.price,
       rows: HIS.tariffs.all().length,
       snap: charge && charge.priceSnapshot.unitPrice,
+      fresh: fresh.ok ? fresh.charge.amount : null,
       audit: HIS.audit.list().filter(x => /Tariff CONS-MED/.test(x.what)).length
     };
   });
@@ -448,6 +457,7 @@ await page.waitForTimeout(300);
   ok('the price in force before the change is unchanged', after.today === 1600, after.today);
   ok('the new price applies from its effective date', after.fromSept === 1750, after.fromSept);
   ok('a charge raised earlier keeps its snapshot', after.snap === before.snap, after.snap);
+  ok('a charge raised after the change uses the new price', after.fresh === 1750, after.fresh);
   ok('the change is written to the audit log', after.audit === 1, after.audit);
 }
 

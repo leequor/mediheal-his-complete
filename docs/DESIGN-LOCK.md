@@ -516,3 +516,32 @@ Below 1440px the responsive layer turns `.ad-tr` into a stacked block with no fi
 applies identically to Laboratory, Pharmacy, Claims, Accounts, Audit, Reports, Admissions and
 Charges. The desktop layout is the design contract; adding per-field captions to one table and not
 the others would be a new inconsistency, so it is recorded here rather than half-fixed.
+
+### 15.6 Closeout — the two baselines, and how to read a "0.000%" claim
+
+There are now two baselines, and a diff percentage means nothing without saying which one it is
+against.
+
+1. **`qa/baseline`** — the M12 state. All 28 pages match it at 1440 and 1366, which proves the
+   closeout changed nothing beyond the Configuration copy it re-captured on purpose.
+2. **The pre-M12 state**, regenerated on demand from `43cbf84`:
+
+   ```
+   git worktree add ../m12-original 43cbf84
+   cd ../m12-original && PW=… node scripts/visual-check.mjs --capture --out qa/base-orig
+   cd ../m12-original && PW=… node scripts/visual-check.mjs --width 1366 --capture --out qa/base-orig
+   cd - && PW=… node scripts/visual-check.mjs --check --out ../m12-original/qa/base-orig
+   ```
+
+   Note `--out`, not `--baseline`: in check mode the harness reads the images from `OUT`.
+
+Against the pre-M12 baseline, exactly two pre-existing pages differ, at both widths:
+
+| Page | 1440 | 1366 |
+|---|---|---|
+| Laboratory | 4.744% · 16,173 px ≥128 | 1.741% · 10,657 px ≥128 |
+| Reports | 34.746% · 602,238 px ≥128 | 28.383% · 638,332 px ≥128 |
+
+Both are the additions recorded in §15.2 and §15.3. The other 22 pre-existing pages are 0.000% at
+both widths. **Do not describe this milestone as "no visual change":** two pages changed by design,
+and three pages (`admissions`, `charges`, `settings`) did not exist in the original.

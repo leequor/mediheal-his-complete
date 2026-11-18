@@ -53,6 +53,13 @@ The **rate is the rate of the bed occupied at that day's cutoff**, so a transfer
 the rate from the next day and an already-posted day never has to be re-priced. A transfer before
 noon on a day whose cutoff has not yet passed is therefore also safe.
 
+`bedAt(admission, instant)` answers "which bed was the patient in then?" by walking the transfer
+history. **The base segment is the bed they were admitted to — `transfers[0].from` once a transfer
+exists — not `admission.bedId`.** `bedId` is overwritten by every transfer, so using it as the base
+made a later re-accrual price the earlier days at the destination rate. That defect shipped in the
+first cut of this module and was caught by `adt-boundary-check.mjs` §4; the existing suites could
+not see it because they had already posted those days, so the duplicate guard skipped them.
+
 `legacyBilledThrough` marks an episode whose room and board is already inside its invoice's opening
 amount. Accrual skips those dates, so the demo's two seeded admissions are not billed twice.
 
@@ -102,3 +109,14 @@ re-occupied only if nobody else has taken it.
   no professional fees.
 * The demo clock is `HIS.today` (31 August 2026, pinned to 14:00). Admissions, accrual and discharge
   all read that clock, so a new admission is dated the same day the header shows.
+
+## Concurrency
+
+Duplicate bed assignment is rejected **within one tab**: `admit()` and `transfer()` both check
+`occupantOf(bedId)` before writing, and `adt-boundary-check.mjs` §8 proves both are refused.
+
+That guard is a read followed by a write over a single `localStorage` blob. It is **not** a
+transaction. Two tabs that read before either writes will both pass the check, and the later write
+discards the earlier admission — `adt-boundary-check.mjs` §12 demonstrates the lost update. This
+module therefore does not claim that simultaneous real users cannot double-book a bed. See
+`docs/PROJECT-STATUS.md` §5.1.

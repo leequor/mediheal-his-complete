@@ -50,14 +50,14 @@
 
     stage.innerHTML =
       "<h1 class='ad-title'>Configuration</h1>" +
-      "<p class='ad-sub'>The charge master, and what else is configured in code. A price change is a new effective-dated row, never an edit, so a charge keeps the price it was raised at.</p>" +
+      "<p class='ad-sub'>Only service tariffs are administered here. The laboratory catalogue, the bed inventory, the payroll policy and the department list are seeded from code and shown read-only below.</p>" +
       "<div class='ad-body'>" +
 
       "<div class='ad-kpis'>" +
       "<div class='ad-kpi'><div class='l'>Tariff codes</div><div class='v'>" + HIS.tariffs.current(TODAY).length + "</div><div class='d'>In force today</div></div>" +
       "<div class='ad-kpi'><div class='l'>Price rows</div><div class='v'>" + all.length + "</div><div class='d'>Every version kept</div></div>" +
       "<div class='ad-kpi'><div class='l'>Scheduled changes</div><div class='v'>" + future.length + "</div><div class='d'>Effective after today</div></div>" +
-      "<div class='ad-kpi'><div class='l'>Beds configured</div><div class='v'>" + bedCount + "</div><div class='d'>Across " + wardCount + ' wards</div></div>' +
+      "<div class='ad-kpi'><div class='l'>Beds in service</div><div class='v'>" + bedCount + "</div><div class='d'>Across " + wardCount + ' wards \u00b7 read-only</div></div>' +
       '</div>' +
 
       "<div class='ad-card' style='margin-bottom:24px'>" +
@@ -75,12 +75,13 @@
           "<span>" + (t.proposed ? "<span class='badge warn'>Proposed</span>" : "<span class='badge ok'>Active</span>") + '</span>' +
           "<span style='text-align:right'><button class='ad-btn ghost' data-act='history' data-code='" + esc(t.code) + "'>History</button></span></div>";
       }).join('') : "<div class='ad-empty'><b>No tariff matches</b>Clear the search.</div>") +
-      "<div class='ad-foot'>A charge copies the price it was raised at into its own record. Changing a tariff here therefore " +
-      'changes the next charge and nothing else — no historical invoice moves.</div>' +
+      "<div class='ad-foot'>A price is superseded, never edited and never deleted: a new row takes over from its effective " +
+      'date and the old one stays in the history. A charge copies the price it was raised at into its own record, so a ' +
+      'change here alters the next charge and nothing else \u2014 no historical invoice moves.</div>' +
       '</div>' +
 
       "<div class='ad-card'>" +
-      "<div class='ad-bar'><h2>Configured in code</h2><span class='ad-count'>Read-only</span></div>" +
+      "<div class='ad-bar'><h2>Seeded from code \u2014 not editable here</h2><span class='ad-count'>View only</span></div>" +
       "<div class='ad-th' style='grid-template-columns:1.4fr .7fr 1.6fr'><span>Area</span><span>Count</span><span>Where it lives</span></div>" +
       "<div class='ad-tr' style='grid-template-columns:1.4fr .7fr 1.6fr'>" +
       '<span><b>Laboratory catalogue</b></span>' +
@@ -98,9 +99,10 @@
       '<span><b>Departments</b></span>' +
       "<span><b>" + ((window.HIS.departments || []).length || '\u2014') + '</b></span>' +
       "<span class='mu'>assets/js/data-departments.js \u00b7 head, doctors, beds, consult fee</span></div>" +
-      "<div class='ad-foot'>These four are seeded from code rather than stored, because each is a fixed property of this " +
-      'demonstration facility. They are listed here so the boundary between "configurable" and "compiled in" is visible ' +
-      'rather than a surprise.</div>' +
+      "<div class='ad-foot'>These four are a fixed property of this demonstration facility and are changed by editing the " +
+      'file named against each row. They are listed here so the boundary between \u201cadministrable on this screen\u201d and ' +
+      '\u201ccompiled in\u201d is visible rather than implied. Adding a test or a bed is therefore a code change, not a ' +
+      'configuration change.</div>' +
       '</div>' +
 
       "<div class='ad-note'><b>Demonstration prices.</b> Every figure here is synthetic and exists so a workflow can be priced " +

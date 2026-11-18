@@ -94,11 +94,43 @@ inspection of rendered screenshots.
 
 ### Administration
 - Accounts, departments, laboratory catalogue, pharmacy stock, tariffs, beds.
-- **Configuration screen** (`settings.html`): the charge master with the price in force today per
-  code, the date it took effect, "New price" (appends an effective-dated row, never edits one) and a
-  per-code price history. The areas that are seeded from code — laboratory catalogue, beds, payroll
-  policy, departments — are listed read-only with their counts, so the boundary between
-  "configurable" and "compiled in" is visible rather than a surprise.
+- **Configuration screen** (`settings.html`): the charge master, and a read-only inventory of what is
+  seeded from code.
+
+#### What an administrator can actually do
+
+The Configuration screen administers **one** thing: service tariffs. Everything else on it is
+reported, not editable. This table is the contract; the screen states the same boundary in its
+subtitle and its card headings.
+
+| Setting | Create | Edit | Deactivate | View | Where |
+|---|---|---|---|---|---|
+| **Service tariff price** | append a new effective-dated row | ✗ — a row is never edited | ✗ — a price is superseded, never deleted | ✓ current price + full per-code history | Configuration |
+| **Tariff code** | ✗ from the screen (`tariffs.setPrice()` accepts one; the dialog only offers existing codes) | ✗ | ✗ | ✓ | — |
+| Laboratory catalogue | ✗ | ✗ | ✗ | ✓ count, read-only | `assets/js/lab.js` `CATALOG` |
+| Bed inventory | ✗ | ✗ | ✗ | ✓ count, read-only | `assets/js/admissions.js` `WARDS` |
+| Payroll policy | ✗ | ✗ | ✗ | ✓ count, read-only | `assets/js/payroll-calc.js` `POLICIES` |
+| Departments | ✗ | ✗ | ✗ | ✓ count, read-only | `assets/js/data-departments.js` |
+| User accounts | ✓ | ✓ | ✓ deactivate (never delete) | ✓ | Accounts |
+| Patient records | ✓ | ✓ | ✗ | ✓ | Registration |
+| Pharmacy stock | ✓ receive a batch | ✓ adjust | ✓ dispose an expired batch | ✓ | Pharmacy |
+| Bed state | n/a | ✓ cleaning / maintenance / available | n/a | ✓ | Admissions |
+| Bed assignment | ✓ admit | ✓ transfer | ✓ discharge | ✓ | Admissions |
+
+**Why the catalogue and the beds are not editable here.** Adding a laboratory test or a bed is a
+change to a fixed property of this demonstration facility, not a routine operational setting. Making
+them editable would require a catalogue editor, validation, and a decision about what happens to
+orders already placed against a retired test — none of which exists. Rather than half-build it, the
+screen lists them with their counts and names the file each one lives in, so the boundary between
+"administrable" and "compiled in" is visible instead of implied. This is recorded as the top item in
+`docs/COMPLETION-ROADMAP.md` §2.1.
+
+**Tariff changes are effective-dated and never rewrite history.** A price change appends a row with
+an `effectiveFrom` date. `priceFor(code, date)` returns the latest row in force on that date, and
+every charge copies the resolved price into its own `priceSnapshot`. `revenue-check.mjs` §9 proves
+all four properties after a change through the real dialog: the earlier price is unchanged, the new
+price applies from its date, an existing charge keeps its snapshot, and a charge raised afterwards
+uses the new price.
 
 ## 3. Simulated, and labelled as such
 
@@ -132,11 +164,36 @@ These are honest gaps, not bugs:
 | Item | Effect | Status |
 |---|---|---|
 | Client-side auth | Anyone can forge a session | Documented, not fixable in a static demo |
-| `localStorage` | Per-browser, ~5 MB, no transactions | Architectural |
-| Admin tables below 1440px | Stack into unlabelled blocks | Shared with Laboratory, Pharmacy, Claims, Accounts, Audit, Reports |
+| `localStorage` | Per-browser, ~5 MB, no transactions | Architectural — see §5.1 |
+| Admin tables below 1440px | Stack into unlabelled blocks | Shared with Laboratory, Pharmacy, Claims, Accounts, Audit, Reports, Admissions, Configuration |
 | Laboratory tariff lives in `lab.js` | Not in the charge master | Deliberate: the catalogue already holds a price per test |
 | Two seeded admissions | Room and board already inside their invoice opening amount | Marked `legacyBilledThrough`; accrual skips those dates |
 | Demo clock | `HIS.today` = 31 Aug 2026, pinned 14:00 for admissions | Real timestamps are still used for event `at` fields elsewhere |
+
+### 5.1 Concurrency — what this store cannot do
+
+**`localStorage` is not a database.** Every store write is a read-modify-write of one JSON blob:
+`get(key)`, mutate in memory, `set(key)`. There is no lock, no transaction, no compare-and-swap and
+no server to serialise writers. The last write wins.
+
+The consequence, stated plainly:
+
+- **Within one tab, duplicate bed assignment is rejected.** `admit()` and `transfer()` both check
+  `occupantOf(bedId)` before writing, and `adt-boundary-check.mjs` §8 proves a second admission and a
+  transfer into an occupied bed are both refused. That guard is a check followed by a write, which is
+  sufficient because a single tab cannot interleave with itself.
+- **Across two tabs or two devices, that guard is not sufficient.** If both read the store before
+  either writes, both see a free bed, both pass the check, and the later write silently discards the
+  earlier admission. `adt-boundary-check.mjs` §12 demonstrates exactly this: tab A holds a snapshot,
+  tab B admits a patient, tab A writes its stale snapshot back, and tab B's admission is gone.
+- **Two devices are two hospitals.** `localStorage` is per browser profile, so nothing synchronises
+  at all; there is no shared state to conflict over.
+
+This project therefore does **not** claim that simultaneous real users cannot double-book a bed. It
+claims only that the application rejects an invalid assignment it can see. A production system needs
+a server, a transaction around the occupancy check, and a unique constraint on
+`(bed_id) WHERE status = 'active'` — none of which exists here. `docs/ARCHITECTURE.md` §11 lists the
+rest of what a real deployment would need.
 
 ## 6. Verification
 
@@ -154,7 +211,8 @@ Run with `PW=<path to playwright-core>` set (see `README.md`). Counts are the ac
 | `claims-check.mjs` | 41 | Claim machine, role gates, settlement boundary |
 | `ledger-check.mjs` | 46 | Payments, refunds, coverage, idempotency, invariants |
 | `charges-check.mjs` | 44 | Clinical activity becomes a charge, once; unbilled persistence |
-| `revenue-check.mjs` | 80 | Charge master, consultation billing, ADT, accrual, queue, returns |
+| `revenue-check.mjs` | 81 | Charge master, consultation billing, ADT, accrual, queue, returns, tariff change |
+| `adt-boundary-check.mjs` | 59 | Noon cutoff edges, transfer pricing, idempotency, reopen, reload, derived occupancy, two-tab lost update |
 | `acceptance-audit.mjs` | 180 | Independent M10 acceptance |
 | `m10-1-audit.mjs` | 77 | Pag-IBIG tiers, wage floor, corrections, negative balances |
 | `m10-2-audit.mjs` | 78 | Wage conversion factors and boundaries |
@@ -165,7 +223,7 @@ Run with `PW=<path to playwright-core>` set (see `README.md`). Counts are the ac
 | `visual-check.mjs` | 28 pages | Pixel diff against `qa/baseline` at 1440 and 1366 |
 | `buttons.mjs` | all pages | 0 dead controls |
 
-**Total: 1,057 assertions across 15 rule-asserting harnesses**, plus a 28-page smoke sweep, a 27-page axe audit, 140 responsive checks and 56 visual baselines (28 pages × 2 widths).
+**Total: 1,117 assertions across 16 rule-asserting harnesses**, plus a 28-page smoke sweep, a 27-page axe audit, 140 responsive checks and 56 visual baselines (28 pages × 2 widths).
 
 ## 7. Where to start reading
 
