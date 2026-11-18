@@ -2,14 +2,14 @@
   "accounts": {
     "width": 1366,
     "height": 4253,
-    "bytes": 376211,
-    "sha256": "d8ebfd18fedcba678d86cb00c3e87d6c0d124416c745cf24f2e5471e56eeadbe"
+    "bytes": 372654,
+    "sha256": "819214278e8f086e165199b1504c5fb94a3261cfd1ee9709ede0b7569d238e49"
   },
   "admissions": {
     "width": 1366,
     "height": 1613,
-    "bytes": 340731,
-    "sha256": "390fdbf50f4a67709ac61b7df836166f761a0dae7a21944f9cd6920d67661ac3"
+    "bytes": 340732,
+    "sha256": "9adc2bab6b52059a2a16f492c536207e12942d8d9324847e392f9f7b09918563"
   },
   "appointment-confirmed": {
     "width": 1366,
@@ -86,8 +86,8 @@
   "laboratory": {
     "width": 1366,
     "height": 2544,
-    "bytes": 353376,
-    "sha256": "377eb9db519292826ffbda58694530aaf87d23bf3523db2763b04c5ac26e839b"
+    "bytes": 353315,
+    "sha256": "8368cd2b8fe68e519ece80a17b65d1f13b9aba0753f5286336ed62c6e3fee599"
   },
   "nursing": {
     "width": 1366,
@@ -110,8 +110,8 @@
   "personnel": {
     "width": 1366,
     "height": 1330,
-    "bytes": 585659,
-    "sha256": "08cc584d878fd290aac3228e042d125ec0ed475f40299fa269bf178e8b0be0ab"
+    "bytes": 585655,
+    "sha256": "978507be69df0e6bc159ae4937ea05b5cfea7f29cc41968f88eff73151dbd07c"
   },
   "pharmacy": {
     "width": 1366,
@@ -151,15 +151,15 @@
   },
   "settings": {
     "width": 1366,
-    "height": 3335,
-    "bytes": 369689,
-    "sha256": "a002e2179e8ad1b68424a5ba05a7545dbc4925a0f7ea040b977f8f57ec68aefa"
+    "height": 3351,
+    "bytes": 382945,
+    "sha256": "8473b513c796965e587b895c9eb3fce65bbbeea04ead369560013bd40bb507d9"
   },
   "staff": {
     "width": 1366,
     "height": 1330,
-    "bytes": 569097,
-    "sha256": "06cd5a7c7f37212ebe3b899a47b7f4c648e2eedd115f51cfa5f143335a827a85"
+    "bytes": 585659,
+    "sha256": "08cc584d878fd290aac3228e042d125ec0ed475f40299fa269bf178e8b0be0ab"
   },
   "treatment": {
     "width": 1366,

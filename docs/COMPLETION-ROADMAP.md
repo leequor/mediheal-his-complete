@@ -20,15 +20,25 @@ either blocked on something outside this repository or deliberately deferred.
 | No charge master | `tariffs.js` with effective-dated rows and price snapshots |
 | Reports ignored unbilled revenue and occupancy | Both derived and shown |
 
+### 1.1 Closed in the M12 closeout
+
+| Item | Outcome |
+|---|---|
+| The Configuration screen implied more than it administers | Subtitle, KPI and card headings now state that only tariffs are editable; the boundary is also a table in `PROJECT-STATUS.md` §2 |
+| **A transfer mis-priced earlier days** | `bedAt()` used the *current* bed as the base for times before the first transfer, so re-accruing an earlier day after a transfer charged the destination rate. The base is now the admitting bed (`transfers[0].from`). Found by `adt-boundary-check.mjs` §4, not by the existing suites — they had already posted those days, so the duplicate guard hid it |
+| Boundary and idempotency behaviour was untested | `adt-boundary-check.mjs`: 59 assertions over the admission day, the noon cutoff, the discharge day, transfers either side of the cutoff, repeated accrual, repeated discharge, reopen, reload, derived occupancy, duplicate bed assignment, invoice association and history preservation |
+| Concurrency was described loosely | `PROJECT-STATUS.md` §5.1 states what the store cannot do, and §12 of the boundary suite demonstrates the lost update rather than asserting safety |
+
 ## 2. Highest value next
 
 ### 2.1 Catalogue and bed configuration screens
 M12 added `settings.html`, so tariffs are now administrable: a price change is an appended,
 effective-dated row, with a per-code history and an audit entry. The **laboratory catalogue** and the
 **bed inventory** are still seeded from code (`lab.js` CATALOG, `admissions.js` WARDS) and are only
-listed read-only on that screen. **Why it matters:** adding a test or a bed currently means editing a
-JavaScript file, which is fine for a fixed demonstration facility but is the last remaining
-configuration gap.
+listed read-only on that screen — the screen and `PROJECT-STATUS.md` §2 now say so explicitly rather
+than leaving it to be discovered. **Why it is not done:** adding a test or a bed needs a catalogue
+editor, validation, and a decision about orders already placed against a retired test. Half-building
+it would be worse than the current honest boundary. It remains the last configuration gap.
 
 ### 2.2 Proration for hires and separations
 `employees.js` has no hire date or separation date, so a mid-period joiner is paid a full period and
