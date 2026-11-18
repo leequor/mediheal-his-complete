@@ -1,6 +1,12 @@
 # Instructions for any AI agent working in this repo
 
-Read `docs/START-HERE.md` FIRST (connect steps, read order, current next step). Then the newest `docs/GITHUBPROGRESS-sessionNN-addendum.md` files (sessions 12 and later are logged only in the addenda; `docs/GITHUBPROGRESS.md` stops at session 11 and is only for measured tokens of a screen you touch). `docs/HANDOFF.md` is OLD history (sessions 1 and 2) and is not the place to start.
+Read `docs/START-HERE.md` FIRST (connect steps, read order, current next step). Then
+**`docs/PROJECT-STATUS.md`** — it is the current, verified statement of what works, what is simulated
+and what is missing, and it supersedes any older progress narrative. `docs/ARCHITECTURE.md` explains
+how the modules fit together and `docs/FEATURE-MATRIX.md` classifies every capability. The newest
+`docs/GITHUBPROGRESS-sessionNN-addendum.md` files carry the per-milestone narrative (sessions 12 and
+later are logged only in the addenda; `docs/GITHUBPROGRESS.md` stops at session 11). `docs/HANDOFF.md`
+is OLD history (sessions 1 and 2) and is not the place to start.
 
 **`docs/DESIGN-LOCK.md` is the visual contract. Read it before changing any CSS, layout or component.** It records the measured tokens, the type scale, the component geometry, the page inventory, the known design deviations, and the verification checklist. A change that moves pixels outside its intended region is a regression, not an improvement.
 
@@ -15,6 +21,6 @@ Short version of the rules:
 
 7. **A record has exactly one owner.** `docs/DATA-MODEL.md` lists which module writes which key and the invariants the stores enforce. Do not compute a balance, a status or a total in a second place: `HIS.ledger` owns money, `HIS.registry` owns patients, `HIS.audit` owns history. If you find code reading `bill.paid` or `employee.ded`, it is a bug — both were retired because two screens disagreed.
 
-8. **Run the domain harness for the area you touched**, not just the visual one: `portal-check` for identity, `clinical-check` for laboratory/pharmacy, `finance-check` for money, `payroll-check` for HR, `claims-check` for the payer workflow, `ledger-check` for money movement. Each asserts rules, not rendering.
+8. **Run the domain harness for the area you touched**, not just the visual one: `portal-check` for identity, `clinical-check` for laboratory/pharmacy, `finance-check` for money, `payroll-check` for HR, `claims-check` for the payer workflow, `ledger-check` for money movement, `charges-check` for charge capture, `revenue-check` for the encounter → charge → invoice chain and the admission lifecycle. Each asserts rules, not rendering.
 
 9. **Measurement is not inspection.** Three separate defects in this project passed every automated check and were only found by looking at a screenshot (a reports string bug, role cells rendering as pills, a registration form with three fields clipped into one row). Capture the screen and look at it before calling a change done.
