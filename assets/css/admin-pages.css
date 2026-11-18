@@ -141,7 +141,7 @@
 
 /* M6 column tuning after inspecting the rendered screens: the Ordered column wrapped to two
    lines and the Qty column split '30 of 30 tablet' across lines. */
-.ad-g-lab{grid-template-columns:118px 1.15fr 1.3fr 74px 102px 128px 134px}
+.ad-g-lab{grid-template-columns:112px 1.05fr 1.2fr 70px 96px 116px 232px}
 .ad-g-rx{grid-template-columns:84px 1.15fr 1.5fr 116px 100px 128px 152px}
 .ad-g-stock{grid-template-columns:1.45fr 92px 120px 70px 116px 1fr 148px}
 
@@ -192,3 +192,44 @@
 .cl-f span{display:block;margin-bottom:5px;font:600 12px/16px var(--font-inter);color:var(--section)}
 .cl-f input,.cl-f select,.cl-f textarea{width:100%;border:1px solid var(--line);border-radius:8px;padding:9px 11px;background:#f6fafd;font:400 13px var(--font-inter);color:var(--body)}
 .cl-f input:focus,.cl-f select:focus,.cl-f textarea:focus{outline:2px solid var(--primary);outline-offset:-1px;background:#fff}
+
+/* ============================================================================
+   M12 — Admissions and Charges.
+   Both screens reuse .ad-* exactly as Claims (M10) did: same title, KPI strip,
+   card, toolbar, table and .ac-* modal shell. The only new rules are the grid
+   tracks, the bed board tiles and the queue summary strip. Every colour is an
+   existing token or an already-measured in-use value; no new radius or type size.
+   ============================================================================ */
+
+/* admissions table */
+.ad-g-adm{grid-template-columns:104px 1.15fr 1.05fr 96px 96px .95fr 252px}
+
+/* charges / unbilled queue table */
+.ad-g-chg{grid-template-columns:88px 1.15fr 1.05fr 112px 1fr 76px 92px 148px}
+
+/* bed board */
+.bd-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(102px,1fr));gap:10px;padding:18px 20px 6px}
+.bd-bed{display:flex;flex-direction:column;gap:2px;height:64px;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:#fff;text-align:left;cursor:pointer;font-family:var(--font-inter);overflow:hidden}
+.bd-bed b{font:600 13px/16px var(--font-inter);color:var(--body)}
+.bd-bed small{font:400 11px/14px var(--font-inter);color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bd-bed.occupied{background:#e8f4fb;border-color:#9cc4dd}
+.bd-bed.occupied b{color:var(--primary)}
+.bd-bed.cleaning{background:#fff6ee;border-color:#f0c2a0}
+.bd-bed.maintenance{background:#f3f5f7;border-color:#d6dde3}
+.bd-bed:hover{box-shadow:0 0 0 2px rgba(28,109,156,.18)}
+.bd-bed:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+.bd-legend{display:flex;flex-wrap:wrap;gap:16px;padding:0 20px 16px;font:400 11.5px/16px var(--font-inter);color:var(--muted)}
+.bd-key{display:inline-flex;align-items:center;gap:6px}
+.bd-dot{width:10px;height:10px;border-radius:3px;border:1px solid var(--line);background:#fff}
+.bd-dot.occupied{background:#e8f4fb;border-color:#9cc4dd}
+.bd-dot.cleaning{background:#fff6ee;border-color:#f0c2a0}
+.bd-dot.maintenance{background:#f3f5f7;border-color:#d6dde3}
+
+/* money strip inside a modal (final statement, accrual result) */
+.ad-sum{margin-top:14px;padding:11px 14px;border-radius:10px;background:#f6fafd;border:1px solid #e3edf3;font:400 12.5px/19px var(--font-inter);color:var(--body)}
+.ad-sum b{color:var(--section)}
+.ad-sum .r{color:var(--red-fg);font-weight:600}
+.ad-sum .g{color:var(--ok-fg);font-weight:600}
+
+/* open-encounter table on the Charges screen */
+.ad-g-enc{grid-template-columns:104px 1.2fr 1.1fr 112px 1fr 96px 172px}

@@ -139,7 +139,8 @@
   function forPatient(patientId) { return rx().filter(function (r) { return r.patientId === patientId; }); }
   function remaining(r) {
     var given = (r.dispensed || []).reduce(function (s, d) { return s + d.qty; }, 0);
-    return Math.max(0, r.qty - given);
+    var back = (r.returns || []).reduce(function (s, d) { return s + d.qty; }, 0);
+    return Math.max(0, r.qty - given + back);
   }
   function nextRxId(rows) {
     var max = rows.reduce(function (m, r) {
@@ -157,11 +158,14 @@
     var qty = Number(input.qty);
     if (!(qty > 0)) return { ok: false, error: 'Enter a quantity greater than zero.' };
     var rows = rx();
+    var enc = window.HIS.encounters ? HIS.encounters.ensure(p.id, { dept: p.dept, provider: input.orderedBy || p.doctor }) : null;
     var r = {
-      id: nextRxId(rows), patientId: p.id, drug: String(input.drug).trim(),
+      id: nextRxId(rows), patientId: p.id,
+      encounterId: enc && enc.ok ? enc.encounter.id : null,
+      drug: String(input.drug).trim(),
       dosage: String(input.dosage || '').trim(), qty: qty, unit: String(input.unit || 'tablet'),
       orderedBy: input.orderedBy || actor(), orderedAt: new Date().toISOString(),
-      status: 'Pending', dispensed: [], notes: String(input.notes || '').trim()
+      status: 'Pending', dispensed: [], returns: [], notes: String(input.notes || '').trim()
     };
     rows.push(r);
     saveRx(rows);
@@ -237,13 +241,62 @@
     // cannot bill it again.
     var billing = null;
     if (window.HIS.charges) {
+      var enc = r.encounterId || (window.HIS.encounters ? (HIS.encounters.openFor(r.patientId) || {}).id : null);
+      r.encounterId = enc || null;
       billing = HIS.charges.add({
-        patientId: r.patientId, source: 'pharmacy', sourceId: r.id + '#' + r.dispensed.length,
+        patientId: r.patientId, encounterId: r.encounterId,
+        source: 'pharmacy', sourceId: r.id + '#' + r.dispensed.length,
         code: b.drug, description: b.drug + ' \u00b7 ' + want + ' ' + b.unit,
-        qty: want, unitPrice: b.price
+        qty: want, unitPrice: b.price,
+        tariffCode: 'PHARM-' + b.id, tariffEffectiveFrom: '2026-01-01'
       });
     }
     return { ok: true, prescription: r, batch: b, remaining: remaining(r), billing: billing };
+  }
+
+  // Reverse ONE dispensing event in full. The original dispense row is never edited: the stock comes
+  // back as its own movement, the charge for that event is voided with a reason, and the return is
+  // recorded beside the dispense it reverses. Partial returns are refused rather than approximated —
+  // a half-returned batch has no honest single price.
+  function returnDispense(rxId, dispenseIndex, reason) {
+    var rows = rx(), r = rows.filter(function (x) { return x.id === rxId; })[0];
+    if (!r) return { ok: false, error: 'Prescription not found.' };
+    if (!String(reason || '').trim()) return { ok: false, error: 'A return needs a reason.' };
+    var d = (r.dispensed || [])[dispenseIndex];
+    if (!d) return { ok: false, error: 'Dispensing event not found.' };
+    if ((r.returns || []).some(function (x) { return x.dispenseIndex === dispenseIndex; })) {
+      return { ok: false, error: 'That dispensing event has already been returned.' };
+    }
+
+    var batches = stock(), b = batches.filter(function (x) { return x.id === d.batchId; })[0];
+    if (!b) return { ok: false, error: 'The batch this was dispensed from no longer exists.' };
+
+    b.qty += d.qty;
+    saveStock(batches);
+
+    r.returns = (r.returns || []).concat([{
+      dispenseIndex: dispenseIndex, batchId: d.batchId, batch: d.batch,
+      qty: d.qty, at: new Date().toISOString(), by: actor(), reason: String(reason).trim()
+    }]);
+    r.status = remaining(r) === 0 ? 'Dispensed' : (r.status === 'Dispensed' ? 'Partial' : r.status);
+    saveRx(rows);
+
+    var mv = moves();
+    mv.push({
+      id: 'MV-' + String(mv.length + 1).padStart(4, '0'), at: new Date().toISOString(),
+      kind: 'return', batchId: b.id, drug: b.drug, qty: d.qty, by: actor(),
+      reason: 'Returned from ' + r.id + ' event ' + (dispenseIndex + 1) + ' \u00b7 ' + String(reason).trim()
+    });
+    saveMoves(mv);
+
+    var billing = null;
+    if (window.HIS.charges) {
+      billing = HIS.charges.voidForSource('pharmacy', r.id + '#' + (dispenseIndex + 1),
+        'Dispensing event returned \u00b7 ' + String(reason).trim());
+    }
+    audit('Dispensing returned \u2014 ' + d.qty + ' ' + b.unit + ' ' + b.drug + ' (batch ' + b.batch + ') on ' + r.id +
+      ' \u00b7 stock ' + (b.qty - d.qty) + ' \u2192 ' + b.qty, 'rx:' + r.id, String(b.qty - d.qty), String(b.qty));
+    return { ok: true, prescription: r, batch: b, billing: billing, remaining: remaining(r) };
   }
 
   // ---- inventory movement -------------------------------------------------------------------
@@ -330,7 +383,7 @@
     available: available, batchesFor: batchesFor,
     lowStock: lowStock, nearExpiry: nearExpiry, expired: expired,
     isExpired: isExpired, daysToExpiry: daysToExpiry,
-    createRx: createRx, verify: verify, reject: reject, dispense: dispense,
+    createRx: createRx, verify: verify, reject: reject, dispense: dispense, returnDispense: returnDispense,
     receive: receive, adjust: adjust, dispose: dispose, stats: stats
   };
 })();
