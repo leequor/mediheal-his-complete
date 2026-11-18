@@ -33,6 +33,14 @@
   //
   // A daily-paid employee carries `dailyRate` instead of `monthlyBasic`; an hourly-paid one carries
   // `hourlyRate`. `equivalentMonthly()` converts either to a monthly figure for payroll.
+  //
+  // `payPolicy` names the payroll policy in force for this employee and `payEffectiveFrom` dates the
+  // rate. The policy decides the daily-rate factor (261 today, see docs/PAYROLL.md §2A), which is a
+  // different question from the 365-day factor the minimum-wage test uses.
+  //
+  // DEMONSTRATION ASSUMPTION: these are synthetic contracts. No employment contract or company
+  // payroll manual exists for this demo, so every record states its own basis, schedule and policy
+  // rather than leaving them to be inferred.
   var EMPLOYEES = [
     {
       id: 'EMP-001', name: 'Dr. Elsie Chen', role: 'Chief Physician', dept: 'Administration',
@@ -45,7 +53,9 @@
       shift: { start: '08:00', end: '17:00', breakMinutes: 60 },
       restDays: [0, 6],
       payBasis: 'monthly',
-      schedule: { daysPerWeek: 5, hoursPerDay: 8, paidRestDays: true, paidSpecialDays: true },
+      schedule: { daysPerWeek: 5, hoursPerDay: 8, normalWorkdaysPerMonth: 22, paidRestDays: true, paidSpecialDays: true },
+      payPolicy: 'MH-PAY-2026.1',
+      payEffectiveFrom: '2026-01-01',
       wage: {
         region: 'NCR', sector: 'non-agriculture', category: 'hospital',
         effectiveFrom: '2026-01-01'
@@ -63,7 +73,9 @@
       shift: { start: '08:00', end: '17:00', breakMinutes: 60 },
       restDays: [0, 6],
       payBasis: 'monthly',
-      schedule: { daysPerWeek: 5, hoursPerDay: 8, paidRestDays: true, paidSpecialDays: true },
+      schedule: { daysPerWeek: 5, hoursPerDay: 8, normalWorkdaysPerMonth: 22, paidRestDays: true, paidSpecialDays: true },
+      payPolicy: 'MH-PAY-2026.1',
+      payEffectiveFrom: '2026-01-01',
       wage: {
         region: 'NCR', sector: 'non-agriculture', category: 'hospital',
         effectiveFrom: '2026-01-01'
@@ -81,7 +93,9 @@
       shift: { start: '08:00', end: '17:00', breakMinutes: 60 },
       restDays: [0, 6],
       payBasis: 'monthly',
-      schedule: { daysPerWeek: 5, hoursPerDay: 8, paidRestDays: true, paidSpecialDays: true },
+      schedule: { daysPerWeek: 5, hoursPerDay: 8, normalWorkdaysPerMonth: 22, paidRestDays: true, paidSpecialDays: true },
+      payPolicy: 'MH-PAY-2026.1',
+      payEffectiveFrom: '2026-01-01',
       wage: {
         region: 'NCR', sector: 'non-agriculture', category: 'hospital',
         effectiveFrom: '2026-01-01'
@@ -99,7 +113,9 @@
       shift: { start: '08:00', end: '17:00', breakMinutes: 60 },
       restDays: [0, 6],
       payBasis: 'monthly',
-      schedule: { daysPerWeek: 5, hoursPerDay: 8, paidRestDays: true, paidSpecialDays: true },
+      schedule: { daysPerWeek: 5, hoursPerDay: 8, normalWorkdaysPerMonth: 22, paidRestDays: true, paidSpecialDays: true },
+      payPolicy: 'MH-PAY-2026.1',
+      payEffectiveFrom: '2026-01-01',
       wage: {
         region: 'NCR', sector: 'non-agriculture', category: 'hospital',
         effectiveFrom: '2026-01-01'
@@ -117,7 +133,9 @@
       shift: { start: '07:00', end: '15:00', breakMinutes: 0 },
       restDays: [0, 6],
       payBasis: 'monthly',
-      schedule: { daysPerWeek: 5, hoursPerDay: 8, paidRestDays: true, paidSpecialDays: true },
+      schedule: { daysPerWeek: 5, hoursPerDay: 8, normalWorkdaysPerMonth: 22, paidRestDays: true, paidSpecialDays: true },
+      payPolicy: 'MH-PAY-2026.1',
+      payEffectiveFrom: '2026-01-01',
       wage: {
         region: 'NCR', sector: 'non-agriculture', category: 'hospital',
         effectiveFrom: '2026-01-01'
@@ -135,7 +153,9 @@
       shift: { start: '08:00', end: '17:00', breakMinutes: 60 },
       restDays: [0, 6],
       payBasis: 'monthly',
-      schedule: { daysPerWeek: 5, hoursPerDay: 8, paidRestDays: true, paidSpecialDays: true },
+      schedule: { daysPerWeek: 5, hoursPerDay: 8, normalWorkdaysPerMonth: 22, paidRestDays: true, paidSpecialDays: true },
+      payPolicy: 'MH-PAY-2026.1',
+      payEffectiveFrom: '2026-01-01',
       wage: {
         region: 'NCR', sector: 'non-agriculture', category: 'hospital',
         effectiveFrom: '2026-01-01'
@@ -153,7 +173,9 @@
       shift: { start: '09:00', end: '18:00', breakMinutes: 60 },
       restDays: [0, 6],
       payBasis: 'monthly',
-      schedule: { daysPerWeek: 5, hoursPerDay: 8, paidRestDays: true, paidSpecialDays: true },
+      schedule: { daysPerWeek: 5, hoursPerDay: 8, normalWorkdaysPerMonth: 22, paidRestDays: true, paidSpecialDays: true },
+      payPolicy: 'MH-PAY-2026.1',
+      payEffectiveFrom: '2026-01-01',
       wage: {
         region: 'NCR', sector: 'non-agriculture', category: 'hospital',
         effectiveFrom: '2026-01-01'
@@ -171,7 +193,9 @@
       shift: { start: '08:00', end: '17:00', breakMinutes: 60 },
       restDays: [0, 6],
       payBasis: 'monthly',
-      schedule: { daysPerWeek: 5, hoursPerDay: 8, paidRestDays: true, paidSpecialDays: true },
+      schedule: { daysPerWeek: 5, hoursPerDay: 8, normalWorkdaysPerMonth: 22, paidRestDays: true, paidSpecialDays: true },
+      payPolicy: 'MH-PAY-2026.1',
+      payEffectiveFrom: '2026-01-01',
       wage: {
         region: 'NCR', sector: 'non-agriculture', category: 'hospital',
         effectiveFrom: '2026-01-01'

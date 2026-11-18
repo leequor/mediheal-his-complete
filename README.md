@@ -55,6 +55,7 @@ node scripts/ledger-check.mjs     # payments, refunds, coverage, idempotency, in
 node scripts/acceptance-audit.mjs # independent M10 acceptance: attendance, statutory, claims, payslips
 node scripts/m10-1-audit.mjs      # Pag-IBIG tiers, wage floor, corrections, negative balances
 node scripts/m10-2-audit.mjs      # wage conversion factors, classifications, boundary cases
+node scripts/m10-3-audit.mjs      # divisor policy per purpose, eight compensation types, regional orders
 node scripts/mobile-audit.mjs     # rendered text size and touch targets at 5 widths
 ```
 
