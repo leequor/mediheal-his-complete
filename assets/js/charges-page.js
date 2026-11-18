@@ -13,7 +13,7 @@
 (function () {
   var stage = document.getElementById('stage');
   var esc = HIS.kit.esc;
-  var tab = 'unbilled', q = '';
+  var tab = (window.HIS.deepLink && HIS.deepLink.param('tab')) === 'all' ? 'all' : 'unbilled', q = '';
 
   function peso(n) {
     return '\u20b1' + Number(n || 0).toLocaleString('en-PH', { minimumFractionDigits: 0, maximumFractionDigits: 2 });

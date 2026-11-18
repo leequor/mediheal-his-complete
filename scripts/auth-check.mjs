@@ -51,11 +51,25 @@ async function freshIndex() {
 }
 async function submit(email, pass) {
   await page.evaluate(([e, p]) => {
+    const msg = document.getElementById('siMsg');
+    if (msg) msg.textContent = '';          // a stale error would satisfy the wait below
     document.getElementById('sie').value = e;
     document.getElementById('sip').value = p;
     document.getElementById('siBtn').click();
   }, [email, pass]);
-  await page.waitForTimeout(800);
+  // Wait for the outcome rather than for a duration: the redirect is what the next assertion reads,
+  // and on a loaded machine 800ms was not always enough for it to land.
+  try {
+    await page.waitForFunction(() => {
+      if (/dashboard\.html$/.test(location.pathname)) return true;
+      const msg = document.getElementById('siMsg');
+      // only an error ON the sign-in form counts; the form being momentarily absent is a transition
+      return !!(msg && msg.textContent.trim() && document.getElementById('siBtn'));
+    }, null, { timeout: 6000 });
+  } catch (e) { /* the caller's assertion reports the real state */ }
+  // The URL changes when the new document commits, before its scripts have mounted the header.
+  try { await page.waitForSelector('#profile .nm', { timeout: 4000 }); } catch (e) { /* sign-in page */ }
+  await page.waitForTimeout(150);
 }
 const message = () => page.evaluate(() => document.getElementById('siMsg').innerText.trim());
 

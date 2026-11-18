@@ -6,7 +6,7 @@
 (function () {
   var stage = document.getElementById('stage');
   var esc = HIS.kit.esc;
-  var tab = 'rx', q = '', rxFilter = 'open';
+  var tab = (window.HIS.deepLink && HIS.deepLink.param('tab')) === 'stock' ? 'stock' : 'rx', q = '', rxFilter = 'open';
 
   function when(iso) {
     if (!iso) return '\u2014';

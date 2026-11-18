@@ -42,7 +42,7 @@ textarea.ap-i{height:88px;padding:12px 14px;line-height:20px;resize:none;font-fa
     </div>
   </section>
 </div>
-<script src='assets/js/data.js'></script><script src='assets/js/store.js'></script><script src='assets/js/audit.js'></script><script src='assets/js/kit.js'></script><script src='assets/js/data-records.js'></script><script src='assets/js/data-departments.js'></script><script src='assets/js/data-billing.js'></script><script src='assets/js/ledger.js'></script><script src='assets/js/tariffs.js'></script><script src='assets/js/encounters.js'></script><script src='assets/js/charges.js'></script><script src='assets/js/lab.js'></script><script src='assets/js/pharmacy.js'></script><script src='assets/js/claims.js'></script><script src='assets/js/admissions.js'></script><script src='assets/js/data-attendance.js'></script><script src='assets/js/registry.js'></script><script src='assets/js/icons.js'></script><script src='assets/js/ui.js'></script><script src='assets/js/accounts.js'></script><script src='assets/js/auth.js'></script><script src='assets/js/rbac.js'></script><script src='assets/js/shell.js'></script>
+<script src='assets/js/data.js'></script><script src='assets/js/store.js'></script><script src='assets/js/audit.js'></script><script src='assets/js/kit.js'></script><script src='assets/js/data-records.js'></script><script src='assets/js/data-departments.js'></script><script src='assets/js/data-billing.js'></script><script src='assets/js/ledger.js'></script><script src='assets/js/tariffs.js'></script><script src='assets/js/encounters.js'></script><script src='assets/js/charges.js'></script><script src='assets/js/lab.js'></script><script src='assets/js/pharmacy.js'></script><script src='assets/js/claims.js'></script><script src='assets/js/admissions.js'></script><script src='assets/js/data-attendance.js'></script><script src='assets/js/registry.js'></script><script src='assets/js/icons.js'></script><script src='assets/js/ui.js'></script><script src='assets/js/accounts.js'></script><script src='assets/js/auth.js'></script><script src='assets/js/rbac.js'></script><script src='assets/js/deeplink.js'></script><script src='assets/js/shell.js'></script>
 <script>
 const $ = id => document.getElementById(id);
 // Appointments saved by appointment-form.html (session key mh_appts_extra via HIS.store, same tab).
@@ -70,8 +70,11 @@ function paintKpis() {
 }
 
 const PAGE = 8;
-const state = { q: '', stat: 'Status: All', doc: 'Doctor: All Drs.', page: 1 };
-makeDropdown($('dd-stat'), { options: ['Status: All', ...HIS.apptStatuses], onChange: v => { state.stat = v; state.page = 1; render(); } });
+// A notification can arrive here asking for a status, e.g. 'appointments.html?status=Pending'.
+const wantStatus = HIS.deepLink ? HIS.deepLink.param('status') : null;
+const state = { q: '', stat: (wantStatus && HIS.apptStatuses.indexOf(wantStatus) > -1) ? wantStatus : 'Status: All', doc: 'Doctor: All Drs.', page: 1 };
+if (wantStatus) HIS.deepLink.clear('status');
+makeDropdown($('dd-stat'), { options: ['Status: All', ...HIS.apptStatuses], value: state.stat, onChange: v => { state.stat = v; state.page = 1; render(); } });
 makeDropdown($('dd-doc'), { options: ['Doctor: All Drs.', ...HIS.doctors], onChange: v => { state.doc = v; state.page = 1; render(); } });
 document.querySelectorAll('.a-dd').forEach(d => d.classList.add('light'));
 
@@ -93,7 +96,7 @@ function render() {
   const slice = list.slice(from, from + PAGE);
 
   $('rows').innerHTML = slice.length ? slice.map(a =>
-    "<div class='a-grid a-row'><span class='nm'>" + a.patient + '</span><span>' + a.when + "</span><span class='ty'>" + a.kind + '</span><span>' + a.doctor + '</span>' +
+    "<div class='a-grid a-row' data-id='" + (a.id || 'APT-' + String(a.i + 1).padStart(4, '0')) + "'><span class='nm'>" + a.patient + '</span><span>' + a.when + "</span><span class='ty'>" + a.kind + '</span><span>' + a.doctor + '</span>' +
     "<span><span class='a-pill " + a.status + "'>" + a.status + '</span></span>' +
     "<span class='a-act'><button class='a-ib' data-edit='" + a.i + "' aria-label='Edit appointment for " + a.patient + "'>" + svg('edit', 16) + "</button><button class='a-ib' data-more='" + a.i + "' aria-label='More actions'>" + svg('more', 16) + '</button></span></div>').join('')
     : "<div class='empty'>" + (HIS.appointments.length ? 'No appointments match these filters.' : 'No appointments booked yet.') + '</div>';

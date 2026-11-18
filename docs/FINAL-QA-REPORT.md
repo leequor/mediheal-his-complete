@@ -174,3 +174,86 @@ patient account on the staff console resolves to the `patient` role whose home i
 Both manifests are committed; the PNGs are regenerated on demand (`DESIGN-LOCK.md` §17.4 has the exact
 commands). The complete list of intentional differences is the four rows in §4 of this report plus the
 two sub-threshold changes recorded in §17.1 — nothing else moved.
+
+---
+
+## 8. Final pass — profiles, avatar centring, actionable notifications
+
+Three defects, all reported from real use, all fixed at the shared component rather than per page.
+
+### 8.1 The initials were not centred
+
+**Cause, measured rather than guessed.** The disc was centred on its *line box*, and two things put
+the glyphs off centre inside that box:
+
+- `letter-spacing: .02em` adds the tracking *after* the last letter, so a two-letter pair sits about
+  1 px left of centre.
+- `line-height: 1` makes the line box equal to the font size, so the baseline lands high and the ink
+  rides up. The offset grows with the disc.
+
+**Fix.** `line-height` is now set to the disc height inline (it is already set inline per size), which
+puts the baseline at `(height + ascent − descent) / 2` — the cap height lands centred — and the
+tracking is zero. `display:flex` with `align-items/justify-content: center`, `box-sizing: border-box`,
+`white-space: nowrap` and `overflow: hidden` complete the component. Nothing about the colours,
+sizes or the profile component changed.
+
+**Proof.** `qa-nav-check.mjs` screenshots each avatar, hands the PNG back to the page, decodes it to a
+canvas and computes the **ink centroid** against the disc centre. Tolerance 1.5 CSS px. Four accounts
+× two sizes (header 42 px, dropdown 44 px), at 3× device pixels.
+
+### 8.2 Notifications were not shortcuts
+
+Clicking a notification marked it read and did nothing else. Every notification now carries a page and
+a record id, and clicking it navigates there.
+
+- `assets/js/deeplink.js` — one shared resolver. `?focus=<id>` locates the row (by `data-id`, then by
+  an exact cell match, then by row text), scrolls it into view, flashes it, and clears the parameter
+  with `replaceState` so a refresh does not replay the arrival.
+- Only a read-only action is opened automatically (the laboratory "View report"). Nothing that
+  changes a record is ever clicked by the arrival, because arriving at a task is not doing it.
+- Appointments gained stable ids (`APT-0001…`) so a notification points at one appointment rather
+  than at a status filter.
+- **Reading is not completing.** The suite snapshots the underlying record before the click and
+  compares after: the laboratory order is still unacknowledged, the prescription still pending, the
+  invoice still unpaid, the leave still pending.
+
+Destinations wired: laboratory orders, pharmacy prescriptions and batches, invoices, charges,
+claims, admissions, appointments, attendance, audit.
+
+### 8.3 A download that lied
+
+Chrome throttles a burst of automatic downloads. "Generate payslips" fired eight `<a download>` clicks
+in a loop and the browser delivered **three to five** of them while the message said eight.
+
+Fixed by packaging: `HIS.pdf.zip()` writes a stored-mode archive (no compressor, no dependency) and
+the action downloads **one ZIP containing one PDF per employee**. The confirmation now reports the
+number of entries actually written. The test unzips it and checks every entry is a `%PDF-1.4` file
+carrying `PAYSLIP`, a `NET PAY` line and the employee's name.
+
+### 8.4 Harness races fixed
+
+`auth-check` was intermittently 24/25. Two real races: it waited a fixed 800 ms for a redirect, and
+the URL commits *before* the destination's scripts mount the header. It now waits for the outcome
+(dashboard, or an error on the form) and then for `#profile .nm`. 25/25 three runs in a row.
+
+### 8.5 Results
+
+| Suite | Result |
+|---|---|
+| `qa-nav-check.mjs` (new) | **115 / 115** |
+| `qa-check` | 91 / 91 |
+| `qa-final-check` | 73 / 73 |
+| `revenue` · `charges` · `adt-boundary` | 81 · 44 · 65 |
+| `clinical` · `finance` · `ledger` | 53 · 31 · 46 |
+| `claims` · `portal` · `auth` | 41 · 40 · 25 |
+| `payroll` · `acceptance` | 89 · 180 |
+| `m10-1 … m10-4` | 77 · 78 · 75 · 54 |
+| `roles` | 144 checks |
+| smoke · a11y · responsive · buttons | 28 pages · 27 pages 0 violations · 140 · 0 |
+| visual | 0.000% at 1440 and 1366 against the approved baseline |
+
+**1,258 assertions across 18 rule-asserting harnesses, plus 144 role checks — 1,402 in all. 0 failures.**
+
+Visual: every page still matches the approved baseline at both widths. The avatar correction and the
+row highlight are both below the harness's 128-level pixel threshold, which is why they do not appear
+as diffs; they are recorded here rather than implied.

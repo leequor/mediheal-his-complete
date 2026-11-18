@@ -343,7 +343,7 @@
         ['Total net pay', fmt(T.net)], ['Columns', 'Basic, absence, late, overtime, night, premiums, allowances, gross, SSS, PhilHealth, Pag-IBIG, tax, net, employer shares']] };
     if (st.modal === 'gen') return { y: 453, h: 438, t: 'Generate payslips', s: per + ' \u00b7 One payslip per employee', ok: 'Generate payslips', c: 'Cancel',
       f: [['Employees', run.lines.length + ' payslips'], ['Total net pay', fmt(T.net)], ['Pay period', run.periodLabel],
-        ['Delivery', 'Download (PDF per employee)'], ['Includes', 'Every earning and deduction line, plus the employer contribution block']] };
+        ['Delivery', 'Download — one PDF per employee, in a ZIP'], ['Includes', 'Every earning and deduction line, plus the employer contribution block']] };
     if (st.modal === 'corr-new') {
       return {
         y: 200, h: 420, t: 'Correction run', s: 'Against ' + run.id + ' · ' + run.periodLabel,
@@ -505,9 +505,12 @@
         if (!res.ok) { tip(res.error); return; }
         tip(step.next === 'released' ? 'Payments released \u00b7 ' + fmt(res.run.totals.net) : 'Payroll ' + step.next);
       } else if (k === 'gen') {
-        var n = 0;
-        run.lines.forEach(function (l) { if (HIS.payrollRuns.payslipPdf(l.employeeId).ok) n++; });
-        tip(n + ' payslip' + (n === 1 ? '' : 's') + ' downloaded as PDF');
+        // One archive, so the count in the message is the number of files the browser actually saved.
+        // Eight separate downloads are throttled by Chrome and the tail is dropped silently.
+        var batch = HIS.payrollRuns.payslipBatch();
+        tip(batch.ok
+          ? batch.count + ' payslip' + (batch.count === 1 ? '' : 's') + ' downloaded as PDF in one ZIP'
+          : batch.error);
       } else if (k === 'export') {
         download('payroll-' + run.periodId.replace(/\//g, '-') + '-v' + run.version + '.csv', HIS.payrollRuns.csv(run.id));
         tip('Payroll exported as CSV');

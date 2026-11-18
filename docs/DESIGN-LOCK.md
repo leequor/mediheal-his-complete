@@ -678,3 +678,34 @@ Appointments (KPI values counted from the records, fifth card relabelled Complet
 reworded note), and Audit at 1366 only (header identity and the bell's real unread count). Everything
 else is 0.000% at both widths, and the two sub-threshold changes in 17.1 are listed there so they are
 not mistaken for regressions later.
+
+---
+
+## 18. Final pass — avatar centring and deep-link arrival
+
+Two additions, both shared components. No colour, size, radius, shadow or spacing token changed.
+
+### 18.1 The avatar is centred on the ink, not on the line box
+
+`.av-d` keeps its 42 / 38 / 36 px sizes and its six tints. What changed is how the letters sit inside
+the disc:
+
+| Property | Before | After | Why |
+|---|---|---|---|
+| `line-height` | `1` (from the font shorthand) | **the disc height**, set inline next to the size | A line box equal to the font size puts the baseline high, so the glyphs ride up. Filling the disc with the line box centres the cap height. |
+| `letter-spacing` | `.02em` | `0` | Tracking is added after the last letter, which shifts a two-letter pair about 1 px left. |
+| `display` | `inline-grid` | `flex` + `align-items/justify-content: center` | Same centring, and it composes with `box-sizing: border-box`, `white-space: nowrap` and `overflow: hidden`. |
+
+The offset is measured from rendered pixels, not from the CSS: `qa-nav-check.mjs` screenshots each
+disc, decodes it to a canvas and compares the ink centroid with the centre. Four accounts × two sizes,
+tolerance 1.5 CSS px.
+
+### 18.2 Arriving at a record
+
+`.dl-hit` is a temporary outline plus a fading flash, applied to the row a notification pointed at.
+It is the only new visual state in this pass and it disappears after 2.4 s; nothing else on the page
+moves. `.dl-tip` is the fallback notice when a record is no longer present.
+
+Because the flash is a background tint and the outline is 2 px of `#1c6d9c`, the sweep still reports
+0.000% — the row is only highlighted after a notification click, which the baseline capture never
+performs. That is stated here so a future reader does not treat the highlight as a regression.

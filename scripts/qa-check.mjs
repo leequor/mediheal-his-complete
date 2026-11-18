@@ -279,8 +279,15 @@ console.log('\n--- 4. notifications follow the account, not a fixed list ---');
   await page.click('.bell');
   await page.waitForTimeout(200);
   const before = await page.evaluate(() => +(document.querySelector('.bell b').textContent || 0));
+  const here = page.url();
   await page.click('.nf-r');
-  await page.waitForTimeout(200);
+  await page.waitForTimeout(1100);
+  // A notification is a shortcut to its record, so clicking it leaves the page. Come back and
+  // reopen the panel to read the state it left behind.
+  await page.goto(here, { waitUntil: 'load' });
+  await page.waitForTimeout(400);
+  await page.click('.bell');
+  await page.waitForTimeout(250);
   const afterOne = await page.evaluate(() => ({
     badge: +(document.querySelector('.bell b').textContent || 0),
     readRows: document.querySelectorAll('.nf-r.rd').length
