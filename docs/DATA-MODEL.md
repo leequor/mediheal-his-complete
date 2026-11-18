@@ -163,6 +163,20 @@ The stores enforce these. Do not add a screen that can break one.
 Times are `HH:MM` in 24-hour form so payroll can subtract them; the screen formats them for display.
 A night shift crosses midnight, so `timeOut < timeIn` means "+1 day", not "negative hours".
 
+### Attendance summary (M10.4)
+The per-period summary the payroll engine prices. Hours are classified before they are priced:
+```
+{ scheduledDays, workedDays, absenceDays, paidLeaveDays,
+  lateMinutes, undertimeMinutes,
+  scheduledHours, workedHours, ordinaryHours, additionalHours,
+  restDayHours, regularHolidayHours, specialHours,
+  otHours: { ordinary, rest, regularHoliday, special },   // statutory, beyond eight
+  ndHours, ndOtHours, premiumDays }
+```
+`additionalHours` is work beyond the schedule but inside eight; `otHours` is work beyond eight. The
+two are never merged. `classify(record)` produces the split for one day and is the only place the
+eight-hour threshold is applied.
+
 ### Timesheet
 ```
 { status:'submitted'|'approved', submittedBy, submittedAt, approvedBy, approvedAt,
@@ -200,6 +214,15 @@ four hours divides by four. `payPolicy` names the effective-dated policy that su
 factor (261 today). `wage.locality` is used where an order splits by area rather than industry, as
 Region VII does. `wage.exemption` is only present when a lawful reason to sit below the floor exists,
 and it must carry a reference.
+
+### Employer profile (M10.4)
+```
+{ name, city, cityPopulation, cityPopulationSource, bedCapacity, bedCapacitySource,
+  employsHealthPersonnel }
+```
+`art83()` returns `covered`, `not-covered` or `undetermined` from the population and bed-capacity
+tests. The demo is a 60-bed hospital with no recorded city population, so it returns `undetermined`
+with `missing: ['cityPopulation']` and refuses to price a sixth day.
 
 ### CorrectionRun (M10.1)
 ```

@@ -73,6 +73,47 @@
     var p = String(hhmm).split(':');
     return (+p[0]) * 60 + (+p[1]);
   }
+  // Hours between two HH:MM times, crossing midnight if needed, less the unpaid break.
+  function hoursBetween(a, b, breakMinutes) {
+    var m = toMinutes(b) - toMinutes(a);
+    if (m < 0) m += 1440;
+    return Math.max(0, (m - (breakMinutes || 0)) / 60);
+  }
+
+  // CLASSIFY BEFORE PRICING. Given one attendance record, split the hours worked into the buckets
+  // the payroll engine prices differently. Article 87 puts statutory overtime at work beyond eight
+  // hours in the day — not beyond the end of the schedule — so a part-timer who works two extra
+  // hours has two ADDITIONAL hours, not two overtime hours.
+  //
+  //   ordinary    scheduled hours actually worked, covered by the period basic
+  //   additional  beyond the schedule but inside eight
+  //   ot          beyond eight
+  //   rest        first eight hours on a rest day (premium), restOt beyond eight
+  //   holiday     first eight hours on a holiday, holidayOt beyond eight
+  function classify(r) {
+    var scheduled = hoursBetween(r.shiftStart, r.shiftEnd, r.breakMinutes);
+    var worked = r.worked ? hoursBetween(r.timeIn, r.timeOut, r.breakMinutes) : 0;
+    var out = {
+      scheduled: scheduled, worked: worked,
+      ordinary: 0, additional: 0, ot: 0,
+      rest: 0, restOt: 0, holiday: 0, holidayOt: 0,
+      dayType: r.dayType
+    };
+    if (!r.worked) return out;
+    if (r.dayType === 'rest') {
+      out.rest = Math.min(worked, 8);
+      out.restOt = Math.max(0, worked - 8);
+    } else if (r.dayType === 'regular-holiday' || r.dayType === 'special') {
+      out.holiday = Math.min(worked, 8);
+      out.holidayOt = Math.max(0, worked - 8);
+    } else {
+      out.ordinary = Math.min(worked, scheduled);
+      out.additional = Math.max(0, Math.min(worked, 8) - scheduled);
+      out.ot = Math.max(0, worked - 8);
+    }
+    return out;
+  }
+
   function fromMinutes(m) {
     m = ((Math.round(m) % 1440) + 1440) % 1440;
     return pad(Math.floor(m / 60)) + ':' + pad(m % 60);
@@ -210,33 +251,45 @@
     s.scheduledDays = 0; s.workedDays = 0; s.totalHours = 0;
 
     recs.forEach(function (r) {
-      if (r.dayType !== 'rest') s.scheduledDays++;
-      if (r.worked) {
-        s.workedDays++;
-        var mins = toMinutes(r.timeOut) - toMinutes(r.timeIn);
-        if (mins < 0) mins += 1440;              // night shift crossing midnight
-        s.totalHours += Math.max(0, (mins - (r.breakMinutes || 0)) / 60);
-      }
+      var scheduledH = hoursBetween(r.shiftStart, r.shiftEnd, r.breakMinutes);
+      var workedH = r.worked ? hoursBetween(r.timeIn, r.timeOut, r.breakMinutes) : 0;
+
+      if (r.dayType !== 'rest') { s.scheduledDays++; s.scheduledHours += scheduledH; }
+      if (r.worked) { s.workedDays++; s.workedHours += workedH; s.totalHours += workedH; }
       if (r.status === 'absent') s.absenceDays++;
       if (r.status === 'leave' && r.leaveApproved) s.paidLeaveDays++;
       // Grace is a company policy, not a statutory rule: only lateness beyond it is docked.
-      var chargeable = Math.max(0, (r.lateMinutes || 0) - HIS.payrollCalc.CONFIG.graceMinutes);
-      s.lateMinutes += chargeable;
+      s.lateMinutes += Math.max(0, (r.lateMinutes || 0) - HIS.payrollCalc.CONFIG.graceMinutes);
       s.undertimeMinutes += (r.undertimeMinutes || 0);
       s.ndHours += r.ndHours || 0;
-      if (r.worked && r.otHours) {
-        if (r.dayType === 'rest') s.otHours.rest += r.otHours;
-        else if (r.dayType === 'regular-holiday') s.otHours.regularHoliday += r.otHours;
-        else if (r.dayType === 'special') s.otHours.special += r.otHours;
-        else s.otHours.ordinary += r.otHours;
-      }
-      if (r.worked) {
-        if (r.dayType === 'rest') s.premiumDays.rest++;
-        else if (r.dayType === 'regular-holiday') s.premiumDays.regularHoliday++;
-        else if (r.dayType === 'special') s.premiumDays.special++;
+      if (!r.worked) return;
+
+      var c = classify(r);
+      if (r.dayType === 'rest') {
+        s.restDayHours += c.rest;
+        s.otHours.rest += c.restOt;
+        s.premiumDays.rest++;
+      } else if (r.dayType === 'regular-holiday') {
+        s.regularHolidayHours += c.holiday;
+        s.otHours.regularHoliday += c.holidayOt;
+        s.premiumDays.regularHoliday++;
+      } else if (r.dayType === 'special') {
+        s.specialHours += c.holiday;
+        s.otHours.special += c.holidayOt;
+        s.premiumDays.special++;
+      } else {
+        s.ordinaryHours += c.ordinary;
+        s.additionalHours += c.additional;
+        s.otHours.ordinary += c.ot;
       }
     });
-    s.totalHours = Math.round(s.totalHours * 100) / 100;
+    ['totalHours', 'scheduledHours', 'workedHours', 'ordinaryHours', 'additionalHours',
+      'restDayHours', 'regularHolidayHours', 'specialHours'].forEach(function (k) {
+      s[k] = Math.round(s[k] * 100) / 100;
+    });
+    ['ordinary', 'rest', 'regularHoliday', 'special'].forEach(function (k) {
+      s.otHours[k] = Math.round(s.otHours[k] * 100) / 100;
+    });
     return s;
   }
 
@@ -361,7 +414,7 @@
 
   HIS.attendancePeriod = {
     PERIOD: PERIOD, HOLIDAYS: HOLIDAYS, KEY: KEY,
-    all: all, days: days, recordsFor: recordsFor,
+    all: all, days: days, recordsFor: recordsFor, classify: classify,
     timesheet: timesheet, approved: approved, unapproved: unapproved, summary: summary,
     approve: approve, approveAll: approveAll, reopen: reopen, correct: correct,
     totals: totals, seed: seed, reset: reset
