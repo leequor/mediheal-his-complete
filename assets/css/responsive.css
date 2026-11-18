@@ -1631,3 +1631,17 @@
   /* the old ::before expander is superseded */
   #atc .at-cb::before, #prc .pr-cb::before { content: none !important; }
 }
+
+/* ---- M6/M9: admin-format meta text below desktop -----------------------
+   The laboratory, pharmacy, accounts, audit and reports screens use 11-11.5px meta text
+   (.ad-who small, .ad-kv dt, .ac-hint, .ac-you). That is the Figma label size at 1440 and
+   stays there; below 1440 the 12px floor from DESIGN-LOCK §12 applies, like every other
+   label class in the design. Caught by mobile-audit at 1280 and 1366. */
+@media (max-width: 1439px) {
+  .ad-who small, .ad-kv dt, .ac-hint, .ac-you, .ad-note, .ad-foot, .ad-count,
+  .ac-wt small, .ad-tr .mu, .ad-alert-row, .ad-seg button, .ad-btn.ghost {
+    font-size: 12px !important;
+    line-height: 16px !important;
+  }
+  .ad-th, .ac-edit, .ad-tr .ac-edit, .ad-tr.ac-g2 .ac-edit { font-size: 12px !important; }
+}

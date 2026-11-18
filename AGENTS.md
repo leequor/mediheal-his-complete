@@ -12,3 +12,9 @@ Short version of the rules:
 4. After every push, say what was verified and what was not. Verify on the live site with the Playwright tools (they drive the owner's real browser: remove any test records you save).
 5. Put a whole page (HTML + JS + CSS) in ONE commit (`push_files`); GitHub Pages lags 10 to 30 s and caches HTML/JS/CSS in the browser (`fetch(url,{cache:'reload'})`, then `location.reload()`).
 6. Run `node scripts/visual-check.mjs --check` before claiming a visual change is safe, `node scripts/roles-check.mjs` after touching `rbac.js` or any role's page list, and `node scripts/smoke.mjs` before claiming a page is clean. All need `playwright-core`; set `PW=/abs/path/to/playwright-core/index.js` if it is not local.
+
+7. **A record has exactly one owner.** `docs/DATA-MODEL.md` lists which module writes which key and the invariants the stores enforce. Do not compute a balance, a status or a total in a second place: `HIS.ledger` owns money, `HIS.registry` owns patients, `HIS.audit` owns history. If you find code reading `bill.paid` or `employee.ded`, it is a bug — both were retired because two screens disagreed.
+
+8. **Run the domain harness for the area you touched**, not just the visual one: `portal-check` for identity, `clinical-check` for laboratory/pharmacy, `finance-check` for money, `payroll-check` for HR. Each asserts rules, not rendering.
+
+9. **Measurement is not inspection.** Three separate defects in this project passed every automated check and were only found by looking at a screenshot (a reports string bug, role cells rendering as pills, a registration form with three fields clipped into one row). Capture the screen and look at it before calling a change done.

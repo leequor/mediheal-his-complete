@@ -87,7 +87,8 @@
     var billed = B.reduce(function (s, b) { return s + b.amount; }, 0);
     var collected = B.reduce(function (s, b) { return s + paidOf(b); }, 0);
     var outstanding = billed - collected;
-    var openBills = B.filter(function (b) { return paidOf(b) < b.amount; });
+    var balOf = function (b) { return HIS.ledger.balanceOf(b); };
+    var openBills = B.filter(function (b) { return balOf(b) > 0.005; });
     var inpatients = count(P, function (p) { return p.type === 'Inpatient'; });
     var outpatients = count(P, function (p) { return p.type === 'Outpatient'; });
     var waiting = count(P, function (p) { return p.status === 'Waiting'; });
@@ -327,8 +328,8 @@
           kpis: [
             { label: 'Open invoices', value: String(openBills.length), delta: money(outstanding) + ' to collect', icon: 'receipt' },
             { label: 'Collected', value: money(collected), delta: 'Across ' + B.length + ' invoices', icon: 'peso' },
-            { label: 'Partial payments', value: String(count(B, function (b) { return paidOf(b) > 0 && paidOf(b) < b.amount; })), delta: 'Balance still due', icon: 'clock' },
-            { label: 'Paid in full', value: String(count(B, function (b) { return paidOf(b) >= b.amount; })), delta: 'Closed invoices', icon: 'check-circle' }
+            { label: 'Partial payments', value: String(count(B, function (b) { return (paidOf(b) > 0 || HIS.ledger.coveredOf(b) > 0) && balOf(b) > 0.005; })), delta: 'Balance still due', icon: 'clock' },
+            { label: 'Paid in full', value: String(count(B, function (b) { return balOf(b) <= 0.005; })), delta: 'Closed invoices', icon: 'check-circle' }
           ],
           table: {
             title: 'Invoices to settle', sub: 'Balance due per patient',
@@ -373,7 +374,7 @@
           feed: {
             title: 'Reconciliation', sub: 'Largest open balances', icon: 'chart',
             items: openBills.slice(0, 4).map(function (b) {
-              return { time: money(b.amount - paidOf(b)), title: b.name, line1: b.id + ' \u00b7 ' + b.dept, line2: b.date, status: 'Open', kind: 'in' };
+              return { time: money(balOf(b)), title: b.name, line1: b.id + ' \u00b7 ' + b.dept, line2: b.date, status: 'Open', kind: 'in' };
             }),
             empty: 'Everything is settled'
           }
@@ -475,7 +476,7 @@
         var pid = (HIS.auth.account() || {}).patientId;
         var me = P.filter(function (p) { return p.id === pid; })[0] || {};
         var myBills = B.filter(function (b) { return b.pt === pid; });
-        var owed = myBills.reduce(function (s, b) { return s + (b.amount - paidOf(b)); }, 0);
+        var owed = myBills.reduce(function (s, b) { return s + HIS.ledger.balanceOf(b); }, 0);
         return {
           greet: 'Welcome back, ' + first(person.name) + '!',
           kpis: [
