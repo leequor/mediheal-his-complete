@@ -29,11 +29,14 @@
     return TINTS[h % TINTS.length];
   }
   // A coloured disc carrying the initials. `size` in px; `label` names the person for a screen reader.
+  // line-height is set to the disc height on purpose: that is what centres the letters optically
+  // (see the .av-d comment in base.css), so every size gets a correct avatar without per-size CSS.
   function disc(name, seed, size, label) {
     var t = tint(seed || name), n = initials(name), d = size || 42;
     return "<span class='av-d' role='img' aria-label='" + (label || name || 'Account') +
-      "' style='width:" + d + 'px;height:' + d + 'px;border-radius:' + (d / 2) + 'px;background:' + t[0] +
-      ';color:' + t[1] + ';font-size:' + Math.max(11, Math.round(d * 0.36)) + "px'>" + (n || '?') + '</span>';
+      "' style='width:" + d + 'px;height:' + d + 'px;border-radius:' + (d / 2) + 'px;line-height:' + d +
+      'px;background:' + t[0] + ';color:' + t[1] + ';font-size:' + Math.max(11, Math.round(d * 0.36)) +
+      "px'>" + (n || '?') + '</span>';
   }
   window.HIS.avatar = { initials: initials, tint: tint, disc: disc };
 })();
@@ -206,12 +209,15 @@
     const a = window.HIS.auth && HIS.auth.account ? HIS.auth.account() : null;
     const role = a ? a.role : 'receptionist';
     const out = [];
-    const add = (title, body, meta) => out.push({ id: role + ':' + title, title: title, body: body, meta: meta });
+    // title, body, meta, page, focus. `page` is where the work is; `focus` is the record id that
+    // page will locate. A row without a page is informational only and is never rendered.
+    const add = (title, body, meta, page, focus) =>
+      out.push({ id: role + ':' + title, title: title, body: body, meta: meta, page: page, focus: focus || null });
 
     const lab = window.HIS.lab, ph = window.HIS.pharmacy, cl = window.HIS.claims,
       ad = window.HIS.admissions, ch = window.HIS.charges, bl = window.HIS.billing;
     const labRows = lab && lab.all ? lab.all() : [];
-    const cnt = (arr, fn) => arr.filter(fn).length;
+    const LAB = id => 'laboratory.html?focus=' + encodeURIComponent(id);
 
     const pending = labRows.filter(o => o.status === 'Ordered');
     const running = labRows.filter(o => o.status === 'Collected' || o.status === 'In Process');
@@ -224,17 +230,15 @@
     const rxReady = rxAll.filter(r => r.status === 'Verified' || r.status === 'Partial');
     const low = ph && ph.lowStock ? ph.lowStock() : [];
     const soon = ph && ph.nearExpiry ? ph.nearExpiry() : [];
+    const RX = id => 'pharmacy.html?tab=rx&focus=' + encodeURIComponent(id);
+    const STOCK = id => 'pharmacy.html?tab=stock&focus=' + encodeURIComponent(id);
 
     const unbilled = ch && ch.unbilled ? ch.unbilled() : [];
     const unbilledTotal = unbilled.reduce((s, c) => s + (c.amount || 0), 0);
     const bills = (bl && bl.bills) || [];
-    const openBills = bills.filter(b => {
-      const bal = (b.amount || 0) - (window.HIS.ledger ? HIS.ledger.paidOf(b) + HIS.ledger.coveredOf(b) : b.paid || 0);
-      return bal > 0.005;
-    });
-    const outstanding = openBills.reduce((s, b) => {
-      return s + (b.amount || 0) - (HIS.ledger ? HIS.ledger.paidOf(b) + HIS.ledger.coveredOf(b) : b.paid || 0);
-    }, 0);
+    const balOf = b => (b.amount || 0) - (window.HIS.ledger ? HIS.ledger.paidOf(b) + HIS.ledger.coveredOf(b) : b.paid || 0);
+    const openBills = bills.filter(b => balOf(b) > 0.005);
+    const outstanding = openBills.reduce((s, b) => s + balOf(b), 0);
 
     const claims = cl && cl.all ? cl.all() : [];
     const claimReview = claims.filter(c => c.status === 'Submitted' || c.status === 'Under review');
@@ -262,83 +266,83 @@
       case 'lab':
         if (critical.length) add('Critical result awaiting acknowledgement',
           critical[0].test + ' \u00b7 ' + patientName(critical[0].patientId) + (critical.length > 1 ? ' and ' + (critical.length - 1) + ' more' : ''),
-          'Flagged on release');
-        if (toValidate.length) add('Results awaiting validation', toValidate.length + ' entered, not yet released', 'Laboratory');
-        if (pending.length) add('Specimens awaiting collection', pending.length + ' order' + (pending.length === 1 ? '' : 's') + ' not yet collected', 'Laboratory');
-        if (running.length) add('Tests in process', running.length + ' specimen' + (running.length === 1 ? '' : 's') + ' collected or running', 'Laboratory');
-        if (released.length) add('Results released today', released.length + ' report' + (released.length === 1 ? '' : 's') + ' visible to the care team', 'Laboratory');
+          'Flagged on release', LAB(critical[0].id), critical[0].id);
+        if (toValidate.length) add('Results awaiting validation', toValidate.length + ' entered, not yet released', 'Laboratory', LAB(toValidate[0].id), toValidate[0].id);
+        if (pending.length) add('Specimens awaiting collection', pending.length + ' order' + (pending.length === 1 ? '' : 's') + ' not yet collected', 'Laboratory', LAB(pending[0].id), pending[0].id);
+        if (running.length) add('Tests in process', running.length + ' specimen' + (running.length === 1 ? '' : 's') + ' collected or running', 'Laboratory', LAB(running[0].id), running[0].id);
+        if (released.length) add('Results released', released.length + ' report' + (released.length === 1 ? '' : 's') + ' visible to the care team', 'Laboratory', LAB(released[0].id), released[0].id);
         break;
 
       case 'pharmacist':
-        if (rxPending.length) add('Prescriptions to verify', rxPending.length + ' waiting for a pharmacist', 'Pharmacy');
-        if (rxReady.length) add('Prescriptions ready to dispense', rxReady.length + ' verified and not yet given out', 'Pharmacy');
-        if (low.length) add('Stock at or below reorder level', low.length + ' item' + (low.length === 1 ? '' : 's') + ' to reorder', 'Inventory');
-        if (soon.length) add('Batches expiring within 90 days', soon.length + ' batch' + (soon.length === 1 ? '' : 'es') + ' to use or return', 'Inventory');
-        if (critical.length) add('Critical result released', critical.length + ' flagged result' + (critical.length === 1 ? '' : 's') + ' on file', 'Laboratory');
+        if (rxPending.length) add('Prescriptions to verify', rxPending.length + ' waiting for a pharmacist', 'Pharmacy', RX(rxPending[0].id), rxPending[0].id);
+        if (rxReady.length) add('Prescriptions ready to dispense', rxReady.length + ' verified and not yet given out', 'Pharmacy', RX(rxReady[0].id), rxReady[0].id);
+        if (low.length) add('Stock at or below reorder level', low.length + ' item' + (low.length === 1 ? '' : 's') + ' to reorder', 'Inventory', STOCK(low[0].drug), low[0].drug);
+        if (soon.length) add('Batches expiring within 90 days', soon.length + ' batch' + (soon.length === 1 ? '' : 'es') + ' to use or return', 'Inventory', STOCK(soon[0].batch || soon[0].id), soon[0].batch || soon[0].id);
+        if (critical.length) add('Critical result released', critical.length + ' flagged result' + (critical.length === 1 ? '' : 's') + ' on file', 'Laboratory', LAB(critical[0].id), critical[0].id);
         break;
 
       case 'nurse':
-        if (adm.length) add('Patients on the ward', adm.length + ' active admission' + (adm.length === 1 ? '' : 's'), 'Admissions');
-        if (rxReady.length) add('Medication ready to administer', rxReady.length + ' verified prescription' + (rxReady.length === 1 ? '' : 's'), 'Pharmacy');
-        if (critical.length) add('Critical result awaiting acknowledgement', critical.length + ' flagged result' + (critical.length === 1 ? '' : 's'), 'Laboratory');
-        if (pending.length) add('Specimens awaiting collection', pending.length + ' order' + (pending.length === 1 ? '' : 's'), 'Laboratory');
+        if (adm.length) add('Patients on the ward', adm.length + ' active admission' + (adm.length === 1 ? '' : 's'), 'Admissions', 'admissions.html?focus=' + encodeURIComponent(adm[0].id), adm[0].id);
+        if (rxReady.length) add('Medication ready to administer', rxReady.length + ' verified prescription' + (rxReady.length === 1 ? '' : 's'), 'Pharmacy', RX(rxReady[0].id), rxReady[0].id);
+        if (critical.length) add('Critical result awaiting acknowledgement', critical.length + ' flagged result' + (critical.length === 1 ? '' : 's'), 'Laboratory', LAB(critical[0].id), critical[0].id);
+        if (pending.length) add('Specimens awaiting collection', pending.length + ' order' + (pending.length === 1 ? '' : 's'), 'Laboratory', LAB(pending[0].id), pending[0].id);
         break;
 
       case 'doctor':
-        if (apptConfirmed.length) add('Consultations today', apptConfirmed.length + ' confirmed appointment' + (apptConfirmed.length === 1 ? '' : 's'), 'Appointments');
-        if (toValidate.length) add('Results ready for review', toValidate.length + ' entered and awaiting validation', 'Laboratory');
-        if (released.length) add('Released results on file', released.length + ' report' + (released.length === 1 ? '' : 's') + ' available', 'Laboratory');
-        if (adm.length) add('Inpatients under care', adm.length + ' active admission' + (adm.length === 1 ? '' : 's'), 'Admissions');
+        if (apptConfirmed.length) add('Consultations today', apptConfirmed.length + ' confirmed appointment' + (apptConfirmed.length === 1 ? '' : 's'), 'Appointments', 'appointments.html?status=Confirmed&focus=' + encodeURIComponent(apptConfirmed[0].id), apptConfirmed[0].id);
+        if (toValidate.length) add('Results ready for review', toValidate.length + ' entered and awaiting validation', 'Laboratory', LAB(toValidate[0].id), toValidate[0].id);
+        if (released.length) add('Released results on file', released.length + ' report' + (released.length === 1 ? '' : 's') + ' available', 'Laboratory', LAB(released[0].id), released[0].id);
+        if (adm.length) add('Inpatients under care', adm.length + ' active admission' + (adm.length === 1 ? '' : 's'), 'Admissions', 'admissions.html?focus=' + encodeURIComponent(adm[0].id), adm[0].id);
         break;
 
       case 'registration':
       case 'receptionist':
-        if (apptPending.length) add('Appointments awaiting approval', apptPending.length + ' still pending', 'Appointments');
-        if (apptToday.length) add('Appointments today', apptToday.length + ' on the schedule for ' + today(), 'Appointments');
-        if (beds) add('Beds available', beds.available + ' of ' + beds.total + ' free across ' + (ad.wards ? ad.wards().length : 0) + ' wards', 'Admissions');
-        if (adm.length) add('Active admissions', adm.length + ' patient' + (adm.length === 1 ? '' : 's') + ' on the ward', 'Admissions');
+        if (apptPending.length) add('Appointments awaiting approval', apptPending.length + ' still pending', 'Appointments', 'appointments.html?status=Pending&focus=' + encodeURIComponent(apptPending[0].id), apptPending[0].id);
+        if (apptToday.length) add('Appointments today', apptToday.length + ' on the schedule for ' + today(), 'Appointments', 'appointments.html', null);
+        if (beds) add('Beds available', beds.available + ' of ' + beds.total + ' free across ' + (ad.wards ? ad.wards().length : 0) + ' wards', 'Admissions', 'admissions.html', null);
+        if (adm.length) add('Active admissions', adm.length + ' patient' + (adm.length === 1 ? '' : 's') + ' on the ward', 'Admissions', 'admissions.html?focus=' + encodeURIComponent(adm[0].id), adm[0].id);
         break;
 
       case 'cashier':
-        if (unbilled.length) add('Charges awaiting an invoice', unbilled.length + ' charge' + (unbilled.length === 1 ? '' : 's') + ' worth ' + peso(unbilledTotal), 'Billing');
-        if (openBills.length) add('Invoices with a balance', openBills.length + ' open \u00b7 ' + peso(outstanding) + ' outstanding', 'Billing');
-        if (claimDenied.length) add('Claims denied', claimDenied.length + ' needing a correction or an appeal', 'Claims');
+        if (unbilled.length) add('Charges awaiting an invoice', unbilled.length + ' charge' + (unbilled.length === 1 ? '' : 's') + ' worth ' + peso(unbilledTotal), 'Billing', 'charges.html?tab=unbilled&focus=' + encodeURIComponent(unbilled[0].id), unbilled[0].id);
+        if (openBills.length) add('Invoices with a balance', openBills.length + ' open \u00b7 ' + peso(outstanding) + ' outstanding', 'Billing', 'billing.html?focus=' + encodeURIComponent(openBills[0].id), openBills[0].id);
+        if (claimDenied.length) add('Claims denied', claimDenied.length + ' needing a correction or an appeal', 'Claims', 'claims.html?focus=' + encodeURIComponent(claimDenied[0].id), claimDenied[0].id);
         break;
 
       case 'finance':
-        if (unbilled.length) add('Unbilled revenue', unbilled.length + ' charge' + (unbilled.length === 1 ? '' : 's') + ' worth ' + peso(unbilledTotal), 'Billing');
-        if (openBills.length) add('Outstanding balance', peso(outstanding) + ' across ' + openBills.length + ' invoice' + (openBills.length === 1 ? '' : 's'), 'Billing');
-        if (claimReview.length) add('Claims awaiting payer review', claimReview.length + ' submitted and not yet decided', 'Claims');
+        if (unbilled.length) add('Unbilled revenue', unbilled.length + ' charge' + (unbilled.length === 1 ? '' : 's') + ' worth ' + peso(unbilledTotal), 'Billing', 'charges.html?tab=unbilled&focus=' + encodeURIComponent(unbilled[0].id), unbilled[0].id);
+        if (openBills.length) add('Outstanding balance', peso(outstanding) + ' across ' + openBills.length + ' invoice' + (openBills.length === 1 ? '' : 's'), 'Billing', 'billing.html?focus=' + encodeURIComponent(openBills[0].id), openBills[0].id);
+        if (claimReview.length) add('Claims awaiting payer review', claimReview.length + ' submitted and not yet decided', 'Claims', 'claims.html?focus=' + encodeURIComponent(claimReview[0].id), claimReview[0].id);
         break;
 
       case 'hr':
-        if (leavePending.length) add('Leave requests to settle', leavePending.length + ' awaiting a decision', 'Attendance');
-        if (absent.length) add('Absences without leave', absent.length + ' employee' + (absent.length === 1 ? '' : 's') + ' with no clock entry', 'Attendance');
-        if (late.length) add('Late arrivals today', late.length + ' employee' + (late.length === 1 ? '' : 's') + ' clocked in late', 'Attendance');
+        if (leavePending.length) add('Leave requests to settle', leavePending.length + ' awaiting a decision', 'Attendance', 'attendance.html?focus=' + encodeURIComponent(leavePending[0].name), leavePending[0].name);
+        if (absent.length) add('Absences without leave', absent.length + ' employee' + (absent.length === 1 ? '' : 's') + ' with no clock entry', 'Attendance', 'attendance.html?focus=' + encodeURIComponent(absent[0].id), absent[0].id);
+        if (late.length) add('Late arrivals today', late.length + ' employee' + (late.length === 1 ? '' : 's') + ' clocked in late', 'Attendance', 'attendance.html?focus=' + encodeURIComponent(late[0].id), late[0].id);
         break;
 
       case 'depthead':
-        if (apptToday.length) add('Appointments today', apptToday.length + ' across the departments you head', 'Appointments');
-        if (late.length) add('Late arrivals today', late.length + ' staff member' + (late.length === 1 ? '' : 's'), 'Attendance');
-        if (adm.length) add('Inpatients on the ward', adm.length + ' active admission' + (adm.length === 1 ? '' : 's'), 'Admissions');
-        if (leavePending.length) add('Leave requests to settle', leavePending.length + ' awaiting a decision', 'Attendance');
+        if (apptToday.length) add('Appointments today', apptToday.length + ' across the departments you head', 'Appointments', 'appointments.html', null);
+        if (late.length) add('Late arrivals today', late.length + ' staff member' + (late.length === 1 ? '' : 's'), 'Attendance', 'attendance.html?focus=' + encodeURIComponent(late[0].id), late[0].id);
+        if (adm.length) add('Inpatients on the ward', adm.length + ' active admission' + (adm.length === 1 ? '' : 's'), 'Admissions', 'admissions.html?focus=' + encodeURIComponent(adm[0].id), adm[0].id);
+        if (leavePending.length) add('Leave requests to settle', leavePending.length + ' awaiting a decision', 'Attendance', 'attendance.html?focus=' + encodeURIComponent(leavePending[0].name), leavePending[0].name);
         break;
 
       case 'auditor':
-        if (voids.length) add('Voided charges', voids.length + ' charge' + (voids.length === 1 ? '' : 's') + ' reversed with a recorded reason', 'Charges');
-        if (unbilled.length) add('Unbilled charges', unbilled.length + ' not yet on an invoice', 'Charges');
-        if (audit.length) add('Audit entries this session', audit.length + ' recorded action' + (audit.length === 1 ? '' : 's'), 'Audit');
-        if (openBills.length) add('Invoices with a balance', openBills.length + ' open \u00b7 ' + peso(outstanding), 'Billing');
+        if (voids.length) add('Voided charges', voids.length + ' charge' + (voids.length === 1 ? '' : 's') + ' reversed with a recorded reason', 'Charges', 'charges.html?tab=all&focus=' + encodeURIComponent(voids[0].id), voids[0].id);
+        if (unbilled.length) add('Unbilled charges', unbilled.length + ' not yet on an invoice', 'Charges', 'charges.html?tab=unbilled&focus=' + encodeURIComponent(unbilled[0].id), unbilled[0].id);
+        if (audit.length) add('Audit entries this session', audit.length + ' recorded action' + (audit.length === 1 ? '' : 's'), 'Audit', 'audit.html', null);
+        if (openBills.length) add('Invoices with a balance', openBills.length + ' open \u00b7 ' + peso(outstanding), 'Billing', 'billing.html?focus=' + encodeURIComponent(openBills[0].id), openBills[0].id);
         break;
 
       case 'patient':
         break;
 
       default: // superadmin, hospitaladmin — operational oversight across every module
-        if (critical.length) add('Critical result awaiting acknowledgement', critical.length + ' flagged result' + (critical.length === 1 ? '' : 's') + ' on file', 'Laboratory');
-        if (unbilled.length) add('Unbilled charges', unbilled.length + ' charge' + (unbilled.length === 1 ? '' : 's') + ' worth ' + peso(unbilledTotal), 'Billing');
-        if (claimReview.length) add('Claims awaiting payer review', claimReview.length + ' submitted and not yet decided', 'Claims');
-        if (beds) add('Beds occupied', beds.occupied + ' of ' + beds.total + ' \u00b7 ' + beds.rate + '% occupancy', 'Admissions');
+        if (critical.length) add('Critical result awaiting acknowledgement', critical.length + ' flagged result' + (critical.length === 1 ? '' : 's') + ' on file', 'Laboratory', LAB(critical[0].id), critical[0].id);
+        if (unbilled.length) add('Unbilled charges', unbilled.length + ' charge' + (unbilled.length === 1 ? '' : 's') + ' worth ' + peso(unbilledTotal), 'Billing', 'charges.html?tab=unbilled&focus=' + encodeURIComponent(unbilled[0].id), unbilled[0].id);
+        if (claimReview.length) add('Claims awaiting payer review', claimReview.length + ' submitted and not yet decided', 'Claims', 'claims.html?focus=' + encodeURIComponent(claimReview[0].id), claimReview[0].id);
+        if (beds) add('Beds occupied', beds.occupied + ' of ' + beds.total + ' \u00b7 ' + beds.rate + '% occupancy', 'Admissions', 'admissions.html', null);
         break;
     }
     return { items: out.slice(0, 5), role: role };
@@ -434,10 +438,14 @@
       saved.by[built.role] = built.items.map(x => x.id); save(); render(); return;
     }
     if (b.dataset.n != null) {
-      const id = built.items[+b.dataset.n];
-      if (!id) return;
+      const item = built.items[+b.dataset.n];
+      if (!item) return;
+      // Marking read and doing the work are two different things. This marks the notification read
+      // and takes the user to the record; the record's own state is untouched until they act on it.
       const read = readFor(built.role);
-      if (read.indexOf(id.id) < 0) { read.push(id.id); save(); render(); }
+      if (read.indexOf(item.id) < 0) { read.push(item.id); save(); }
+      if (item.page) { location.href = item.page; return; }
+      render();
     }
   });
   bell.addEventListener('click', () => setOpen(!panel.classList.contains('on')));

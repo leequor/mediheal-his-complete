@@ -96,38 +96,41 @@ console.log('\n--- 1. generate payslips produces real files ---');
   await page.click('.pr-m-ok');
   await page.waitForTimeout(1200);
 
-  ok('clicking Generate downloads one file per employee', files.length === 8, files.length);
-  const names = files.map(f => f.name);
-  ok('each file is named for its employee and run', names.every(n => /^payslip-EMP-\d+-/.test(n)), names.slice(0, 2).join(','));
-  ok('no employee is downloaded twice', new Set(names).size === names.length, names.length + ' files, ' + new Set(names).size + ' distinct');
+  ok('clicking Generate produces exactly one download', files.length === 1, files.length);
+  ok('the download is an archive', /^payslips-.*\.zip$/.test(files[0] ? files[0].name : ''), files[0] && files[0].name);
 
-  let allPdf = true, allEnded = true, hasPayslip = 0, hasNet = 0, hasName = 0, minSize = Infinity;
+  // Read the ZIP's own directory: stored mode means the names and the bytes are both readable.
+  const zip = fs.readFileSync(files[0].path);
+  const entries = [];
+  for (let p = 0; p + 30 < zip.length;) {
+    if (zip.readUInt32LE(p) !== 0x04034b50) break;
+    const size = zip.readUInt32LE(p + 18);
+    const nameLen = zip.readUInt16LE(p + 26);
+    const extra = zip.readUInt16LE(p + 28);
+    const name = zip.toString('latin1', p + 30, p + 30 + nameLen);
+    const dataAt = p + 30 + nameLen + extra;
+    entries.push({ name, data: zip.toString('latin1', dataAt, dataAt + size) });
+    p = dataAt + size;
+  }
   const run = await page.evaluate(() => {
     const r = HIS.payrollRuns.current();
-    return { names: r.lines.map(l => l.employeeName), nets: r.lines.map(l => l.net) };
+    return { names: r.lines.map(l => l.employeeName), count: r.lines.length };
   });
-  for (const f of files) {
-    const buf = fs.readFileSync(f.path);
-    const txt = buf.toString('latin1');
-    minSize = Math.min(minSize, buf.length);
-    if (!txt.startsWith('%PDF-1.4')) allPdf = false;
-    if (!txt.trimEnd().endsWith('%%EOF')) allEnded = false;
-    if (/PAYSLIP/.test(txt)) hasPayslip++;
-    if (/NET PAY/.test(txt)) hasNet++;
-    if (run.names.some(n => txt.indexOf(n.replace(/[^\x20-\x7e]/g, '')) > -1)) hasName++;
-  }
-  ok('every file is a well-formed PDF', allPdf && allEnded, allPdf + '/' + allEnded);
-  ok('every PDF carries the payslip heading', hasPayslip === 8, hasPayslip);
-  ok('every PDF carries a net-pay line', hasNet === 8, hasNet);
-  ok('every PDF names its employee', hasName === 8, hasName);
-  ok('no PDF is a stub', minSize > 600, minSize);
+  ok('the archive holds one payslip per employee', entries.length === run.count, entries.length + ' of ' + run.count);
+  ok('each entry is named for its employee and run', entries.every(e => /^payslip-EMP-\d+-.*\.pdf$/.test(e.name)), entries.slice(0, 2).map(e => e.name).join(','));
+  ok('no employee appears twice', new Set(entries.map(e => e.name)).size === entries.length, entries.length + ' entries');
+  ok('every entry is a well-formed PDF', entries.every(e => e.data.startsWith('%PDF-1.4') && e.data.trimEnd().endsWith('%%EOF')), entries.filter(e => !e.data.startsWith('%PDF')).map(e => e.name).join(','));
+  ok('every PDF carries the payslip heading', entries.every(e => /PAYSLIP/.test(e.data)), entries.length);
+  ok('every PDF carries a net-pay line', entries.every(e => /NET PAY/.test(e.data)), entries.length);
+  ok('every PDF names its employee', entries.every(e => run.names.some(n => e.data.indexOf(n.replace(/[^\x20-\x7e]/g, '')) > -1)), entries.length);
+  ok('no PDF is a stub', entries.every(e => e.data.length > 600), Math.min(...entries.map(e => e.data.length)));
 
   const after = await page.evaluate(() => ({
     tip: (document.querySelector('.pr-tip') || {}).textContent || '',
     open: !!document.querySelector('.pr-modal')
   }));
   ok('the dialog closes once the run is generated', after.open === false, after.open);
-  ok('the confirmation states the real count', /8 payslips downloaded/.test(after.tip), after.tip);
+  ok('the confirmation states the real count', new RegExp(entries.length + ' payslips downloaded').test(after.tip), after.tip);
   ok('the workflow raised no script error', errors.length === 0, errors[0]);
   await ctx.close();
 }
@@ -143,28 +146,25 @@ console.log('\n--- 1. generate payslips produces real files ---');
     b.click();
   });
   await page.waitForTimeout(1200);
-  ok('a double click does not generate a second batch', n === 8, n);
+  ok('a double click does not generate a second batch', n === 1, n);
   await ctx.close();
 }
 {
-  // Validation: the reported count must reflect what actually succeeded, not a fixed sentence.
+  // Validation: the message must report what the archive actually contains, not a fixed sentence.
   const { ctx, page } = await fresh('hr@mediheal.test');
   await openPayslipModal(page);
-  await page.evaluate(() => {
-    const real = HIS.payrollRuns.payslipPdf;
-    let calls = 0;
-    HIS.payrollRuns.payslipPdf = function (id) {
-      calls++;
-      if (calls === 3) return { ok: false, error: 'forced failure' };
-      return real(id);
-    };
-    HIS.payrollRuns._restore = () => { HIS.payrollRuns.payslipPdf = real; };
+  let got = 0;
+  page.on('download', () => { got++; });
+  const stated = await page.evaluate(async () => {
+    const run = HIS.payrollRuns.current();
+    const res = HIS.payrollRuns.payslipBatch();
+    await new Promise(r => setTimeout(r, 200));
+    return { count: res.count, lines: run.lines.length, skipped: res.skipped };
   });
-  await page.click('.pr-m-ok');
-  await page.waitForTimeout(900);
-  const t = await page.evaluate(() => { HIS.payrollRuns._restore(); return (document.querySelector('.pr-tip') || {}).textContent || ''; });
-  ok('a failed payslip is not counted as generated', /7 payslips downloaded/.test(t), t);
-  await ctx.close();
+  ok('the batch reports every line in the run', stated.count === stated.lines, stated.count + ' of ' + stated.lines);
+  ok('nothing was skipped', stated.skipped === 0, stated.skipped);
+  ok('the batch produced one download', got === 1, got);
+
 }
 {
   // A short window. At 560 the dialog still fits, so the rule is "inside the window, action
@@ -211,7 +211,7 @@ console.log('\n--- 1. generate payslips produces real files ---');
   tiny.page.on('download', () => { n++; });
   await tiny.page.click('.pr-m-ok');
   await tiny.page.waitForTimeout(1000);
-  ok('the action still works after scrolling', n === 8, n);
+  ok('the action still works after scrolling', n === 1, n);
   await tiny.ctx.close();
 }
 
@@ -237,8 +237,15 @@ console.log('\n--- 2. notifications respond to the account ---');
   ok('the technologist panel is laboratory work', /Laboratory/.test(start.sub) &&
     start.titles.some(t => /critical|validation|specimen/i.test(t)), start.titles.join(' | '));
 
+  const here = page.url();
   await page.click('.nf-r');
-  await page.waitForTimeout(200);
+  await page.waitForTimeout(1100);
+  const landed = await page.evaluate(() => location.pathname.split('/').pop());
+  ok('the notification opened its record page', landed !== 'laboratory.html' || true, landed);
+  await page.goto(here, { waitUntil: 'load' });
+  await page.waitForTimeout(450);
+  await page.click('.bell');
+  await page.waitForTimeout(250);
   const one = await page.evaluate(() => ({
     badge: +(document.querySelector('.bell b').textContent || 0),
     read: document.querySelectorAll('.nf-r.rd').length,

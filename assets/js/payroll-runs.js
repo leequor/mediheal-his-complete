@@ -297,9 +297,9 @@
   }
 
   // Printable payslip, rendered through HIS.pdf (text-only PDF 1.4, same helper as invoices).
-  function payslipPdf(empId) {
-    var p = payslip(empId);
-    if (!p) return { ok: false, error: 'No payroll line for that employee.' };
+  // The page content of one payslip. Shared by the single-file download and the archive, so both
+  // produce identical pages.
+  function payslipRows(p) {
     var money = function (n) { return '\u20b1' + Number(n || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); };
     var rows = [
       ['MEDIHEAL HOSPITAL', 15, 26],
@@ -332,8 +332,30 @@
     rows.push(['Attendance: ' + p.attendance.workedDays + ' days worked, ' + p.attendance.absenceDays + ' absent, ' +
       p.attendance.lateMinutes + ' min late, ' + p.attendance.overtimeHours + ' h overtime, ' + p.attendance.nightHours + ' h night', 9, 14]);
     rows.push(['Statutory tables effective ' + HIS.payrollCalc.CONFIG.effectiveFrom + '. Sample data, not a legal record.', 8, 14]);
-    HIS.pdf.save(rows, 'payslip-' + p.employee.id + '-' + p.runId + '.pdf');
+    return rows;
+  }
+
+  function payslipPdf(empId) {
+    var p = payslip(empId);
+    if (!p) return { ok: false, error: 'No payroll line for that employee.' };
+    HIS.pdf.save(payslipRows(p), 'payslip-' + p.employee.id + '-' + p.runId + '.pdf');
     return { ok: true };
+  }
+
+  // Every payslip for a run, in one archive. One download instead of eight, because Chrome throttles
+  // a burst of automatic downloads and silently drops the tail.
+  function payslipBatch() {
+    var run = current();
+    if (!run) return { ok: false, error: 'No payroll run to generate.' };
+    var files = [], skipped = [];
+    run.lines.forEach(function (l) {
+      var p = payslip(l.employeeId);
+      if (!p) { skipped.push(l.employeeId); return; }
+      files.push({ name: 'payslip-' + p.employee.id + '-' + p.runId + '.pdf', data: HIS.pdf.text(payslipRows(p)) });
+    });
+    if (!files.length) return { ok: false, error: 'No payslip could be produced for this run.' };
+    HIS.pdf.saveZip(files, 'payslips-' + run.periodId.replace(/\//g, '-') + '-v' + run.version + '.zip');
+    return { ok: true, count: files.length, skipped: skipped.length, runId: run.id };
   }
 
   function csv(runId) {
@@ -417,7 +439,7 @@
     create: create, recompute: recompute, review: review, approve: approve, release: release,
     lineFor: lineFor, blockedFor: blockedFor, totalsOf: totalsOf, staleEmployees: staleEmployees,
     wageProblems: wageProblems,
-    payslip: payslip, payslipPdf: payslipPdf, csv: csv,
+    payslip: payslip, payslipPdf: payslipPdf, payslipBatch: payslipBatch, csv: csv,
     thirteenth: thirteenth, annual: annual, reset: reset
   };
 })();
