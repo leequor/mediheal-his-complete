@@ -83,3 +83,63 @@ The payroll baseline was re-captured. The 2.145% diff is the data correction des
 * Overtime is paid at the statutory minimum; no CBA rates, no regional wage orders.
 * No BIR Form 2316, no alphalist, no loan amortisation, no bank file.
 * Still client-side, still browser storage, still no security boundary. `docs/AUTH.md` is unchanged.
+
+---
+
+## M10 acceptance audit (independent pass)
+
+A separate audit harness (`scripts/acceptance-audit.mjs`, 180 assertions) re-derives every figure
+from the published rule instead of reusing the M10 fixtures. It found four defects.
+
+### 1. Claim ids grew without bound and eventually collided — fixed
+
+`nextId()` stripped every non-digit from the previous id, so `CLM-2026-0005` became `20260005` and
+the next id was `CLM-2026-20260006`, then `CLM-2026-202620260007`. Within a handful of creates the
+number passed `Number.MAX_SAFE_INTEGER`, two claims received the same id, and `get()` returned
+whichever came first — so a transition could act on the wrong claim. The sequence is now the last
+hyphen-separated segment. Twelve consecutive creates are asserted to stay unique and short.
+
+### 2. A stale run could be released — fixed
+
+The live attendance check ran on `approved` only. Approve a clean run, reopen a timesheet, release:
+it went through. Both transitions now share `staleEmployees()`.
+
+### 3. A changed timesheet left an approved run with no recovery path — fixed
+
+`recompute()` refused `approved`, so once approval was given there was no way to pick up a
+correction — the error message pointed at a "correction run" that did not exist. `recompute()` now
+accepts an approved run, archives the approved version, clears the approval stamp, records
+`approval invalidated` in the history and returns the run to draft. A **released** run stays final,
+and the message now says so instead of promising something the demo cannot do.
+
+### 4. Two audit expectations were wrong, not the code
+
+Settlement was read from a copy captured before the transition, and `File appeal` was expected to
+land in `under-review` when the table says `Appeal requested`. Both corrected in the harness.
+
+### Regulatory re-check (November 2026)
+
+| Rule | Status | Source |
+|---|---|---|
+| SSS 15%, MSC ₱5,000–₱35,000, employee 5% | unchanged for 2026 | SSS Circular 2024-006 |
+| PhilHealth 5%, floor ₱10,000, ceiling ₱100,000 | unchanged for 2026 | PhilHealth Circular 2024-0031 |
+| Pag-IBIG 2% / 2%, fund salary cap ₱10,000 | unchanged | HDMF Circular 460 |
+| BIR Annex E tables | no superseding issuance found; still "2023 and onwards" | RR 11-2018 |
+| NCR minimum wage | **moved**: ₱718.00–₱755.00 a day | Wage Order NCR-28, 26 Sep 2026 |
+
+Open for professional review: the Pag-IBIG 1% tier, the absence of any wage-floor enforcement, the
+2026 holiday list, and the whole table set against the next issuance.
+
+### Acceptance results
+
+| Section | Result |
+|---|---|
+| Attendance → payroll (absence, leave, late, undertime, OT, ND, premiums, gates, versions) | 39/39 |
+| Statutory rules against an independently encoded Annex E | 14/14 |
+| Claims: 13 statuses × 17 actions, role gates, financial integrity | 27/27 |
+| Payslips: 7 cases, every line hand-checked | 99/99 |
+| Console errors | 0 |
+
+Full suite after the fixes: smoke clean · roles 132 · auth 25 · clinical 53 · finance 31 · portal 40
+· payroll 89 · claims 41 · ledger 46 · a11y 22 pages 0 violations · responsive 125 · visual all match
+· buttons 0 anomalies.
