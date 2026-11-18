@@ -3,7 +3,7 @@
     "width": 1440,
     "height": 1509,
     "bytes": 454859,
-    "sha256": "ce4ff4a53e33153ca2ac5a54c5bd7050ef5c3fb865cd2673512bf8b3795254ee"
+    "sha256": "82486c1b9e488c52a897979e4f213571a70a4f8b0027aa94d15d1b2e316c6aa2"
   },
   "appointment-confirmed": {
     "width": 1440,
@@ -86,14 +86,14 @@
   "payroll": {
     "width": 1440,
     "height": 1345,
-    "bytes": 461099,
-    "sha256": "3819da5f300af2d5760c3d7c446e690c0effbe39f9a560785f623473037339b6"
+    "bytes": 469056,
+    "sha256": "2906fa7e6de902376dab28648676ffd6ff5d87d12fef725260f045191dce38f6"
   },
   "personnel": {
     "width": 1440,
     "height": 1262,
-    "bytes": 430369,
-    "sha256": "f65e96d18c6096539955aacb4c5af43cd14ef959b6f0a806079e72e96ded426e"
+    "bytes": 436732,
+    "sha256": "08691ad0cc634d2ad3af1e11181f2a37c2dff2b526a0b614126b13527c5e7e96"
   },
   "pharmacy": {
     "width": 1440,

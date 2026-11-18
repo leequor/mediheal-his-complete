@@ -6,7 +6,11 @@
   var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
   var fmt = function (n) { return '\u20b1' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); };
   var fmt0 = function (n) { return '\u20b1' + n.toLocaleString('en-US'); };
-  var net = function (e) { return e.basic + e.allow - e.ded; };
+  // M8: net pay and every deduction come from HIS.payrollCalc, which applies the effective-dated
+  // statutory table. The stored `e.ded` is no longer read: it was a number nothing could verify.
+  var calc = function (e) { return HIS.payrollCalc.compute(e); };
+  var net = function (e) { return calc(e).net; };
+  var ded = function (e) { return calc(e).deductions; };
   var sum = function (a, f) { return a.reduce(function (t, e) { return t + f(e); }, 0); };
   var ALL_D = 'All departments', ALL_S = 'All payment statuses';
   var st = { q: '', dept: ALL_D, status: ALL_S, menu: '', modal: '', emp: null, sel: {} };
@@ -52,7 +56,7 @@
     h += "<button class='pr-btn pri' data-modal='proc' style='left:1110px;width:174px'>" + ic('send', 18, 1.8) + '<span>Process payments</span></button></div>';
     var M = [['users', 'Employees in payroll', String(E.length), paid.length + ' paid \u00b7 ' + (E.length - paid.length) + ' awaiting settlement'],
       ['wallet', 'Total earnings', fmt0(sum(E, function (e) { return e.basic + e.allow; })), 'Basic salary + allowances'],
-      ['receipt', 'Total deductions', fmt0(sum(E, function (e) { return e.ded; })), 'Tax + employee contributions'],
+      ['receipt', 'Total deductions', fmt0(sum(E, ded)), 'Tax + employee contributions'],
       ['banknote', 'Net payroll', fmt0(sum(E, net)), fmt0(sum(paid, net)) + ' paid this period']];
     M.forEach(function (m, i) { h += "<div class='pr-a pr-card pr-m' style='left:" + (68 + 331 * i) + "px;top:331px'><span class='ic'>" + ic(m[0], 24, 1.8) + "</span><span class='l'>" + m[1] + "</span><span class='n'>" + m[2] + "</span><span class='s'>" + m[3] + '</span></div>'; });
     return h;
@@ -78,7 +82,7 @@
     RCOL.forEach(function (c) { h += at('pr-h', c[1], 16.5, c[0], 'width:' + c[2] + 'px;text-align:right'); });
     h += at('pr-h', 1068, 16.5, 'PAYMENT STATUS') + at('pr-h', 1186, 16.5, 'ACTION', 'width:94px;text-align:right') + '</div>';
     v.forEach(function (e, i) {
-      var cells = [[560, 112, e.basic, ''], [680, 110, e.allow, ''], [798, 112, e.ded, ''], [918, 126, net(e), 'net']];
+      var cells = [[560, 112, e.basic, ''], [680, 110, e.allow, ''], [798, 112, ded(e), ''], [918, 126, net(e), 'net']];
       h += "<div class='pr-a pr-r' style='top:" + (196 + 64 * i) + "px'>" + cb(!!st.sel[e.id], 24, 24, e.id);
       h += "<span class='nm'>" + esc(e.name) + "</span><span class='mt'>" + e.id + ' \u00b7 ' + esc(e.role) + "</span><span class='dp'>" + esc(e.dept) + "</span><span class='dh'>" + e.days + ' days \u00b7 ' + e.hours + ' h</span>';
       cells.forEach(function (c) { h += "<span class='am " + c[3] + "' style='left:" + c[0] + 'px;width:' + c[1] + "px'>" + fmt(c[2]) + '</span>'; });
@@ -88,12 +92,12 @@
     if (!v.length) h += "<div class='pr-a pr-none'>No employees match</div>";
     h += "<div class='pr-a pr-tot'><span class='tl'>Pay period total \u00b7 " + v.length + ' employee' + (v.length === 1 ? '' : 's') + '</span>';
     h += "<span class='dd'>" + sum(v, function (e) { return e.days; }) + ' days \u00b7 ' + sum(v, function (e) { return e.hours; }) + ' h</span>';
-    [[560, 112, function (e) { return e.basic; }], [680, 110, function (e) { return e.allow; }], [798, 112, function (e) { return e.ded; }], [918, 126, net]].forEach(function (c, i) {
+    [[560, 112, function (e) { return e.basic; }], [680, 110, function (e) { return e.allow; }], [798, 112, ded], [918, 126, net]].forEach(function (c, i) {
       h += "<span class='am" + (i === 3 ? ' net' : '') + "' style='left:" + c[0] + 'px;width:' + c[1] + "px'>" + fmt(sum(v, c[2])) + '</span>';
     });
     h += '</div>';
     h += "<div class='pr-a pr-ft'>" + at('pr-ex', 24, 25.5, 'Showing ' + (v.length ? '1\u2013' + v.length : '0') + ' of ' + E.length + ' employees');
-    h += at('pr-meth', 504, 25, ic('shield', 16, 1.8).replace('<svg', "<svg style='color:#6f8890'")) + at('pr-meth', 527, 26.5, 'Deductions include withholding tax, SSS, PhilHealth and Pag-IBIG.');
+    h += at('pr-meth', 504, 25, ic('shield', 16, 1.8).replace('<svg', "<svg style='color:#6f8890'")) + at('pr-meth', 527, 26.5, 'Statutory tables effective ' + HIS.payrollCalc.CONFIG.effectiveFrom + ' \u00b7 verify before use.');
     h += "<div class='pr-pg'>Page 1 of 1</div></div></section>";
     return h;
   }
@@ -107,10 +111,12 @@
   }
 
   function breakdown(e) {
-    var t, s, p, g;
-    if (e.tax != null) { t = e.tax; s = e.sss; p = e.phil; g = e.pag; }
-    else { p = Math.round(e.basic * 0.025); s = Math.min(1350, Math.round(e.basic * 0.0225)); g = 750; t = e.ded - p - s - g; }
-    return 'Withholding tax ' + fmt0(t) + ' \u00b7 SSS ' + fmt0(s) + ' \u00b7 PhilHealth ' + fmt0(p) + ' \u00b7 Pag-IBIG ' + fmt0(g);
+    // M8: this used to reconstruct the stored total with invented rates and then define tax as
+    // whatever was left over — so it could never disagree with the number it was checking. It now
+    // prints the calculation that produced the number.
+    var c = calc(e);
+    return 'Withholding tax ' + fmt0(c.tax) + ' \u00b7 SSS ' + fmt0(c.sss) + ' \u00b7 PhilHealth ' +
+      fmt0(c.philhealth) + ' \u00b7 Pag-IBIG ' + fmt0(c.pagibig);
   }
 
   function modalDef() {
@@ -123,7 +129,7 @@
       f: [['Employees', E.length + ' payslips to generate'], ['Total net pay', fmt(sum(E, net))], ['Pay period', P.period], ['Delivery', 'Employee portal'], ['Includes', 'Basic pay, allowances, tax, SSS, PhilHealth and Pag-IBIG deductions']] };
     var e = st.emp;
     return { y: 388, h: 568, t: 'Payslip', s: e.name + ' \u00b7 ' + e.id + ' \u00b7 ' + e.role + ' \u00b7 ' + P.period, ok: 'Download PDF', c: 'Close', slip: 1,
-      f: [['Basic salary', fmt(e.basic)], ['Allowances', fmt(e.allow)], ['Deductions', fmt(e.ded)], ['Net pay', fmt(net(e))], ['Payment', e.status + ' \u00b7 ' + P.method + ' \u00b7 ' + P.payDate], ['Deduction breakdown', breakdown(e)]] };
+      f: [['Basic salary', fmt(e.basic)], ['Allowances', fmt(e.allow)], ['Deductions', fmt(ded(e))], ['Net pay', fmt(net(e))], ['Payment', e.status + ' \u00b7 ' + P.method + ' \u00b7 ' + P.payDate], ['Deduction breakdown', breakdown(e)]] };
   }
 
   function modal() {
@@ -145,7 +151,7 @@
 
   function csv() {
     var rows = [['Employee', 'ID', 'Role', 'Department', 'Days', 'Hours', 'Basic salary', 'Allowances', 'Deductions', 'Net pay', 'Status']];
-    P.emps.forEach(function (e) { rows.push([e.name, e.id, e.role, e.dept, e.days, e.hours, e.basic, e.allow, e.ded, net(e), e.status]); });
+    P.emps.forEach(function (e) { rows.push([e.name, e.id, e.role, e.dept, e.days, e.hours, e.basic, e.allow, ded(e), net(e), e.status]); });
     var t = rows.map(function (r) { return r.map(function (c) { return '"' + String(c).replace(/"/g, '""') + '"'; }).join(','); }).join('\r\n');
     var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([t], { type: 'text/csv' })); a.download = 'payroll-aug-16-31-2026.csv';
     document.body.appendChild(a); a.click(); a.remove();
@@ -178,7 +184,11 @@
       if (k === 'proc') {
         var n = P.emps.filter(function (x) { return x.status !== 'Paid'; });
         if (!n.length) tip('Nothing to process: all 8 employees are paid');
-        else { n.forEach(function (x) { x.status = 'Paid'; }); tip(n.length + ' payments processed (' + fmt(sum(n, net)) + ')'); }
+        else { n.forEach(function (x) { x.status = 'Paid'; });
+        if (window.HIS.audit) HIS.audit.append({ who: HIS.rbac.person().name, role: HIS.rbac.current().label,
+          what: 'Payroll released \u2014 ' + n.length + ' employees, net ' + fmt(sum(n, net)) + ' for ' + P.period,
+          entity: 'payroll:' + P.period, before: 'Processing', after: 'Paid' });
+        tip(n.length + ' payments processed (' + fmt(sum(n, net)) + ')'); }
       } else if (k === 'gen') tip(P.emps.length + ' payslips generated and sent to the employee portal');
       else if (k === 'export') { csv(); tip('Payroll exported as CSV (Excel format is a Figma label)'); }
       else tip('Payslip PDF prepared for ' + st.emp.name);
