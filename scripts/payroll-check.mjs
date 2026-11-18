@@ -224,12 +224,24 @@ CASES.forEach((c, i) => {
     a: HIS.payrollCalc.annualize({ monthlyBasic: 60000, allowances: [{ label: 'A', amount: 8000, taxable: true }] },
       { months: 12, benefits: 60000, taxWithheld: 100000 }),
     aExact: HIS.payrollCalc.annualize({ monthlyBasic: 60000, allowances: [{ label: 'A', amount: 8000, taxable: true }] },
-      { months: 12, benefits: 60000, taxWithheld: 97420 })
+      { months: 12, benefits: 60000, taxWithheld: 97420 }),
+    // 13th month 60,000 + a 50,000 performance bonus: 110,000 of benefits, 90,000 exempt.
+    bonus: HIS.payrollCalc.annualize({ monthlyBasic: 60000, allowances: [{ label: 'A', amount: 8000, taxable: true }] },
+      { months: 12, benefits: 110000, taxWithheld: 0 }),
+    // A de minimis rice allowance is paid but not taxed.
+    deMinimis: HIS.payrollCalc.compute({
+      monthlyBasic: 26000,
+      allowances: [{ label: 'Professional', amount: 1000, taxable: true }, { label: 'Rice', amount: 1500, taxable: false }]
+    }, { frequency: 'semi-monthly', attendance: HIS.payrollCalc.emptySummary(11) })
   }));
   ok('13th month is basic earned / 12', near(r.t8.amount, 40000), r.t8.amount);
   ok('13th month ignores allowances by construction', near(r.t8.basicEarned, 480000), r.t8.basicEarned);
   ok('13th month up to 90,000 is tax-exempt', near(r.t8.taxableExcess, 0), r.t8.taxableExcess);
   ok('13th month above 90,000 is taxable', near(r.t12.taxableExcess, 60000), r.t12.taxableExcess);
+  // A bonus is "other benefit" for tax purposes and shares the same 90,000 ceiling.
+  ok('a bonus is pooled with the 13th month against the 90,000 exemption',
+    near(r.bonus.benefitsExempt, 90000) && near(r.bonus.benefitsTaxable, 20000),
+    r.bonus.benefitsExempt + ' exempt / ' + r.bonus.benefitsTaxable + ' taxable');
   ok('annual taxable compensation = regular - contributions + taxable benefits',
     near(r.a.taxableCompensation, 774600), r.a.taxableCompensation);
   ok('annual tax due on 774,600 is 97,420', near(r.a.annualDue, 97420), r.a.annualDue);
@@ -237,6 +249,24 @@ CASES.forEach((c, i) => {
     near(r.a.adjustment, -2580) && r.a.direction === 'refund', r.a.adjustment);
   ok('withholding exactly the annual due reconciles to zero',
     near(r.aExact.adjustment, 0) && r.aExact.direction === 'even', r.aExact.adjustment);
+}
+
+// ---------------------------------------------------------------- 5b. allowances: paid versus taxable
+{
+  const r = await page.evaluate(() => {
+    const e = HIS.payrollCalc.compute({
+      monthlyBasic: 26000,
+      allowances: [{ label: 'Professional', amount: 1000, taxable: true }, { label: 'Rice', amount: 1500, taxable: false }]
+    }, { frequency: 'semi-monthly', attendance: HIS.payrollCalc.emptySummary(11) });
+    return e;
+  });
+  // Period: basic 13,000 + allowances 1,250 (500 taxable + 750 de minimis) = 14,250.
+  // SSS 1,300/2 = 650, PhilHealth 650/2 = 325, Pag-IBIG 200/2 = 100 -> 1,075.
+  // Taxable = 14,250 - 1,075 - 750 = 12,425 -> 937.50 + 20% x (12,425 - 16,667) is negative, so
+  // it stays in the second bracket: 15% x (12,425 - 10,417) = 301.20.
+  ok('a de minimis allowance is paid in gross', near(r.gross, 14250), r.gross);
+  ok('a de minimis allowance is excluded from taxable compensation', near(r.taxable, 12425), r.taxable);
+  ok('the de minimis exclusion reduces the withholding to 301.20', near(r.tax, 301.20), r.tax);
 }
 
 // ---------------------------------------------------------------- 6. the run and its gates

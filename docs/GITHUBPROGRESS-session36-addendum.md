@@ -57,8 +57,8 @@ dropped its `width`, collapsing the card to 0px.
 
 | Suite | Result |
 |---|---|
-| `scripts/payroll-check.mjs` | 83 passed, 0 failed |
-| `scripts/claims-check.mjs` | 38 passed, 0 failed |
+| `scripts/payroll-check.mjs` | 89 passed, 0 failed |
+| `scripts/claims-check.mjs` | 41 passed, 0 failed |
 | `scripts/ledger-check.mjs` | 46 passed, 0 failed |
 | `scripts/smoke.mjs` | all pages clean |
 | `scripts/roles-check.mjs` | 132 checks, allowlists complete |
