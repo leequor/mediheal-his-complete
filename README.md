@@ -1,32 +1,33 @@
 # MediHeal HIS
 
-Hospital Information System UI, converted from the Figma file "Overview (Dashboard, Departments)".
+Hospital Information System, built from the Figma file "Overview (Dashboard, Departments)" as a
+static site: plain HTML, CSS and vanilla JavaScript, no build step.
 
-Live site: https://leequor.github.io/mediheal-his/
+**Live site:** https://leequor.github.io/mediheal-his/ — serves an **older build**. Nothing from M5
+onward has been deployed, and `main` has not moved since `fd5bf9f`.
 
-**AI agents: read [`AGENTS.md`](AGENTS.md) and [`docs/START-HERE.md`](docs/START-HERE.md) first.**
-The visual contract is [`docs/DESIGN-LOCK.md`](docs/DESIGN-LOCK.md); the record shapes are in
-[`docs/DATA-MODEL.md`](docs/DATA-MODEL.md); the authentication model and its limits are in
-[`docs/AUTH.md`](docs/AUTH.md).
+**Start here:** [`docs/PROJECT-STATUS.md`](docs/PROJECT-STATUS.md) describes what actually works.
+[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) explains how it fits together.
+[`docs/FEATURE-MATRIX.md`](docs/FEATURE-MATRIX.md) classifies every capability.
 
-Plain HTML, CSS and vanilla JS. No build step, so it runs on GitHub Pages as-is. Layout is a fixed 1440px stage that mirrors the Figma frames.
+## What it is
 
-## What it does
+A desktop-first demonstration of a Philippine hospital information system: **27 pages, 14 roles**,
+one authoritative patient record, and a single money chain from a clinical service to an invoice.
 
-24 pages across 14 signed-in roles. Each account signs in with its own email and resolves its own
-role, navigation and dashboard — there is no role picker.
-
-| Area | State |
+| Area | What works |
 |---|---|
-| Authentication | demo email + password against a browser-local account table (not security — see `docs/AUTH.md`) |
-| Roles | 14, each with its own dashboard, navigation and page allowlist |
-| Patients | one authoritative registry; the staff console and the patient portal read the same record |
-| Clinical | consultation, treatment, nursing, laboratory (order → collect → process → result → validate), pharmacy (batch stock, dispensing, expiry) |
-| Finance | invoices, a transaction ledger, coverage and discounts, PhilHealth / HMO payer records, reports |
+| Authentication | demo email + password against a browser-local account table; per-account role, navigation and dashboard (not security — see `docs/AUTH.md`) |
+| Patients | one registry read by the staff console, billing and the patient portal |
+| Clinical | consultation, treatment, nursing, laboratory (order → collect → process → result → validate), pharmacy (batch stock, dispensing, expiry, returns) |
+| Inpatient | admissions, 172-bed board, transfers, daily room-and-board accrual, discharge |
+| Revenue | charge master, unbilled queue, invoices, payments, refunds, coverage and discounts |
+| Claims | 13-state lifecycle with partial approval and capped settlement |
 | HR | personnel, attendance, payroll with effective-dated statutory tables |
+| Portal | six patient views, own records only, released results only |
 
-Everything is synthetic and lives in the browser. It does not synchronise between devices and it is
-not a hospital database.
+Everything is synthetic and lives in `localStorage`. It does not synchronise between devices, and it
+is not a hospital database. Read `docs/PROJECT-STATUS.md` §3 before treating any figure as real.
 
 ## Run locally
 
@@ -34,39 +35,46 @@ not a hospital database.
 python3 -m http.server 8000
 ```
 
-Then open http://localhost:8000
+Then open http://localhost:8000 and sign in with a demo account (`index.html` lists them).
 
 ## Verify
 
-Every claim in the documentation is produced by a script in `scripts/`. Each needs `playwright-core`
-(set `PW=/abs/path/to/playwright-core/index.js` if it is not local) and a running server on :8788.
+Every claim in the documentation is produced by a script in `scripts/`. They need `playwright-core`;
+set `PW` to its `index.js` if it is not resolvable from the repository root.
 
 ```
-node scripts/smoke.mjs            # every page: console errors, overflow, clickable controls
-node scripts/visual-check.mjs --check   # pixel diff of all pages against qa/baseline
-node scripts/auth-check.mjs       # sign-in, session, expiry, reset, deactivation
-node scripts/roles-check.mjs      # every role reaches its allowlist and is blocked elsewhere
-node scripts/portal-check.mjs     # patient identity, scoping, guardians, documents
-node scripts/clinical-check.mjs   # laboratory and pharmacy rules, and their integration
-node scripts/finance-check.mjs    # one money chain across Billing, Reports and the portal
-node scripts/payroll-check.mjs    # payroll arithmetic against hand-calculated figures
-node scripts/claims-check.mjs     # claim state machine, role gates, settlement boundary
-node scripts/ledger-check.mjs     # payments, refunds, coverage, idempotency, invariants
-node scripts/acceptance-audit.mjs # independent M10 acceptance: attendance, statutory, claims, payslips
-node scripts/m10-1-audit.mjs      # Pag-IBIG tiers, wage floor, corrections, negative balances
-node scripts/m10-2-audit.mjs      # wage conversion factors, classifications, boundary cases
-node scripts/m10-3-audit.mjs      # divisor policy per purpose, eight compensation types, regional orders
-node scripts/m10-4-audit.mjs      # hour classification, absence basis, Article 83 applicability
-node scripts/charges-check.mjs    # clinical activity becomes a billable charge, once
-node scripts/mobile-audit.mjs     # rendered text size and touch targets at 5 widths
+export PW=/abs/path/to/playwright-core/index.js
+node scripts/smoke.mjs                  # 27 pages: console errors, overflow, clickable controls
+node scripts/visual-check.mjs --check   # pixel diff of all pages against qa/baseline @1440
+node scripts/visual-check.mjs --width 1366 --check
+node scripts/auth-check.mjs             # sign-in, session, expiry, reset, deactivation
+node scripts/roles-check.mjs            # every role reaches its allowlist and is blocked elsewhere
+node scripts/portal-check.mjs           # patient identity, scoping, guardians, documents
+node scripts/clinical-check.mjs         # laboratory and pharmacy rules and their integration
+node scripts/finance-check.mjs          # one money chain across Billing, Reports and the portal
+node scripts/charges-check.mjs          # clinical activity becomes a charge, once
+node scripts/revenue-check.mjs          # charge master, consultation billing, ADT, queue, returns
+node scripts/payroll-check.mjs          # payroll arithmetic against hand-calculated figures
+node scripts/claims-check.mjs           # claim state machine, role gates, settlement boundary
+node scripts/ledger-check.mjs           # payments, refunds, coverage, idempotency, invariants
+node scripts/acceptance-audit.mjs       # independent M10 acceptance
+node scripts/m10-1-audit.mjs            # Pag-IBIG tiers, wage floor, corrections
+node scripts/m10-2-audit.mjs            # wage conversion factors and boundaries
+node scripts/m10-3-audit.mjs            # divisor policy per purpose, regional orders
+node scripts/m10-4-audit.mjs            # hour classification, absence basis, Article 83
+node scripts/a11y-check.mjs             # axe audit, 26 pages
+node scripts/responsive-check.mjs       # 27 pages × 5 widths, no overflow
+node scripts/buttons.mjs                # dead-control sweep
+node scripts/mobile-audit.mjs           # rendered text size and touch targets at 5 widths
 ```
+
+Run two or three at a time: a single shell loop over all of them exceeds the default timeout.
 
 ## Images
 
-Logo, background texture and avatar must be exported from Figma and added to `assets/img/`. See `assets/img/README.md`.
+Logo, background texture and avatar are expected in `assets/img/`. See `assets/img/README.md`.
 
-## Conversion status
+## Branches
 
-See the table in `docs/HANDOFF.md`. Done (rebuilt from Figma measurements): sidebar and header, Dashboard, Registration, Appointments. Everything else is a stub that names its Figma node.
-
-Data lives in memory, so it resets on refresh.
+- `dev/autonomous-milestones` — development. All work happens here.
+- `main` — frozen at `fd5bf9f`. Not merged, not deployed.

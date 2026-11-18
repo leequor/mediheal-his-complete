@@ -52,7 +52,12 @@ before M7.
 | `mh_payroll_runs` | `{ runs[] }` | Payroll |
 | `mh_payroll_corrections` | `{ corrections[] }` | Payroll → corrections |
 | `mh_claims` | `{ claims[], version, seededAt }` | Claims |
-| `mh_charges` | `{ charges[], version }` | Laboratory, Pharmacy |
+| `mh_charges` | `{ charges[], version }` | Laboratory, Pharmacy, Consultation, Admissions |
+| `mh_invoices` | `Invoice[]` | seeded from `data-billing.js`; Billing → new invoice |
+| `mh_tariffs` | `Tariff[]` | seeded charge master; Administration |
+| `mh_encounters` | `Encounter[]` | Consultation, Laboratory, Pharmacy, Admissions |
+| `mh_admissions` | `Admission[]` | Admissions |
+| `mh_bed_state` | `{ [bedId]: {status, since, note} }` | Admissions → bed state |
 
 `HIS.store.reset()` deliberately leaves `mh_regs_extra` and `mh_appts_extra` alone: they hold work
 the owner entered by hand.
@@ -218,14 +223,65 @@ factor (261 today). `wage.locality` is used where an order splits by area rather
 Region VII does. `wage.exemption` is only present when a lawful reason to sit below the floor exists,
 and it must carry a reference.
 
-### Charge (M11)
+### Charge (M11, reshaped in M12)
 ```
-{ id:'CH-0001', key, invoiceId, patientId, source, sourceLabel, sourceId, code,
-  description, qty, unitPrice, amount, at, by, status:'active'|'void',
+{ id:'CH-0001', key, patientId, encounterId, invoiceId,
+  billingStatus:'assigned'|'unbilled', unbilledReason,
+  source, sourceLabel, sourceId, code, description, qty, unitPrice, amount,
+  priceSnapshot:{ unitPrice, tariffCode, effectiveFrom, capturedAt },
+  at, by, status:'active'|'void',
+  assignedAt, assignedBy, assignmentReason,
+  unassignedAt, unassignedBy,
   voidedAt, voidedBy, voidReason }
 ```
 `key` is `source|sourceId|code` and is the duplicate guard. A charge is a price, not money: it raises
-`ledger.invoiceAmount(bill)` and never `collected`. See `docs/CHARGES.md`.
+`ledger.invoiceAmount(bill)` and never `collected`.
+
+M12 changes the association rule. `invoiceId` comes from the charge's **encounter**, never from a
+search for "the oldest invoice with a balance". A charge whose encounter has no invoice is stored
+with `billingStatus:'unbilled'` and no `invoiceId`, and waits in the queue until `charges.assign()`
+puts it on one — with a reason and an audit row. `priceSnapshot` freezes the price the charge was
+raised at, so a later tariff change cannot rewrite it. See `docs/CHARGES.md`.
+
+### Tariff (M12)
+```
+{ code:'CONS-CARD', category:'consultation'|'room'|'nursing'|'procedure',
+  description, price, unit, effectiveFrom:'YYYY-MM-DD', proposed?, addedBy, addedAt }
+```
+Several rows may share a `code`; `priceFor(code, date)` returns the latest one whose `effectiveFrom`
+is on or before that date. Nothing is deleted — a superseded price keeps its history.
+
+### Encounter (M12)
+```
+{ id:'ENC-0001', patientId, kind:'outpatient'|'inpatient', status:'open'|'completed'|'cancelled',
+  dept, provider, admissionId, invoiceId, appointmentId,
+  openedAt, closedAt, disposition, notes, createdBy, closedBy, cancelReason }
+```
+The episode a charge belongs to. One open encounter per patient; `openFor(patientId)` is what a
+clinical screen resolves before raising an order, so an order is never orphaned. `invoiceId` is the
+link that turns an episode into a bill; without it, its charges stay unbilled.
+
+### Admission (M12)
+```
+{ id:'ADM-0001', patientId, encounterId, status:'active'|'discharged',
+  admittedAt, attending, dept, ward, bedId, bedLabel, bedType,
+  diagnosis, reason, payer:{type,reference},
+  transfers:[{ at, from:{bedId,bedLabel,bedType,ward}, to:{...}, by, reason }],
+  legacyBilledThrough, discharge:{at,by,disposition,summary,note},
+  dischargeHistory:[...], createdBy, createdAt }
+```
+Bed occupancy is **derived**: a bed is occupied when an active admission names it, so no second
+`occupied` flag can disagree with the record. `mh_bed_state` holds only the states that are not a
+patient (cleaning, maintenance). `legacyBilledThrough` marks an episode whose room and board is
+already inside its invoice's opening amount, so accrual does not bill those nights twice.
+
+### Bed (M12, generated, not stored)
+```
+{ id:'BED-C-204', label:'C-204', ward:'Cardiology Ward', dept:'Cardiology', type:'Private' }
+```
+172 beds across six wards, generated from the explicit `WARDS` configuration in `admissions.js`.
+The split per ward is stated rather than calculated so the two beds the patient registry already
+names (`C-204`, `N-112`) keep the type their invoices imply.
 
 ### Employer profile (M10.4)
 ```
@@ -268,6 +324,14 @@ so a browser that already holds records is never overwritten.
 The one migration so far is the M7 ledger seed: invoices that already carried a `paid` figure got a
 single `seeded: true` opening transaction for exactly that amount, so on-screen totals did not move
 while their provenance changed from "a number on the invoice" to "a row in the ledger".
+
+M12 adds a second: the invoice table moved from a literal array in `data-billing.js` to
+`mh_invoices`. On first read the four seeded invoices are written to the store unchanged, so every
+figure on every screen is the same number it was; the difference is that an invoice can now be
+created. `HIS.billing.bills` remains a property that returns the array, so no reader changed.
+
+Neither migration deletes anything. A browser holding the old keys keeps working: an absent key
+seeds, a present key is read as-is.
 
 ---
 

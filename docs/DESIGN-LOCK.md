@@ -452,3 +452,67 @@ overflow, no console errors.
 
 The correction detail dialog sizes to its content (`300 + 52 × employees`, capped at 560) rather
 than using one fixed height, because a one-line correction in a 560px box looked like an error.
+
+---
+
+## 15. M12 — Admissions and Charges, and two intended changes to existing pages
+
+### 15.1 Two new screens (additions, not in Figma)
+
+`admissions.html` and `charges.html` have no Figma frame. They use the admin pattern established in
+M2 and reused by Claims in M10 — nothing new is introduced:
+
+| Element | Reused from |
+|---|---|
+| Title / description | `.ad-title` Outfit 700 36/45 at (68,115); `.ad-sub` Inter 400 14/20 at (68,166) |
+| KPI strip | `.ad-kpis` / `.ad-kpi`, 4 × 1fr, 24px gap, radius 14, border `--line` |
+| Card + toolbar + table | `.ad-card`, `.ad-bar`, `.ad-search`, `.ad-sel`, `.ad-btn`, `.ad-th` / `.ad-tr`, `.ad-foot`, `.ad-note` |
+| Action modal | `.ac-bg` / `.ac-m` 620px, `.ac-f`, `.ac-row`, `.ac-err`, `.ac-a` — the same shell as the Accounts editor and the Laboratory dialogs |
+| Queue switch | `.ad-seg`, added in M6 for the Pharmacy tabs |
+
+New rules, all composed from existing tokens (no new colour, radius, shadow or type size):
+
+| Rule | Purpose | Values |
+|---|---|---|
+| `.ad-g-adm`, `.ad-g-chg`, `.ad-g-enc` | grid tracks for the three new tables | existing `--line` row separators, existing 11px uppercase headers |
+| `.bd-grid` | bed board | `repeat(auto-fill,minmax(102px,1fr))`, 10px gap, 18/20px padding |
+| `.bd-bed` | one bed tile | 64px tall, radius 10, border `--line`, 13px label + 11px meta — the same two-line shape as `.ad-who` |
+| `.bd-bed.occupied` | occupied | `#e8f4fb` on `#9cc4dd`, the existing in-use tint from `.ad-btn:hover` |
+| `.bd-bed.cleaning` | cleaning | `#fff6ee` on `#f0c2a0`, the existing `--in-fg` family |
+| `.bd-bed.maintenance` | maintenance | `#f3f5f7` on `#d6dde3`, neutral |
+| `.bd-legend`, `.bd-dot` | state key | 10px swatches, same fills |
+| `.ad-sum` | money strip inside a modal | `#f6fafd` on `#e3edf3`, the `.ad-note` treatment |
+
+Colour is never the only carrier of state: every tile also prints its state or its occupant, and the
+legend spells the states out.
+
+### 15.2 Intended change — Laboratory row actions
+
+Cancelling an order is a real capability with a billing consequence, so every non-validated row now
+carries a second, ghost-styled action. The action column was widened from 134px to 232px and the Test
+column narrowed to keep every row on one line.
+
+Measured diff against the pre-M12 baseline: **4.744%, 16,173 pixels ≥128, bounding box
+(187,560) 1164×408** — the table body only. No other region moved.
+
+### 15.3 Intended change — Reports
+
+Reports gained a second KPI strip (unbilled charges, beds occupied, beds available, active
+admissions) and a "Unbilled charges by source" card, because the page previously reported revenue
+without reporting revenue that had not reached a bill. Everything below the first strip therefore
+moved down.
+
+Measured diff against the pre-M12 baseline: **34.746%, bounding box (0,170) 1440×1353**. The page is
+an addition (there is no Figma frame for Reports), so this is a content change, not a design change.
+
+### 15.4 Baselines
+
+Re-captured for all 27 pages at 1440 and, for the first time, at 1366. Every other page measured
+**0.000%** against its pre-M12 baseline before the re-capture, so no existing page moved.
+
+### 15.5 Known limitation, shared with every admin table
+
+Below 1440px the responsive layer turns `.ad-tr` into a stacked block with no field captions. This
+applies identically to Laboratory, Pharmacy, Claims, Accounts, Audit, Reports, Admissions and
+Charges. The desktop layout is the design contract; adding per-field captions to one table and not
+the others would be a new inconsistency, so it is recorded here rather than half-fixed.
