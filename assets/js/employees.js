@@ -23,10 +23,16 @@
 // DEMO DATA. Every person below is synthetic. Salary bands are plausible for a 60-bed private
 // hospital in Metro Manila; they are not market data.
 (function () {
-  // `wage` feeds the minimum-wage check (assets/js/wage-floor.js): region and sector select the
-  // applicable order, `hoursPerDay` sets the full-time equivalent so a part-timer is compared on a
-  // like-for-like basis, and `exemption` (when present) records a lawful reason to sit below the
-  // floor. `dailyRate` is only used for employees paid by the day.
+  // CLASSIFICATION, for the minimum-wage check (assets/js/wage-floor.js).
+  //
+  // `payBasis` is stated, never inferred from the salary: 'monthly', 'daily' or 'hourly'. It
+  // selects the NWPC annual factor — 365 for monthly-paid, 393.50 / 313 / 310 / 261 / 258 for
+  // daily-paid depending on the schedule. `schedule` records the normal day and whether rest days
+  // and special days are paid, because those decide the factor. `wage.region` and `wage.sector`
+  // select the wage order; `wage.exemption` (when present) records a lawful reason to sit below it.
+  //
+  // A daily-paid employee carries `dailyRate` instead of `monthlyBasic`; an hourly-paid one carries
+  // `hourlyRate`. `equivalentMonthly()` converts either to a monthly figure for payroll.
   var EMPLOYEES = [
     {
       id: 'EMP-001', name: 'Dr. Elsie Chen', role: 'Chief Physician', dept: 'Administration',
@@ -38,9 +44,11 @@
       ],
       shift: { start: '08:00', end: '17:00', breakMinutes: 60 },
       restDays: [0, 6],
+      payBasis: 'monthly',
+      schedule: { daysPerWeek: 5, hoursPerDay: 8, paidRestDays: true, paidSpecialDays: true },
       wage: {
-        region: 'NCR', sector: 'non-agriculture', establishment: 'hospital',
-        classification: 'regular', hoursPerDay: 8, daysPerWeek: 5
+        region: 'NCR', sector: 'non-agriculture', category: 'hospital',
+        effectiveFrom: '2026-01-01'
       },
       tin: '123-456-789-000', sss: '34-1234567-8', philhealth: '12-345678901-2', pagibig: '1234-5678-9012'
     },
@@ -54,9 +62,11 @@
       ],
       shift: { start: '08:00', end: '17:00', breakMinutes: 60 },
       restDays: [0, 6],
+      payBasis: 'monthly',
+      schedule: { daysPerWeek: 5, hoursPerDay: 8, paidRestDays: true, paidSpecialDays: true },
       wage: {
-        region: 'NCR', sector: 'non-agriculture', establishment: 'hospital',
-        classification: 'regular', hoursPerDay: 8, daysPerWeek: 5
+        region: 'NCR', sector: 'non-agriculture', category: 'hospital',
+        effectiveFrom: '2026-01-01'
       },
       tin: '123-456-789-001', sss: '34-1234568-9', philhealth: '12-345678902-3', pagibig: '1234-5678-9013'
     },
@@ -70,9 +80,11 @@
       ],
       shift: { start: '08:00', end: '17:00', breakMinutes: 60 },
       restDays: [0, 6],
+      payBasis: 'monthly',
+      schedule: { daysPerWeek: 5, hoursPerDay: 8, paidRestDays: true, paidSpecialDays: true },
       wage: {
-        region: 'NCR', sector: 'non-agriculture', establishment: 'hospital',
-        classification: 'regular', hoursPerDay: 8, daysPerWeek: 5
+        region: 'NCR', sector: 'non-agriculture', category: 'hospital',
+        effectiveFrom: '2026-01-01'
       },
       tin: '123-456-789-002', sss: '34-1234569-0', philhealth: '12-345678903-4', pagibig: '1234-5678-9014'
     },
@@ -86,9 +98,11 @@
       ],
       shift: { start: '08:00', end: '17:00', breakMinutes: 60 },
       restDays: [0, 6],
+      payBasis: 'monthly',
+      schedule: { daysPerWeek: 5, hoursPerDay: 8, paidRestDays: true, paidSpecialDays: true },
       wage: {
-        region: 'NCR', sector: 'non-agriculture', establishment: 'hospital',
-        classification: 'regular', hoursPerDay: 8, daysPerWeek: 5
+        region: 'NCR', sector: 'non-agriculture', category: 'hospital',
+        effectiveFrom: '2026-01-01'
       },
       tin: '123-456-789-003', sss: '34-1234570-3', philhealth: '12-345678904-5', pagibig: '1234-5678-9015'
     },
@@ -102,9 +116,11 @@
       ],
       shift: { start: '07:00', end: '15:00', breakMinutes: 0 },
       restDays: [0, 6],
+      payBasis: 'monthly',
+      schedule: { daysPerWeek: 5, hoursPerDay: 8, paidRestDays: true, paidSpecialDays: true },
       wage: {
-        region: 'NCR', sector: 'non-agriculture', establishment: 'hospital',
-        classification: 'regular', hoursPerDay: 8, daysPerWeek: 5
+        region: 'NCR', sector: 'non-agriculture', category: 'hospital',
+        effectiveFrom: '2026-01-01'
       },
       tin: '123-456-789-004', sss: '34-1234571-4', philhealth: '12-345678905-6', pagibig: '1234-5678-9016'
     },
@@ -118,9 +134,11 @@
       ],
       shift: { start: '08:00', end: '17:00', breakMinutes: 60 },
       restDays: [0, 6],
+      payBasis: 'monthly',
+      schedule: { daysPerWeek: 5, hoursPerDay: 8, paidRestDays: true, paidSpecialDays: true },
       wage: {
-        region: 'NCR', sector: 'non-agriculture', establishment: 'hospital',
-        classification: 'regular', hoursPerDay: 8, daysPerWeek: 5
+        region: 'NCR', sector: 'non-agriculture', category: 'hospital',
+        effectiveFrom: '2026-01-01'
       },
       tin: '123-456-789-005', sss: '34-1234572-5', philhealth: '12-345678906-7', pagibig: '1234-5678-9017'
     },
@@ -134,9 +152,11 @@
       ],
       shift: { start: '09:00', end: '18:00', breakMinutes: 60 },
       restDays: [0, 6],
+      payBasis: 'monthly',
+      schedule: { daysPerWeek: 5, hoursPerDay: 8, paidRestDays: true, paidSpecialDays: true },
       wage: {
-        region: 'NCR', sector: 'non-agriculture', establishment: 'hospital',
-        classification: 'regular', hoursPerDay: 8, daysPerWeek: 5
+        region: 'NCR', sector: 'non-agriculture', category: 'hospital',
+        effectiveFrom: '2026-01-01'
       },
       tin: '123-456-789-006', sss: '34-1234573-6', philhealth: '12-345678907-8', pagibig: '1234-5678-9018'
     },
@@ -150,9 +170,11 @@
       ],
       shift: { start: '08:00', end: '17:00', breakMinutes: 60 },
       restDays: [0, 6],
+      payBasis: 'monthly',
+      schedule: { daysPerWeek: 5, hoursPerDay: 8, paidRestDays: true, paidSpecialDays: true },
       wage: {
-        region: 'NCR', sector: 'non-agriculture', establishment: 'hospital',
-        classification: 'regular', hoursPerDay: 8, daysPerWeek: 5
+        region: 'NCR', sector: 'non-agriculture', category: 'hospital',
+        effectiveFrom: '2026-01-01'
       },
       tin: '123-456-789-007', sss: '34-1234574-7', philhealth: '12-345678908-9', pagibig: '1234-5678-9019'
     }

@@ -186,7 +186,8 @@
         esc(exempt.map(function (f) { return f.employeeId; }).join(', ')) + '</div>';
     } else if (floors.length) {
       h += "<div class='pr-slip-note'>Every rate is at or above the <b>" + esc(floors[0].floor.orderId) +
-        '</b> floor of ' + fmt(floors[0].floor.dailyRate) + ' a day.</div>';
+        '</b> floor of ' + fmt(floors[0].floor.dailyRate) + ' for an 8-hour day. Monthly-paid salaries are ' +
+        'converted at 365 days; daily- and hourly-paid rates at their own schedule factor.</div>';
     }
 
     if (run.status === 'released') h += correctionsBlock();

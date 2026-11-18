@@ -343,6 +343,17 @@
     return { total: round2(base + ot), hours: round2((summary.ndHours || 0) + (summary.ndOtHours || 0)), lines: lines };
   }
 
+  // The monthly figure the statutory tables are keyed on. For a monthly-paid employee it is the
+  // salary itself; for a daily- or hourly-paid employee it is the NWPC equivalent monthly rate,
+  // which is why the basis must be stated on the record rather than inferred.
+  function monthlyOf(emp) {
+    if (window.HIS && HIS.wageFloor) {
+      var m = HIS.wageFloor.equivalentMonthly(emp);
+      if (isFinite(m) && m > 0) return m;
+    }
+    return Number(emp && (emp.monthlyBasic != null ? emp.monthlyBasic : emp.basic)) || 0;
+  }
+
   // ---- the calculation -----------------------------------------------------------------------
   // compute(employee, opts)
   //   opts.frequency        default 'semi-monthly'
@@ -355,7 +366,7 @@
     opts = opts || {};
     if (!emp) throw new Error('compute() needs an employee');
     var f = freq(opts.frequency || 'semi-monthly');
-    var monthly = Number(emp.monthlyBasic != null ? emp.monthlyBasic : emp.basic) || 0;
+    var monthly = monthlyOf(emp);
     var allowMonthly = emp.monthlyBasic != null
       ? HIS.employees.monthlyAllowance(emp)
       : (Number(emp.allow) || 0);
@@ -491,7 +502,7 @@
   // night differential and premium pay are excluded (Sec. 2(b) and the supplementary rules).
   function thirteenthMonth(emp, opts) {
     opts = opts || {};
-    var monthly = Number(emp.monthlyBasic != null ? emp.monthlyBasic : emp.basic) || 0;
+    var monthly = monthlyOf(emp);
     var months = opts.months == null ? 12 : Math.max(0, Math.min(12, Number(opts.months)));
     var basicEarned = opts.basicEarned != null ? Number(opts.basicEarned) : round2(monthly * months);
     var amount = round2(basicEarned / 12);
@@ -509,7 +520,7 @@
   // A positive `adjustment` is still due from the employee; a negative one is a refund.
   function annualize(emp, opts) {
     opts = opts || {};
-    var monthly = Number(emp.monthlyBasic != null ? emp.monthlyBasic : emp.basic) || 0;
+    var monthly = monthlyOf(emp);
     var months = opts.months == null ? 12 : Number(opts.months);
     var taxableAllowance = emp.monthlyBasic != null
       ? HIS.employees.monthlyTaxableAllowance(emp)
@@ -595,7 +606,7 @@
     pagibigMonthly: pagibigMonthly, pagibigEmployerMonthly: pagibigEmployerMonthly,
     statutory: statutory, withholding: withholding, bracketTax: bracketTax,
     dailyRate: dailyRate, hourlyRate: hourlyRate,
-    compute: compute, emptySummary: emptySummary,
+    compute: compute, emptySummary: emptySummary, monthlyOf: monthlyOf,
     thirteenthMonth: thirteenthMonth, annualize: annualize,
     verify: verify, auditTables: auditTables
   };
