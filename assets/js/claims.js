@@ -221,9 +221,14 @@
   function save(s) { HIS.store.set(KEY, s); return s; }
   function all() { return state().claims.slice(); }
   function get(id) { return state().claims.filter(function (c) { return c.id === id; })[0] || null; }
+  // The sequence is the LAST hyphen-separated segment. Stripping every non-digit (as this did)
+  // concatenates the year into the sequence: 0005 -> 20260005 -> 202620260006, and within a few
+  // creates the number exceeds Number.MAX_SAFE_INTEGER, two claims collide, and a transition acts
+  // on whichever claim `get()` finds first. Caught by the M10 acceptance audit.
   function nextId() {
     var max = all().reduce(function (m, c) {
-      var v = parseInt(String(c.id).replace(/\D/g, ''), 10);
+      var seg = String(c.id).split('-').pop();
+      var v = parseInt(seg, 10);
       return isNaN(v) ? m : Math.max(m, v);
     }, 0);
     return 'CLM-2026-' + String(max + 1).padStart(4, '0');

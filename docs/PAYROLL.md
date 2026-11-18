@@ -246,7 +246,16 @@ difference from the published bracket rounding, not from the model.
 
 * The tables are dated 2025-01-01 and reviewed 2026-11-18. A new circular makes them stale;
   `verify()` reports the age and the payroll footer prints the effective date.
-* No regional or industry wage orders; no minimum-wage compliance check.
+* **No minimum-wage check.** The engine will compute payroll for any monthly rate. The current NCR
+  floor is Wage Order No. NCR-28, effective 26 September 2026: ₱718.00–₱755.00 a day for
+  non-agriculture. (NCR-27, effective 25 July 2026, is under a court injunction and carries a
+  further step to ₱743.00–₱780.00 on 20 January 2027.) The lowest salary in the demo is ₱1,195.40 a
+  day, so no demo record breaches the floor — but nothing in the code would stop one that did.
+  Regional wage orders differ and are not modelled.
+* **Pag-IBIG's 1% tier is not implemented.** Long-standing HDMF rules give an employee earning
+  ₱1,500 a month or less a 1% share rather than 2%. The engine applies 2% at every level. The tier
+  is unreachable at the NCR minimum wage, so no demo record is affected, but the rule is missing and
+  would need confirmation against HDMF Circular No. 460 before being added.
 * Overtime is paid at the statutory minimum. A CBA may provide more, and Art. 93 says the higher
   rate governs.
 * Holiday premiums use the 2026 holiday list only.

@@ -58,6 +58,19 @@
     ].join('|');
   }
 
+  // Employees whose current attendance no longer matches the line that was priced from it.
+  function staleEmployees(run) {
+    var stale = [];
+    HIS.employees.all().forEach(function (emp) {
+      var att = HIS.attendancePeriod.summary(emp.id);
+      var line = run.lines.filter(function (l) { return l.employeeId === emp.id; })[0];
+      if (!att) stale.push(emp.name + ' (timesheet not approved)');
+      else if (!line) stale.push(emp.name + ' (no payroll line)');
+      else if (line.attendanceFingerprint !== fingerprint(att)) stale.push(emp.name + ' (attendance changed)');
+    });
+    return stale;
+  }
+
   function computeLines() {
     var lines = [], blocked = [];
     HIS.employees.all().forEach(function (emp) {
@@ -143,8 +156,10 @@
     var s = state();
     var run = s.runs.filter(function (r) { return r.id === runId; })[0];
     if (!run) return { ok: false, error: 'Run not found.' };
-    if (run.status === 'approved' || run.status === 'released') {
-      return { ok: false, error: 'An ' + run.status + ' run cannot be recomputed. Create a correction run instead.' };
+    if (run.status === 'released') {
+      // A released payroll is a historical record. Rewriting it would change what was paid; a real
+      // deployment would raise an off-cycle correction, which this demo does not implement.
+      return { ok: false, error: 'This run was released and is final. A correction after release needs an off-cycle run, which this demo does not support.' };
     }
     run.versions = run.versions || [];
     run.versions.push({
@@ -157,6 +172,12 @@
     run.totals = totalsOf(built.lines);
     run.version += 1;
     run.status = 'draft';
+    // A recompute invalidates any earlier approval: the approved figures no longer describe the
+    // attendance on file, so the approval stamp is cleared rather than left looking current.
+    if (run.approvedAt) {
+      run.history.push({ at: stamp(), by: actor(), action: 'approval invalidated', note: 'Attendance changed after approval' });
+      delete run.approvedAt; delete run.approvedBy;
+    }
     run.history.push({ at: stamp(), by: actor(), action: 'recomputed', note: reason || '' });
     save(s);
     if (window.HIS.audit) {
@@ -174,18 +195,16 @@
     var run = s.runs.filter(function (r) { return r.id === runId; })[0];
     if (!run) return { ok: false, error: 'Run not found.' };
     if (run.status !== from) return { ok: false, error: 'A ' + run.status + ' run cannot move to ' + to + '.' };
-    if (to === 'approved') {
-      // Live check, not the snapshot taken when the run was built.
-      var stale = [];
-      HIS.employees.all().forEach(function (emp) {
-        var att = HIS.attendancePeriod.summary(emp.id);
-        var line = run.lines.filter(function (l) { return l.employeeId === emp.id; })[0];
-        if (!att) stale.push(emp.name + ' (timesheet not approved)');
-        else if (!line) stale.push(emp.name + ' (no payroll line)');
-        else if (line.attendanceFingerprint !== fingerprint(att)) stale.push(emp.name + ' (attendance changed)');
-      });
+    // Both approval and release re-check attendance live. Checking only at approval left a hole:
+    // reopen a timesheet after approval and the stale run could still be released.
+    if (to === 'approved' || to === 'released') {
+      var stale = staleEmployees(run);
       if (stale.length) {
-        return { ok: false, error: 'Payroll cannot be approved: ' + stale.join(', ') + '. Recompute the run first.' };
+        return {
+          ok: false,
+          error: 'Payroll cannot be ' + (to === 'approved' ? 'approved' : 'released') + ': ' + stale.join(', ') +
+            '. Recompute the run to pick up the change.'
+        };
       }
     }
     if (to === 'approved') {
@@ -369,7 +388,7 @@
     KEY: KEY, PERIOD: PERIOD,
     list: list, get: get, current: current,
     create: create, recompute: recompute, review: review, approve: approve, release: release,
-    lineFor: lineFor, blockedFor: blockedFor, totalsOf: totalsOf,
+    lineFor: lineFor, blockedFor: blockedFor, totalsOf: totalsOf, staleEmployees: staleEmployees,
     payslip: payslip, payslipPdf: payslipPdf, csv: csv,
     thirteenth: thirteenth, annual: annual, reset: reset
   };

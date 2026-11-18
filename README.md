@@ -52,6 +52,7 @@ node scripts/finance-check.mjs    # one money chain across Billing, Reports and 
 node scripts/payroll-check.mjs    # payroll arithmetic against hand-calculated figures
 node scripts/claims-check.mjs     # claim state machine, role gates, settlement boundary
 node scripts/ledger-check.mjs     # payments, refunds, coverage, idempotency, invariants
+node scripts/acceptance-audit.mjs # independent M10 acceptance: attendance, statutory, claims, payslips
 node scripts/mobile-audit.mjs     # rendered text size and touch targets at 5 widths
 ```
 
