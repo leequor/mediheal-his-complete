@@ -116,14 +116,15 @@
   function totalsOf(lines) {
     var t = {
       headcount: lines.length, gross: 0, deductions: 0, net: 0,
-      basic: 0, allowances: 0, overtime: 0, night: 0, premium: 0,
+      basic: 0, allowances: 0, overtime: 0, additional: 0, night: 0, premium: 0,
       sss: 0, philhealth: 0, pagibig: 0, tax: 0, other: 0,
       employer: 0, employerTotal: 0
     };
     lines.forEach(function (l) {
       t.gross += l.gross; t.deductions += l.deductions; t.net += l.net;
       t.basic += l.earnings.basic; t.allowances += l.earnings.allowances;
-      t.overtime += l.earnings.overtime; t.night += l.earnings.night; t.premium += l.earnings.premium;
+      t.overtime += l.earnings.overtime; t.additional += (l.earnings.additional || 0);
+      t.night += l.earnings.night; t.premium += l.earnings.premium;
       t.sss += l.statutory.sss; t.philhealth += l.statutory.philhealth; t.pagibig += l.statutory.pagibig;
       t.tax += l.tax; t.other += l.other;
       t.employerTotal += l.employer.total;

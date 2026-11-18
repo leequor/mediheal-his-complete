@@ -204,7 +204,20 @@
       overtimeBasis: 'hourly rate x statutory multiplier',
       nightBasis: 'hourly rate x 10%',
       holidayBasis: 'daily rate x statutory premium',
-      leaveBasis: 'paid leave is not converted: the period basic already pays it'
+      leaveBasis: 'paid leave is not converted: the period basic already pays it',
+      // Extra hours beyond the schedule but within eight are NOT statutory overtime (Art. 87).
+      // No company agreement grants them a premium, so they are paid at the ordinary hourly rate.
+      additionalHoursPremium: 0,
+      // The absence deduction is its own basis, not a reuse of the premium rate. `factor` is the
+      // annual divisor for a monthly-paid employee; a daily-paid employee loses exactly their day.
+      absence: {
+        basis: 'daily-rate',
+        factor: 261,
+        status: 'configured-assumption',
+        review: 'No employment contract, payroll manual or historical payslip is available for this demo. ' +
+          'The 261-day factor is a configured assumption, not a proven practice. A Philippine payroll ' +
+          'practitioner should confirm it against the employer\u2019s written policy before production.'
+      }
     },
     {
       id: 'MH-PAY-2027.1',
@@ -220,7 +233,14 @@
       overtimeBasis: 'hourly rate x statutory multiplier',
       nightBasis: 'hourly rate x 10%',
       holidayBasis: 'daily rate x statutory premium',
-      leaveBasis: 'paid leave is not converted: the period basic already pays it'
+      leaveBasis: 'paid leave is not converted: the period basic already pays it',
+      additionalHoursPremium: 0,
+      absence: {
+        basis: 'daily-rate',
+        factor: 365,
+        status: 'proposed',
+        review: 'Aligns the absence deduction with the DOLE monthly-paid conversion. Requires approval.'
+      }
     }
   ];
 
@@ -362,10 +382,16 @@
   // ---- attendance ----------------------------------------------------------------------------
   // The attendance store hands over counts, not money. An empty summary means "a full period with
   // no exceptions", which is what a payroll run uses when attendance has not been loaded yet.
+  // A full period with no exceptions. The hour buckets are the classification every calculation
+  // below depends on: ordinary hours are covered by the period basic, additional hours are beyond
+  // the schedule but inside eight, statutory overtime is beyond eight.
   function emptySummary(days) {
+    var h = days * CONFIG.hoursPerDay;
     return {
       scheduledDays: days, workedDays: days, absenceDays: 0, paidLeaveDays: 0, unpaidLeaveDays: 0,
-      lateMinutes: 0, undertimeMinutes: 0, totalHours: days * CONFIG.hoursPerDay,
+      lateMinutes: 0, undertimeMinutes: 0, totalHours: h,
+      scheduledHours: h, workedHours: h, ordinaryHours: h, additionalHours: 0,
+      restDayHours: 0, regularHolidayHours: 0, specialHours: 0,
       otHours: { ordinary: 0, rest: 0, regularHoliday: 0, special: 0 },
       ndHours: 0, ndOtHours: 0,
       premiumDays: { rest: 0, regularHoliday: 0, special: 0, restRegularHoliday: 0, restSpecial: 0 }
@@ -375,23 +401,52 @@
   // Premium pay: the amount added ON TOP of the period basic, which already pays every scheduled
   // day (including regular holidays, Art. 94). A regular holiday actually worked therefore adds
   // 100%, bringing the day to 200%.
-  function premiumPay(summary, daily) {
+  // Premium pay, priced per HOUR so a partial day is exact. The base day is already inside the
+  // period basic for a monthly-paid employee, so only the premium is added; a daily-paid employee's
+  // equivalent monthly rate covers scheduled days only, so a rest day must also pay its base.
+  //
+  // `hours` prefers the precise figure from the attendance summary and falls back to the day count
+  // (x8) for callers that only know how many rest or holiday days were worked.
+  function premiumPay(summary, hourly, ctx) {
+    ctx = ctx || {};
     var p = summary.premiumDays || {};
     var L = CONFIG.labor;
+    var monthly = ctx.payBasis !== 'daily' && ctx.payBasis !== 'hourly';
+    var paidSpecial = ctx.paidSpecialDays !== false;
+    var hours = {
+      rest: summary.restDayHours > 0 ? summary.restDayHours : (p.rest || 0) * CONFIG.hoursPerDay,
+      regularHoliday: summary.regularHolidayHours > 0 ? summary.regularHolidayHours : (p.regularHoliday || 0) * CONFIG.hoursPerDay,
+      special: summary.specialHours > 0 ? summary.specialHours : (p.special || 0) * CONFIG.hoursPerDay,
+      restRegularHoliday: (p.restRegularHoliday || 0) * CONFIG.hoursPerDay,
+      restSpecial: (p.restSpecial || 0) * CONFIG.hoursPerDay
+    };
     var parts = [
-      ['Rest day', p.rest || 0, L.restDay],
-      ['Regular holiday', p.regularHoliday || 0, L.regularHoliday],
-      ['Special non-working day', p.special || 0, L.specialHoliday],
-      ['Rest day + regular holiday', p.restRegularHoliday || 0, L.restDayOnRegularHoliday],
-      ['Rest day + special day', p.restSpecial || 0, L.specialOnRestDay]
+      ['Rest day', hours.rest, monthly ? L.restDay : 1 + L.restDay],
+      ['Regular holiday', hours.regularHoliday, L.regularHoliday],
+      ['Special non-working day', hours.special, monthly || paidSpecial ? L.specialHoliday : 1 + L.specialHoliday],
+      ['Rest day + regular holiday', hours.restRegularHoliday, monthly ? L.restDayOnRegularHoliday : 1 + L.restDayOnRegularHoliday],
+      ['Rest day + special day', hours.restSpecial, monthly ? L.specialOnRestDay : 1 + L.specialOnRestDay]
     ];
     var total = 0, lines = [];
     parts.forEach(function (x) {
-      var amount = round2(daily * x[2] * x[1]);
-      if (x[1] > 0) lines.push({ label: x[0], days: x[1], rate: x[2], amount: amount });
+      if (x[1] <= 0) return;
+      var amount = round2(hourly * x[2] * x[1]);
+      lines.push({ label: x[0], hours: round2(x[1]), rate: x[2], amount: amount });
       total += amount;
     });
     return { total: round2(total), lines: lines };
+  }
+
+  // Hours beyond the schedule but within eight. Not Art. 87 overtime; paid at the ordinary hourly
+  // rate unless an agreement grants a premium, which none does here.
+  function additionalPay(summary, hourly, policy, eligible) {
+    var h = summary.additionalHours || 0;
+    if (!eligible || h <= 0) return { total: 0, hours: 0, lines: [], rate: 1 };
+    var rate = 1 + (policy.additionalHoursPremium || 0);
+    return {
+      total: round2(hourly * rate * h), hours: round2(h),
+      rate: rate, lines: [{ label: 'Additional hours within eight', hours: round2(h), rate: rate, amount: round2(hourly * rate * h) }]
+    };
   }
 
   function overtimePay(summary, hourly, eligible) {
@@ -437,6 +492,19 @@
     return Number(emp && (emp.monthlyBasic != null ? emp.monthlyBasic : emp.basic)) || 0;
   }
 
+  // The daily amount an unpaid absence costs. A daily-paid employee loses exactly the day they did
+  // not work; a monthly-paid employee loses the policy's absence divisor, which is a separate
+  // setting from the premium daily rate even when the two numbers currently agree.
+  function absenceDailyOf(emp, asOf) {
+    if (emp && emp.payBasis === 'daily' && emp.dailyRate != null) return Number(emp.dailyRate);
+    if (emp && emp.payBasis === 'hourly' && emp.hourlyRate != null) {
+      return Number(emp.hourlyRate) * normalHoursOf(emp);
+    }
+    var p = policyFor(asOf);
+    var factor = (p.absence && p.absence.factor) || p.dailyRateFactor;
+    return monthlyOf(emp) * 12 / factor;
+  }
+
   // ---- the calculation -----------------------------------------------------------------------
   // compute(employee, opts)
   //   opts.frequency        default 'semi-monthly'
@@ -468,7 +536,7 @@
     var allowanceTaxablePeriod = round2(allowTaxableMonthly / f.periodsPerMonth);
     var allowanceNonTaxablePeriod = round2(allowNonTaxableMonthly / f.periodsPerMonth);
 
-    var absence = round2(daily * (summary.absenceDays || 0));
+    var absence = round2(absenceDailyOf(emp, opts.asOf) * (summary.absenceDays || 0));
     var late = round2(hourly / 60 * (summary.lateMinutes || 0));
     var undertime = round2(hourly / 60 * (summary.undertimeMinutes || 0));
 
@@ -476,9 +544,14 @@
     var eligible = (emp.category || 'rank-and-file') === 'rank-and-file';
     var ot = overtimePay(summary, hourly, eligible);
     var nd = nightPay(summary, hourly, eligible);
-    var premium = premiumPay(summary, daily);
+    var additional = additionalPay(summary, hourly, policy, eligible);
+    var premium = premiumPay(summary, hourly, {
+      payBasis: emp.payBasis || 'monthly',
+      paidSpecialDays: emp.schedule ? emp.schedule.paidSpecialDays !== false : true
+    });
 
-    var gross = round2(periodBasic - absence - late - undertime + premium.total + ot.total + nd.total + allowancePeriod);
+    var gross = round2(periodBasic - absence - late - undertime +
+      premium.total + ot.total + nd.total + additional.total + allowancePeriod);
 
     // Contributions are monthly amounts. A semi-monthly payroll withholds half of each; a weekly
     // payroll withholds 12/52. The base is always the MONTHLY basic, never the period amount.
@@ -519,7 +592,10 @@
       { label: 'Allowances', amount: allowancePeriod, kind: 'earning' }
     ];
     premium.lines.forEach(function (l) {
-      lines.push({ label: l.label + ' premium (' + l.days + ' day' + (l.days === 1 ? '' : 's') + ' \u00d7 ' + Math.round(l.rate * 100) + '%)', amount: l.amount, kind: 'earning' });
+      lines.push({ label: l.label + ' premium (' + l.hours + ' h \u00d7 ' + Math.round(l.rate * 100) + '%)', amount: l.amount, kind: 'earning' });
+    });
+    additional.lines.forEach(function (l) {
+      lines.push({ label: l.label + ' (' + l.hours + ' h \u00d7 ' + Math.round(l.rate * 100) + '%)', amount: l.amount, kind: 'earning' });
     });
     ot.lines.forEach(function (l) {
       lines.push({ label: l.label + ' (' + l.hours + ' h \u00d7 ' + Math.round(l.rate * 100) + '%)', amount: l.amount, kind: 'earning' });
@@ -544,12 +620,12 @@
         scheduled: summary.scheduledDays, worked: summary.workedDays,
         absent: summary.absenceDays, paidLeave: summary.paidLeaveDays,
         lateMinutes: summary.lateMinutes, undertimeMinutes: summary.undertimeMinutes,
-        overtimeHours: ot.hours, nightHours: nd.hours
+        overtimeHours: ot.hours, additionalHours: additional.hours, nightHours: nd.hours
       },
       earnings: {
         basic: periodBasic,
         absence: -absence, late: -late, undertime: -undertime,
-        premium: premium.total, overtime: ot.total, night: nd.total,
+        premium: premium.total, overtime: ot.total, additional: additional.total, night: nd.total,
         allowances: allowancePeriod,
         allowancesTaxable: allowanceTaxablePeriod,
         allowancesNonTaxable: allowanceNonTaxablePeriod
@@ -570,6 +646,11 @@
       net: net,
       capped: capped,
       otEligible: eligible,
+      absenceBasis: {
+        factor: emp.payBasis === 'daily' || emp.payBasis === 'hourly' ? null : ((policy.absence && policy.absence.factor) || policy.dailyRateFactor),
+        dailyAmount: round2(absenceDailyOf(emp, opts.asOf)),
+        status: emp.payBasis === 'daily' || emp.payBasis === 'hourly' ? 'stated rate' : (policy.absence && policy.absence.status) || 'configured-assumption'
+      },
       basis: {
         msc: stat.msc,
         philhealthBase: stat.philhealthBase,
@@ -646,36 +727,85 @@
     return '\u20b1' + Number(n || 0).toLocaleString('en-PH', { maximumFractionDigits: 0 });
   }
 
-  // What a change of daily-rate factor would do to each employee, so a non-diminution question is
-  // answered with numbers instead of an opinion. Compares the active policy with a proposed one.
+  // What a change of divisor would do to each employee, component by component.
+  //
+  // A single daily-rate comparison is not enough to call a change favourable or unfavourable: a
+  // higher divisor lowers every premium (bad for the employee) and lowers the absence deduction
+  // (good for the employee). The net depends on the mix, so the components are reported separately
+  // and the net is labelled illustrative.
+  //
+  // Read-only. It never writes to a run, a payslip, an employee rate or a correction.
   function policyImpact(employees, proposedId) {
     var proposed = POLICIES.filter(function (p) { return p.id === proposedId; })[0] ||
       POLICIES.filter(function (p) { return p.status === 'proposed'; })[0];
     if (!proposed) return { ok: false, error: 'No proposed policy to compare against.' };
     var active = policyFor();
+
+    function pair(before, after) {
+      return { before: round2(before), after: round2(after), delta: round2(after - before) };
+    }
+
     var rows = (employees || []).map(function (e) {
       var monthly = monthlyOf(e);
-      var before = monthly * 12 / active.dailyRateFactor;
-      var after = monthly * 12 / proposed.dailyRateFactor;
-      var hourlyBefore = before / active.hoursPerDay;
-      var hourlyAfter = after / proposed.hoursPerDay;
+      var hours = normalHoursOf(e);
+      var stated = e.payBasis === 'daily' || e.payBasis === 'hourly';
+
+      var dailyBefore = stated ? dailyRateOf(e) : monthly * 12 / active.dailyRateFactor;
+      var dailyAfter = stated ? dailyRateOf(e) : monthly * 12 / proposed.dailyRateFactor;
+      var hourlyBefore = dailyBefore / hours;
+      var hourlyAfter = dailyAfter / hours;
+
+      var absFactorBefore = (active.absence && active.absence.factor) || active.dailyRateFactor;
+      var absFactorAfter = (proposed.absence && proposed.absence.factor) || proposed.dailyRateFactor;
+      var absenceBefore = stated ? dailyRateOf(e) : monthly * 12 / absFactorBefore;
+      var absenceAfter = stated ? dailyRateOf(e) : monthly * 12 / absFactorAfter;
+
+      var restRate = e.payBasis === 'daily' || e.payBasis === 'hourly' ? 1.30 : 0.30;
+      var earnings = {
+        ordinaryDaily: pair(dailyBefore, dailyAfter),
+        hourly: pair(hourlyBefore, hourlyAfter),
+        overtime2h: pair(hourlyBefore * 1.25 * 2, hourlyAfter * 1.25 * 2),
+        night8h: pair(hourlyBefore * 0.10 * 8, hourlyAfter * 0.10 * 8),
+        restDay8h: pair(hourlyBefore * restRate * 8, hourlyAfter * restRate * 8),
+        holiday8h: pair(hourlyBefore * 1.00 * 8, hourlyAfter * 1.00 * 8)
+      };
+      var deductions = { absence1day: pair(absenceBefore, absenceAfter) };
+
+      var earningsDelta = round2(
+        earnings.overtime2h.delta + earnings.night8h.delta +
+        earnings.restDay8h.delta + earnings.holiday8h.delta);
+      var deductionDelta = deductions.absence1day.delta;
+
       return {
-        employeeId: e.id, name: e.name,
-        dailyBefore: round2(before), dailyAfter: round2(after),
-        hourlyBefore: round2(hourlyBefore), hourlyAfter: round2(hourlyAfter),
-        absenceBefore: round2(before), absenceAfter: round2(after),
-        overtime2hBefore: round2(hourlyBefore * 1.25 * 2), overtime2hAfter: round2(hourlyAfter * 1.25 * 2),
-        premiumReduced: round2(hourlyAfter * 1.25 * 2) < round2(hourlyBefore * 1.25 * 2) - 0.005
+        employeeId: e.id, name: e.name, payBasis: e.payBasis || 'monthly',
+        dailyBefore: round2(dailyBefore), dailyAfter: round2(dailyAfter),
+        earnings: earnings,
+        deductions: deductions,
+        netIllustrative: {
+          earningsDelta: earningsDelta,
+          deductionDelta: round2(deductionDelta),
+          net: round2(earningsDelta - deductionDelta)
+        },
+        premiumReduced: earningsDelta < -0.005
       };
     });
+
+    var premiumDown = rows.filter(function (r) { return r.premiumReduced; }).length;
+    var deductionDown = rows.filter(function (r) { return r.deductions.absence1day.delta < -0.005; }).length;
     return {
       ok: true,
-      active: { id: active.id, factor: active.dailyRateFactor },
-      proposed: { id: proposed.id, factor: proposed.dailyRateFactor, effectiveFrom: proposed.effectiveFrom, status: proposed.status },
+      active: { id: active.id, factor: active.dailyRateFactor, absenceFactor: (active.absence && active.absence.factor) || active.dailyRateFactor },
+      proposed: { id: proposed.id, factor: proposed.dailyRateFactor, absenceFactor: (proposed.absence && proposed.absence.factor) || proposed.dailyRateFactor, effectiveFrom: proposed.effectiveFrom, status: proposed.status },
       rows: rows,
-      affected: rows.filter(function (r) { return r.premiumReduced; }).length,
-      note: rows.some(function (r) { return r.premiumReduced; })
-        ? 'Moving to ' + proposed.dailyRateFactor + ' days lowers the daily and hourly rate, so overtime, night differential and premiums fall for every employee below. That is a potential diminution of an established benefit (Labor Code Art. 100) and needs an approved policy change, not a code change.'
+      affected: premiumDown,
+      summary: { premiumFalls: premiumDown, deductionFalls: deductionDown, employees: rows.length },
+      note: premiumDown
+        ? 'Moving to ' + proposed.dailyRateFactor + ' days lowers the daily and hourly rate, so overtime, ' +
+          'night differential and premiums fall for ' + premiumDown + ' of ' + rows.length + ' employees, while the ' +
+          'unpaid-absence deduction also falls. The two effects pull in opposite directions; the net is ' +
+          'illustrative and depends on each employee\u2019s attendance and overtime mix. A reduction in premium pay ' +
+          'is a potential diminution of an established benefit (Labor Code Art. 100) and needs an approved policy ' +
+          'change, not a code change.'
         : 'No employee would see premium pay fall.'
     };
   }
@@ -729,6 +859,7 @@
     dailyRate: dailyRate, hourlyRate: hourlyRate,
     POLICIES: POLICIES, policyFor: policyFor, policyImpact: policyImpact,
     compute: compute, emptySummary: emptySummary, monthlyOf: monthlyOf, normalHoursOf: normalHoursOf,
+    absenceDailyOf: absenceDailyOf,
     dailyRateOf: dailyRateOf, hourlyRateOf: hourlyRateOf,
     thirteenthMonth: thirteenthMonth, annualize: annualize,
     verify: verify, auditTables: auditTables

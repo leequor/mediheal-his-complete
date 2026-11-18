@@ -140,6 +140,35 @@ not `monthlyEquivalent × 12 / 261`. Pushing a daily rate through the annual fac
 it (₱1,200 on a 313-day schedule became ₱1,439.08), so `dailyRateOf()` returns the stated rate and
 `monthlyOf()` exists only to feed the statutory tables.
 
+### The absence deduction has its own basis
+
+The daily rate used to price a premium is not automatically the right amount to deduct for an
+absence, so the absence basis is a separate setting (`policy.absence`):
+
+| Employee | Absence costs |
+|---|---|
+| Monthly-paid | `monthly × 12 / absence.factor` — 261 under the active policy |
+| Daily-paid | exactly the stated daily rate |
+| Hourly-paid | hourly rate × normal hours |
+
+The factor currently matches the premium factor, but they are independent fields: changing one does
+not change the other, and `absenceDailyOf()` is the only place the rule lives. Partial-day absence is
+not a separate rule — it is lateness and undertime, priced per minute at the hourly rate.
+
+**Status: configured assumption, not established practice.** No employment contract, payroll manual
+or historical payslip exists for this demo. The policy record says so in `policy.absence.review`, and
+`compute()` returns `absenceBasis.status = 'configured-assumption'` so a payslip can carry it. What
+would settle it: a written company rule, the applicable CBA or employment contract, and a run of
+historical payslips showing the deduction actually applied. **Not modelled:** proration for a new hire
+or a separated employee — there is no hire or separation date on the payroll record.
+
+### The impact report separates earnings from deductions
+
+`policyImpact()` reports, per employee and per component, the before and after of: ordinary daily
+rate, hourly rate, two hours of overtime, eight night hours, a rest day, a holiday, and one unpaid
+absence. Premiums fall when the divisor rises; the absence deduction falls too. The two pull in
+opposite directions, so the net is labelled illustrative and shown only after the components.
+
 ---
 
 ## 3. Statutory tables, sources and effective dates
@@ -233,6 +262,35 @@ Company policy, not statute, is marked as such in the config:
 * `graceMinutes: 15` — lateness inside fifteen minutes is recorded but not docked.
 * `specialDayPaidWhenNotWorked: true` — special non-working days are paid here. The Labor Code
   treats them as "no work, no pay" unless the employer grants otherwise.
+
+---
+
+## 4A. Hours are classified before they are priced
+
+Article 87 puts statutory overtime at work **beyond eight hours in the day**, not beyond the end of
+the employee's schedule. A part-timer on a four-hour day who works six hours has worked two
+*additional* hours, not two overtime hours. Pricing every hour past the schedule as overtime
+overpays; pricing none of them underpays.
+
+`attendancePeriod.classify(record)` splits one day into buckets, and the payroll engine prices each
+one differently:
+
+| Bucket | Meaning | Paid at |
+|---|---|---|
+| `ordinary` | scheduled hours worked | the period basic |
+| `additional` | beyond the schedule, within eight | ordinary hourly rate (no statutory premium) |
+| `ot` | beyond eight | 125% |
+| `rest` / `restOt` | first eight hours on a rest day / beyond eight | 130% (premium only for monthly-paid; base and premium for daily-paid) / 169% |
+| `holiday` / `holidayOt` | first eight hours on a holiday / beyond eight | 100% premium / 260% |
+
+No company agreement grants a premium for additional hours inside eight, so
+`policy.additionalHoursPremium` is `0` and the hours are paid at the ordinary hourly rate. If an
+agreement ever does, that is a contractual premium and belongs in that field — it is not Article 87
+overtime and must not be labelled as such.
+
+**The eight-hour threshold is fixed by law, not by the schedule.** A four-hour employee's ninth hour
+is overtime; their fifth hour is not. `classify()` hard-codes the threshold at eight and the tests
+assert that changing the schedule does not move it.
 
 ---
 
@@ -337,6 +395,32 @@ Code. The payslip reports `otEligible: false` rather than silently dropping the 
 
 ---
 
+## 6A. Health personnel: Article 83
+
+The Labor Code's special provision for health personnel applies to those working in a city or
+municipality of at least **1,000,000** people, or in a hospital or clinic with a bed capacity of at
+least **100**. Covered personnel work eight hours a day, five days a week; if the employer requires a
+sixth day, that day carries an additional **30%** of the regular wage.
+
+`assets/js/employer.js` records what the demo actually knows: a **60-bed** hospital whose **city is not
+recorded**. Sixty beds is below the bed threshold, so the only route to coverage is the population
+test, and that fact is missing.
+
+```
+art83() -> { status: 'undetermined', missing: ['cityPopulation'] }
+sixthDayPremium() -> { ok: false, error: '...applicability is undetermined...' }
+```
+
+Applicability is therefore **undetermined**, and no sixth-day premium is priced. Pricing one would
+overpay an employer that may not be covered; omitting it would underpay one that is. Setting the
+population to 1,500,000 makes the provision apply and the premium prices at 30% of eight hours; with
+500,000 people and 60 beds it does not apply. The tests cover all three states.
+
+**Do not stack.** If the sixth day is also the designated rest day, the rest-day premium applies
+instead — the 30% is not added on top of it. `sixthDayPremium()` returns that warning with its result.
+
+---
+
 ## 7. 13th month and year-end
 
 `thirteenthMonth(employee, { months })` returns `basicEarned / 12` on **basic salary only**. A rice
@@ -405,10 +489,18 @@ the test asserts the released run is byte-identical after a correction is create
   `verify()` reports the age and the payroll footer prints the effective date.
 * **The wage floor covers NCR only**, and only the region/sector split. Regional orders, establishment
   size, partial exemptions and the sector definitions inside an order are not modelled.
-* **The pay factor is a company policy, not a statutory conversion.** `MH-PAY-2026.1` uses 261 where
-  DOLE publishes 365 for a monthly-paid employee's daily rate. The higher factor favours the employee
-  on premiums and costs them on absences. It is documented, quantified by `policyImpact()`, and held
-  in place pending a non-diminution review — see §2A.
+* **The pay factor is a configured assumption, not a proven practice.** `MH-PAY-2026.1` uses 261 where
+  DOLE publishes 365 for a monthly-paid employee's daily rate. There is **no historical evidence** for
+  the 261 practice in this demo — no contract, no manual, no payslip — so it is a configured policy
+  assumption. It is not established that Article 100 would protect it. Evidence needed: a written
+  company rule, the applicable agreement, and historical payslips showing the calculation applied
+  consistently. See §2A.
+* **The absence deduction is likewise a configured assumption.** No source establishes the 261 basis
+  for it specifically; it is a separate setting and marked for review.
+* **Proration is not modelled.** There is no hire or separation date on the payroll record, so a
+  mid-period start or end cannot be prorated.
+* **Article 83 applicability is undetermined.** The employer's city population is not recorded, so the
+  health-personnel sixth-day premium is neither applied nor excluded — see §6A.
 * **Regional coverage is two of seventeen.** NCR and Region VII are verified from their orders; the
   rest are registered with their published ranges and refused. `docs/WAGE-ORDERS.md` has the plan.
 * **Circulars 274 and 460 were not read directly.** The 1% Pag-IBIG tier rests on RA 9679 §7; the
