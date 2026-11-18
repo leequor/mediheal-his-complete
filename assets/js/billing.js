@@ -87,12 +87,15 @@
     // field on the invoice. `b.paid` is still written by the payment modal for backwards
     // compatibility but is no longer read for display.
     var paid = HIS.ledger.paidOf(b), bal = HIS.ledger.balanceOf(b), status = HIS.ledger.statusOf(b);
+    var covered = HIS.ledger.coveredOf(b);
     if (items) { sub = b.subtotal; vat = b.vat; } else { sub = Math.round(total / 1.12); vat = total - sub; }
     var h = "<section class='bl-inv'><div class='bl-ih'><span class='t'>Invoice " + b.id + "</span><span class='m'>" + esc(b.full) + ' \u00b7 ' + b.pt + ' \u00b7 ' + esc(b.dept) + "</span><span class='d'>" + b.date + "</span><span class='bp'>" + pill(status) + '</span></div>';
     h += "<div class='bl-tb'><div class='bl-tr h'><span class='c1'>Description \u00b7 charge source</span><span class='c2'>Qty</span><span class='c3'>Rate (\u20b1)</span><span class='c4'>Amount</span></div>";
     if (items) items.forEach(function (r) { h += "<div class='bl-tr'><span class='c1'>" + esc(r[0]) + "</span><span class='c2'>" + r[1] + "</span><span class='c3'>" + num(r[2]) + "</span><span class='c4'>" + num(r[3]) + '</span></div>'; });
     else h += "<div class='bl-tr'><span class='c1' style='color:#8a97a6'>Line items for this bill are not in the main Figma frame (estimated summary)</span><span class='c2'>1</span><span class='c3'>" + num(sub) + "</span><span class='c4'>" + num(sub) + '</span></div>';
-    h += "</div><div class='bl-tot'><div><span>Subtotal</span><b>" + peso(sub) + "</b></div><div><span>VAT (12%)</span><b>" + peso(vat) + "</b></div><div class='gt'><span>Grand total</span><b>" + peso(total) + "</b></div><div class='pd'><span>Paid</span><b>" + peso(paid) + "</b></div><div class='bd'><span>Balance due</span><b>" + peso(bal) + '</b></div></div>';
+    h += "</div><div class='bl-tot'><div><span>Subtotal</span><b>" + peso(sub) + "</b></div><div><span>VAT (12%)</span><b>" + peso(vat) + "</b></div><div class='gt'><span>Grand total</span><b>" + peso(total) + "</b></div>" +
+      (covered > 0 ? "<div class='pd'><span>Coverage / discounts</span><b>" + peso(covered) + '</b></div>' : '') +
+      "<div class='pd'><span>Paid</span><b>" + peso(paid) + "</b></div><div class='bd'><span>Balance due</span><b>" + peso(bal) + '</b></div></div>';
     h += "<div class='bl-act'><button class='bl-btn' data-act='dl' style='left:0'>" + DL + "Download</button><button class='bl-btn' data-modal='pay' style='left:228px'>Record payment</button><button class='bl-btn' data-modal='cov' style='left:456px'>Coverage and discounts</button><button class='bl-btn' data-modal='fin' style='left:684px'>Final statement</button></div></section>";
     el.innerHTML = h;
   }

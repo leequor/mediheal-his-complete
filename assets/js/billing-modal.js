@@ -23,11 +23,25 @@
       v: [b.id + ' (' + HIS.ledger.statusOf(b) + ')', 'Cash', bal > 0 ? p2(bal) : '', '', 'Billing clerk on duty \u00b7 Aug 31, 2026', ''],
       bt: 'Payment check', bx: bal > 0 ? peso(bal) + ' clears the balance. Invoice ' + b.id + ' will change from ' + HIS.ledger.statusOf(b) + ' to Paid.' : 'Nothing due on this invoice.',
       methods: HIS.ledger.METHODS };
-    if (kind === 'cov') return {
-      title: 'Coverage and discounts', sub: b.full + ' \u00b7 ' + b.pt + ' \u00b7 Invoice ' + b.id + ' \u00b7 Total ' + peso(total), ok: 'Apply to invoice',
-      l: ['PhilHealth ID', 'PhilHealth case rate', 'HMO / letter of authorization', 'HMO coverage', 'Senior / PWD discount', 'Notes'],
-      v: is01(b) ? ['01-234567890-1', '\u20b13,000.00', 'Maxicare \u00b7 LOA MX-20418', '\u20b12,000.00', 'PWD 20% on room and nursing (\u20b110,200 \u00d7 20% = \u20b12,040.00)', 'Deductions apply after VAT. The patient pays only the net amount.'] : ['', '\u20b10.00', '', '\u20b10.00', '', ''],
-      bt: 'Net payable', bx: peso(total - cov) + (cov ? ' after ' + peso(cov) + ' in coverage and discounts. Paid ' + peso(paid) + ', so the balance is ' + peso(total - cov - paid) + '.' : ' with no coverage or discounts applied.') };
+    if (kind === 'cov') {
+      // M7: the payer details come from the PATIENT RECORD, not from text typed into this dialog.
+      // The amounts default to zero because a PhilHealth case rate and an HMO approval are
+      // decisions made by those payers — this screen records them, it does not invent them.
+      var pat = (window.HIS.registry && HIS.registry.byId(b.pt)) || {};
+      var ph = pat.philhealth || {}, hm = pat.hmo || {};
+      var loa = [hm.provider, hm.loa].filter(Boolean).join(' \u00b7 ');
+      return {
+        title: 'Coverage and discounts',
+        sub: b.full + ' \u00b7 ' + b.pt + ' \u00b7 Invoice ' + b.id + ' \u00b7 Total ' + peso(total) + ' \u00b7 Balance ' + peso(bal),
+        ok: 'Apply to invoice',
+        l: ['PhilHealth ID', 'PhilHealth case rate', 'HMO / letter of authorization', 'HMO coverage', 'Senior / PWD discount', 'Notes'],
+        v: [ph.no || '', '0.00', loa, hm.coverage ? String(hm.coverage) : '0.00',
+          '0.00', 'Recorded against the claim or authorisation named on the line above.'],
+        bt: 'Net payable',
+        bx: 'Coverage and discounts reduce the charge; they are not payments and are never counted as collected. ' +
+          'Paid ' + peso(paid) + ' so far, so the balance is ' + peso(bal) + '.'
+      };
+    }
     if (kind === 'dl') return {
       title: 'Download invoice', sub: 'Invoice ' + b.id + ' \u00b7 ' + short(b.name) + ' \u00b7 ' + b.pt, ok: 'Download PDF',
       l: ['Document', 'File format', 'Includes', 'Invoice total', 'Copies', 'Note'],
@@ -130,6 +144,40 @@
         : 'Payment recorded: ' + p2(amt) + ' (' + method + ')');
       return;
     }
+    if (cur.kind === 'cov') {
+      var wc = document.getElementById('blmodal');
+      var numOf = function (s) { return parseFloat(String(s || '').replace(/[^0-9.]/g, '')) || 0; };
+      var g = function (i) { return wc.querySelector('[data-i="' + i + '"]').value; };
+      var phAmt = numOf(g(1)), hmoAmt = numOf(g(3)), discAmt = numOf(g(4));
+      if (phAmt + hmoAmt + discAmt <= 0) {
+        toast('Enter at least one coverage or discount amount.');
+        return;
+      }
+      var pat = (window.HIS.registry && HIS.registry.byId(b.pt)) || {};
+      var entries = [];
+      if (phAmt > 0) entries.push({ kind: 'coverage', payer: 'PhilHealth', reference: g(0).trim(), amount: phAmt, notes: g(5) });
+      if (hmoAmt > 0) entries.push({ kind: 'coverage', payer: (pat.hmo && pat.hmo.provider) || 'HMO', reference: g(2).trim(), amount: hmoAmt, notes: g(5) });
+      // A discount must name the authorisation it rests on: an amount with no OSCA/PWD number is a leak.
+      if (discAmt > 0) {
+        if (!/\d/.test(g(4))) { toast('Name the OSCA / PWD ID or authorisation in the discount line.'); return; }
+        entries.push({ kind: 'discount', payer: 'Senior / PWD discount', reference: g(4).trim(), basis: g(4).trim(), amount: discAmt, notes: g(5) });
+      }
+      var applied = 0, lastErr = '';
+      for (var i = 0; i < entries.length; i++) {
+        var r = HIS.ledger.recordCoverage({
+          invoiceId: b.id, kind: entries[i].kind, payer: entries[i].payer,
+          reference: entries[i].reference, amount: entries[i].amount,
+          basis: entries[i].basis, notes: entries[i].notes
+        });
+        if (r.ok) applied += entries[i].amount; else lastErr = r.error;
+      }
+      if (!applied) { toast(lastErr || 'Nothing was applied.'); return; }
+      close();
+      document.dispatchEvent(new CustomEvent('bl:refresh'));
+      toast('Applied ' + p2(applied) + ' in coverage and discounts. Balance now ' + p2(HIS.ledger.balanceOf(b)) + '.');
+      return;
+    }
+
     close(); toast((cur ? '' : '') + (b.id) + ': saved in memory only (demo)');
   }
 

@@ -24,15 +24,19 @@
     var bills = ((HIS.billing || {}).bills || []).slice();
     var billed = bills.reduce(function (s, b) { return s + b.amount; }, 0);
     var collected = bills.reduce(function (s, b) { return s + paidOf(b); }, 0);
-    var outstanding = billed - collected;
+    // M7: coverage and discounts reduce the charge but are not collections, so the outstanding
+    // figure must subtract them or the report overstates what patients still owe.
+    var covered = bills.reduce(function (s, b) { return s + HIS.ledger.coveredOf(b); }, 0);
+    var outstanding = billed - collected - covered;
     var rate = billed ? Math.round((collected / billed) * 100) : 0;
 
     // Split by invoice type (Inpatient / Outpatient) - the dimension the Billing table carries.
     var byType = {};
     bills.forEach(function (b) {
       var k = b.type || 'Unspecified';
-      byType[k] = byType[k] || { n: 0, billed: 0, collected: 0 };
+      byType[k] = byType[k] || { n: 0, billed: 0, collected: 0, covered: 0 };
       byType[k].n++; byType[k].billed += b.amount; byType[k].collected += paidOf(b);
+      byType[k].covered += HIS.ledger.coveredOf(b);
     });
 
     stage.innerHTML =
@@ -41,7 +45,7 @@
       "<div class='ad-body'>" +
       "<div class='ad-kpis'>" +
       "<div class='ad-kpi'><div class='l'>Total billed</div><div class='v'>" + peso(billed) + "</div><div class='d'>" + bills.length + ' invoices in scope</div></div>' +
-      "<div class='ad-kpi g'><div class='l'>Collected</div><div class='v'>" + peso(collected) + "</div><div class='d'>" + rate + '% collection rate</div></div>' +
+      "<div class='ad-kpi g'><div class='l'>Collected</div><div class='v'>" + peso(collected) + "</div><div class='d'>" + rate + '% collection rate' + (covered ? ' · ' + peso(covered) + ' covered' : '') + '</div></div>' +
       "<div class='ad-kpi r'><div class='l'>Outstanding</div><div class='v'>" + peso(outstanding) + "</div><div class='d'>" + bills.filter(function (b) { return statusOf(b) !== 'Paid'; }).length + ' invoices open</div></div>' +
       "<div class='ad-kpi'><div class='l'>Average invoice</div><div class='v'>" + peso(bills.length ? Math.round(billed / bills.length) : 0) + "</div><div class='d'>Per invoice, this scope</div></div>" +
       '</div>' +
@@ -66,7 +70,7 @@
       "<div class='ad-bar'><h2>By invoice type</h2><span class='ad-count'>Same " + bills.length + " invoices</span></div>" +
       "<div class='ad-th ad-g-rep' style='grid-template-columns:1.6fr .9fr .9fr .9fr .9fr .7fr'><span>Type</span><span>Count</span><span>Billed</span><span>Collected</span><span>Balance</span><span>Rate</span></div>" +
       Object.keys(byType).map(function (k) {
-        var t = byType[k], bal = t.billed - t.collected, r = t.billed ? Math.round((t.collected / t.billed) * 100) : 0;
+        var t = byType[k], bal = t.billed - t.collected - t.covered, r = t.billed ? Math.round((t.collected / t.billed) * 100) : 0;
         return "<div class='ad-tr' style='grid-template-columns:1.6fr .9fr .9fr .9fr .9fr .7fr'>" +
           '<span><b>' + esc(k) + '</b></span>' +
           "<span class='num'>" + t.n + '</span>' +
