@@ -80,7 +80,8 @@ function mscRef(monthly) {
 }
 const sssRef = m => r2(mscRef(m) * 0.05);
 const philRef = m => r2(Math.min(100000, Math.max(10000, m)) * 0.025);
-const pagRef = m => r2(Math.min(10000, m) * 0.02);
+// RA 9679 s.7: 1% employee at or below 1,500, 2% above, capped at a 10,000 fund salary.
+const pagRef = m => r2(Math.min(10000, m) * (m <= 1500 ? 0.01 : 0.02));
 
 const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, acceptDownloads: true });
 const page = await ctx.newPage();
@@ -494,8 +495,8 @@ await page.waitForTimeout(400);
   });
 
   ok('a partial approval records the approved amount, not the requested one', r.partial.ok && near(r.partial.approved, 600), r.partial.approved);
-  ok('a partial approval sets the patient share to the invoice less the approved amount',
-    near(r.partial.share, 52800 - 600), r.partial.share);
+  ok('a partial approval sets the patient share to the outstanding balance less the approved amount',
+    near(r.partial.share, r.partial.balBeforeApprove - 600), r.partial.share + ' vs ' + (r.partial.balBeforeApprove - 600));
   ok('approval creates no payment transaction', r.partial.paymentsAfter === r.partial.paymentsBefore,
     r.partial.paymentsBefore + ' -> ' + r.partial.paymentsAfter);
   ok('approval leaves the invoice balance unchanged', near(r.partial.balBeforeApprove, r.partial.balAfterApprove),

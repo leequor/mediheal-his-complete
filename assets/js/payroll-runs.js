@@ -71,6 +71,16 @@
     return stale;
   }
 
+  // Employees whose current rate sits below the floor in force for the period.
+  function wageProblems(run) {
+    var out = [];
+    HIS.employees.all().forEach(function (emp) {
+      var floor = HIS.wageFloor.check(emp, run.payDate || PERIOD.payDate);
+      if (floor.status === 'below') out.push(emp.name + ' (' + floor.explanation + ')');
+    });
+    return out;
+  }
+
   function computeLines() {
     var lines = [], blocked = [];
     HIS.employees.all().forEach(function (emp) {
@@ -82,12 +92,21 @@
         });
         return;
       }
+      // A rate below the applicable wage floor is a blocking problem, not a warning: paying it
+      // would underpay the employee. An 'unknown' floor (no order in force for the date) is
+      // reported on the line but does not block, because there is nothing to test against.
+      var floor = HIS.wageFloor.check(emp, PERIOD.payDate);
+      if (floor.status === 'below') {
+        blocked.push({ employeeId: emp.id, name: emp.name, reason: floor.explanation });
+        return;
+      }
       var line = HIS.payrollCalc.compute(emp, {
         frequency: PERIOD.frequency,
         attendance: att
       });
       line.status = 'Pending';
       line.attendanceFingerprint = fingerprint(att);
+      line.wageFloor = floor;
       line.attendanceApprovedBy = HIS.attendancePeriod.timesheet(emp.id).approvedBy || '\u2014';
       lines.push(line);
     });
@@ -198,6 +217,13 @@
     // Both approval and release re-check attendance live. Checking only at approval left a hole:
     // reopen a timesheet after approval and the stale run could still be released.
     if (to === 'approved' || to === 'released') {
+      var below = wageProblems(run);
+      if (below.length) {
+        return {
+          ok: false,
+          error: 'Payroll cannot be ' + (to === 'approved' ? 'approved' : 'released') + ': ' + below.join('; ') + '.'
+        };
+      }
       var stale = staleEmployees(run);
       if (stale.length) {
         return {
@@ -389,6 +415,7 @@
     list: list, get: get, current: current,
     create: create, recompute: recompute, review: review, approve: approve, release: release,
     lineFor: lineFor, blockedFor: blockedFor, totalsOf: totalsOf, staleEmployees: staleEmployees,
+    wageProblems: wageProblems,
     payslip: payslip, payslipPdf: payslipPdf, csv: csv,
     thirteenth: thirteenth, annual: annual, reset: reset
   };

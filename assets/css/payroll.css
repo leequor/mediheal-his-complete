@@ -131,3 +131,20 @@
 .pr-seg button.on{background:#1c6d9c;color:#fff}
 .pr-ts-grid.th,.pr-ts-row.th{grid-template-columns:1.35fr 44px 88px 82px 80px 84px 76px}
 .pr-ts-row.th.tot{border-top:1px solid #c8dcea;border-bottom:0;font-weight:700;color:#1b4e6b}
+
+/* M10.1 — correction runs and the wage-floor note. Existing tokens only. */
+.pr-sect{margin-top:16px;padding-top:12px;border-top:1px solid #e3edf3}
+.pr-sect h4{margin:0 0 8px;font:600 12px Inter,sans-serif;letter-spacing:.05em;text-transform:uppercase;color:#5b8db8}
+.pr-corr-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 0;border-top:1px solid #eef4f9;font:400 12.5px/17px Inter,sans-serif;color:#1c2b30}
+.pr-corr-row:first-of-type{border-top:0}
+.pr-corr-row>span:first-child{min-width:0}
+.pr-corr-row small{color:#6f8890;font-size:11px}
+.pr-corr-line{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid #eef4f9;font:400 12.5px/17px Inter,sans-serif;color:#1c2b30}
+.pr-corr-line small{color:#6f8890;font-size:11px}
+.pr-corr-due{color:#1c6d9c;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+.pr-corr-rec{color:#a6460a;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+.pr-corr-ok{color:#1c6d9c;font-weight:600;font-size:11.5px}
+.pr-fld{display:block;margin-top:12px}
+.pr-fld span{display:block;margin-bottom:5px;font:600 12px Inter,sans-serif;color:#1b4e6b}
+.pr-fld textarea{width:100%;box-sizing:border-box;border:1px solid #c8dcea;border-radius:8px;padding:10px 12px;background:#f6fafd;font:400 13px/18px Inter,sans-serif;color:#1c2b30;resize:vertical}
+.pr-fld textarea:focus{outline:2px solid #1c6d9c;outline-offset:-1px;background:#fff}

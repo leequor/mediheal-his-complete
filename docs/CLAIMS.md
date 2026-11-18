@@ -109,8 +109,15 @@ This is the part that matters.
 * **Settlement is idempotent.** The claim id is the ledger's `sourceId`, and the ledger refuses a
   second transaction with the same source. A double click, a retry or a re-opened tab cannot credit
   the invoice twice. The claim also refuses to settle when `settlement` is already set.
-* **Settlement cannot exceed the balance.** The ledger refuses a coverage larger than the
-  outstanding balance, so a claim against an already-paid invoice cannot over-credit it.
+* **Settlement is capped at the balance, and the excess is recorded as unapplied.** A payer can
+  approve more than the patient owes — because the patient has already paid part of the bill, or an
+  earlier claim covered it. Posting the full approval would drive the invoice below zero, so the
+  settlement posts `min(approved, outstanding)` and stores the remainder on the claim as
+  `unappliedAmount` with a reason. It is not a cash refund and it is not a negative balance; it is a
+  figure the finance team has to resolve with the payer.
+* **`patientShare` is measured against the outstanding balance**, not the original charge:
+  `max(0, balance at decision − approved)`. Measuring against the charge would ignore payments
+  already received and overstate what the patient still owes.
 
 Worked example, BL-8801 (₱17,360 total, ₱10,000 already collected):
 
@@ -119,6 +126,19 @@ Worked example, BL-8801 (₱17,360 total, ₱10,000 already collected):
 | Before | 7,360.00 | 10,000.00 | 0.00 |
 | Claim approved for 4,000 | 7,360.00 | 10,000.00 | 0.00 |
 | Claim settled | 3,360.00 | 10,000.00 | 4,000.00 |
+
+If the same claim had been approved for 9,000 against a 7,360 balance, the settlement would post
+7,360 and record 1,640 as `unapplied`; the balance would land on zero, never below it.
+
+---
+
+### Credits
+
+A patient who pays more than the invoice is holding a credit, not a negative balance.
+`HIS.ledger.recordCredit()` records it as a `credit` transaction with its own reference. Credits are
+excluded from `collected`, `covered` and the invoice balance, and `creditOf()` reports them
+separately. `recordPayment()` still refuses an amount above the balance: an overpayment has to be
+recorded deliberately, with a receipt number, not by letting a payment slip through.
 
 ---
 
