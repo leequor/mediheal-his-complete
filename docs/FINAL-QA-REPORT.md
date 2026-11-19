@@ -389,3 +389,49 @@ The claim dialog's action row was pinned with `position:sticky; bottom:-26px` in
 container: the last status-history line was hidden behind the footer with no sign that more existed,
 and the footer's bottom edge was clipped. It is now a fixed header, a scrolling body and an anchored
 footer. See `DESIGN-LOCK` §20.
+
+---
+
+## 12. Nested modal stacking — the defect the earlier passes missed
+
+### Root cause
+
+| Overlay | z-index |
+|---|---|
+| `.cl-bg` — claim detail | **2500** |
+| `.ac-bg` — page editors | 2500 |
+| `.modal-bg` — `HIS.kit.modal()`, used by every claim action | **60** |
+
+A claim action created its form at 60 under a parent at 2500. The form existed, was focusable by
+script, and could not be seen or clicked by a person. A hit test at its centre returned `.cl-docs`, a
+cell of the parent dialog.
+
+**Why the previous pass passed:** it clicked the button node with `element.click()`, which ignores
+stacking. Every assertion was true and the feature was unusable. `claims-modal-stack-check.mjs` now
+uses real Playwright clicks — which fail when anything covers the target — and hit-tests the centre of
+each dialog.
+
+### Fix
+
+One stack in `assets/js/kit.js`, one layer scale, a `MutationObserver` that registers every overlay
+regardless of which file created it, Escape bound to the top overlay only, and a submission contract
+where `onSave` can return `false` to keep the form open. Details in `DESIGN-LOCK` §21.
+
+### Verified
+
+`scripts/claims-modal-stack-check.mjs` — **76 assertions**:
+
+| Group | What is proven |
+|---|---|
+| All four decisions + note | form above the parent (4020 vs 4010), pointer lands inside it, field accepts typing, submit moves the claim, history grows, no cash recorded, exactly one dialog remains |
+| Validation | an out-of-range amount keeps the form open, shows the reason inside it, preserves the typed value, leaves the claim untouched, and still accepts a corrected value |
+| Closing | Cancel, Escape and backdrop each remove only the child; a second Escape closes the parent; no overlay, scroll lock or stack entry survives; the register still works afterwards |
+| Add note | empty note refused; valid note recorded; claim status and money unchanged; the note is visible in the still-open dialog |
+| Viewports | 1440×900, 1366×768, 1280×800 — above the parent, inside the window, pointer reaches the form |
+| Elsewhere | the pharmacy dispense form joins the same managed layer |
+
+### Totals
+
+**1,370 assertions across 20 harnesses + 144 role checks = 1,514. 0 failures.**
+smoke 28 pages · a11y 27 pages 0 violations · responsive 140 · buttons 0 anomalies (388 clicks) ·
+visual 0.000% at 1440 and 1366.

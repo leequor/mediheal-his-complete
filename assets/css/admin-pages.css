@@ -76,7 +76,7 @@
 .ac-edit:hover{background:#e8f4fb}
 
 /* editor modal */
-.ac-bg{position:fixed;inset:0;z-index:2500;background:var(--scrim);display:grid;place-items:center;padding:20px}
+.ac-bg{position:fixed;inset:0;z-index:4000;background:var(--scrim);display:grid;place-items:center;padding:20px}
 .ac-m{width:620px;max-width:100%;max-height:88vh;overflow-y:auto;background:#fff;border-radius:16px;padding:24px;box-shadow:0 20px 50px rgba(15,30,46,.25)}
 .ac-m h3{margin:0;font:500 20px/25px var(--font-lexend);color:var(--section)}
 .ac-s{margin:5px 0 0;font:400 12.5px/17px var(--font-inter);color:var(--muted)}
@@ -154,7 +154,7 @@
 .ad-tr.ad-g-claims{cursor:pointer}
 .ad-tr.ad-g-claims .badge{min-width:0;padding:0 12px;height:26px;font-size:11px}
 
-.cl-bg{position:fixed;inset:0;z-index:2500;background:var(--scrim);display:grid;place-items:center;padding:24px}
+.cl-bg{position:fixed;inset:0;z-index:4000;background:var(--scrim);display:grid;place-items:center;padding:24px}
 /* A column: fixed header, scrolling body, anchored footer. The footer used to be sticky inside a
    scrolling card with bottom:-26px, so the last status-history line vanished behind it with no sign
    that anything was hidden. */

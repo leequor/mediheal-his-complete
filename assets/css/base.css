@@ -72,4 +72,4 @@ body.menu-open .drawer{transform:none}
    the flash fades out, so it reads as "this one" without becoming a permanent state. */
 .dl-hit{animation:dl-flash 2.4s ease-out 1;outline:2px solid #1c6d9c;outline-offset:-2px;border-radius:8px}
 @keyframes dl-flash{0%{background:#dff0f8}55%{background:#dff0f8}100%{background:transparent}}
-.dl-tip{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);z-index:3000;background:#15405a;color:#fff;font:600 13px/16px var(--font-inter);padding:10px 16px;border-radius:10px}
+.dl-tip{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);z-index:5000;background:#15405a;color:#fff;font:600 13px/16px var(--font-inter);padding:10px 16px;border-radius:10px}
