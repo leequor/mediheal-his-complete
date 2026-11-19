@@ -141,8 +141,8 @@
 
 /* M6 column tuning after inspecting the rendered screens: the Ordered column wrapped to two
    lines and the Qty column split '30 of 30 tablet' across lines. */
-.ad-g-lab{grid-template-columns:112px 1.05fr 1.2fr 70px 96px 116px 232px}
-.ad-g-rx{grid-template-columns:84px 1.15fr 1.5fr 116px 100px 128px 152px}
+.ad-g-lab{grid-template-columns:140px 1.05fr 1.2fr 70px 96px 116px 232px}
+.ad-g-rx{grid-template-columns:132px 1.15fr 1.5fr 116px 100px 128px 152px}
 .ad-g-stock{grid-template-columns:1.45fr 92px 120px 70px 116px 1fr 148px}
 
 /* ============================================================================
@@ -202,7 +202,7 @@
    ============================================================================ */
 
 /* admissions table */
-.ad-g-adm{grid-template-columns:104px 1.15fr 1.05fr 96px 96px .95fr 252px}
+.ad-g-adm{grid-template-columns:134px 1.15fr 1.05fr 96px 96px .95fr 252px}
 
 /* charges / unbilled queue table */
 .ad-g-chg{grid-template-columns:88px 1.15fr 1.05fr 112px 1fr 76px 92px 148px}

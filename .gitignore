@@ -33,3 +33,7 @@ qa/prev/
 
 # Screenshots taken during a review. Never part of the deliverable.
 qa/shots/
+qa/baseline-release/*.png
+
+# Screenshots from the visual acceptance sweep. Regenerated with scripts/eyeball.mjs.
+qa/eyeball/

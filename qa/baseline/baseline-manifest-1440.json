@@ -2,80 +2,80 @@
   "accounts": {
     "width": 1440,
     "height": 1508,
-    "bytes": 445540,
-    "sha256": "35f0585c75043e49e8080892a5acb50b3ac7f561921d7a9b7b70219b1f4bb563"
+    "bytes": 445544,
+    "sha256": "9e9c21ffc40d7dfb45a899b77bc744ea613bc8dbab1866e8ea77d6dc82b0201f"
   },
   "admissions": {
     "width": 1440,
     "height": 1120,
-    "bytes": 473191,
-    "sha256": "7e74b6cedd7ed8c6b6e20164766a65e1015c6a4eb806112e667f057ee1f8dbeb"
+    "bytes": 473227,
+    "sha256": "49e24567be04e75c1bc2822e0575643def265ddbc399606eb6122a433a199df2"
   },
   "appointment-confirmed": {
     "width": 1440,
     "height": 1120,
-    "bytes": 626695,
-    "sha256": "ffa0ab3a466777be78fcbe9f4803105b9dce564b82dcc368c68774415fdcb4ae"
+    "bytes": 626715,
+    "sha256": "3030da58012dbd02666022f85b2b91d2f0c27f19b22ff739c3b7ac1b297b34c4"
   },
   "appointment-form": {
     "width": 1440,
     "height": 1120,
-    "bytes": 361285,
-    "sha256": "8970480f5ad8597330219259fa93442b5675c15574f337b7d872b2cf397ebbaa"
+    "bytes": 361284,
+    "sha256": "c821d7d955067c567cd047402fb2114948a867a91b741ac19fcc3449bcbb54d3"
   },
   "appointments": {
     "width": 1440,
     "height": 1120,
-    "bytes": 472294,
-    "sha256": "eb5b3ae5dd68329d5a6912c4fbeb0b8e7ef116d37ca2034edce3064522f63275"
+    "bytes": 472296,
+    "sha256": "830102f1d1a4f4eaa9e98ba6a89ae1bb0590eb90ab8507fbee77ccf7cc102b5f"
   },
   "attendance": {
     "width": 1440,
     "height": 1635,
-    "bytes": 473704,
-    "sha256": "78e7bc7fc8bd088fcf26463c3801644f8f5c4e7f92a88d3e8128fcea816d58c5"
+    "bytes": 473703,
+    "sha256": "6ede63f3e0a3e2321d1d36cf7a26d002ab8754ada40265ccd8544b8ebbefb538"
   },
   "audit": {
     "width": 1440,
     "height": 1120,
-    "bytes": 574036,
-    "sha256": "966f774b58730ec261c62fabf15274c9fab54917c461f77dd232e4e1d3ddcc36"
+    "bytes": 574038,
+    "sha256": "9401582f159d24cd4d8fab3a37a8821a6c89f1bb0f1494493a18d78f49031f38"
   },
   "billing": {
     "width": 1440,
     "height": 1120,
-    "bytes": 450668,
-    "sha256": "dd626657952e509671f3ab732a3650abc7365716f52bfb9333be39f89b8900f9"
+    "bytes": 450670,
+    "sha256": "10fa384be336d531f563de0e96488ad83d92d64a48d312724968ff82853ae518"
   },
   "charges": {
     "width": 1440,
     "height": 1134,
     "bytes": 388646,
-    "sha256": "2e50dfc82d24970e207ba457c276a9c71fc8d66847c28db416f379496e9cbcfa"
+    "sha256": "2717af20a0d9559824c93bf537bf3eb6c3e2b0e619059da62d0357703e69eb36"
   },
   "claims": {
     "width": 1440,
     "height": 1181,
     "bytes": 424652,
-    "sha256": "64d15068a8e776a02d1efa314df1836146f90ce1868177afa748221f6c40a7bd"
+    "sha256": "9c742fed146ce1701bece6f1402d5bf4a4854931acd62ba1341cab9e2f9966ca"
   },
   "consultation": {
     "width": 1440,
     "height": 1262,
     "bytes": 435441,
-    "sha256": "0f28ee667b852890c7132e50f22f1b91b242bd905db9427a2441d58b9aae9df7"
+    "sha256": "9d2ce4c49588eb50f7feb25908bcbb536f6805a38d5ff423e0b60af9dc4bf91d"
   },
   "dashboard": {
     "width": 1440,
     "height": 1128,
-    "bytes": 354058,
-    "sha256": "560e5f1a18aad924f9336b8fbc386958ccb2a70094792751985ff4ec141bfc08"
+    "bytes": 354060,
+    "sha256": "53432e80a957722d56a6d5b39d055a9bd4399f3b952bc85243393a803a096ae9"
   },
   "departments": {
     "width": 1440,
     "height": 1420,
-    "bytes": 421418,
-    "sha256": "ff989521ef9036b39463dcd75ed6a50f23c8005f53a0c81ff1132518e88360fd"
+    "bytes": 421419,
+    "sha256": "a6d2738acddba17b245a34389ab394283eeb60afcac831ce8459e55e1628a84d"
   },
   "index": {
     "width": 1440,
@@ -86,85 +86,85 @@
   "laboratory": {
     "width": 1440,
     "height": 1120,
-    "bytes": 450727,
-    "sha256": "5d1dafb0c9e1cf5ae3a52a6f24285920d50831856b14a1d49d79cc7ea5e9bd69"
+    "bytes": 451538,
+    "sha256": "c6a9eb44e39ee43a1ab56404adf8b54919615d922a35d3f6504f0eb838713d0b"
   },
   "nursing": {
     "width": 1440,
     "height": 1262,
-    "bytes": 444979,
-    "sha256": "affd5c653ce7613ef5071a0f3efec8e068d014f805fd97b92167820b6f05ae28"
+    "bytes": 451322,
+    "sha256": "f5ba26b3a629f5cdd90d234e95cbd4e7e202cb562ae65fdb4d6445b05d380c21"
   },
   "outpatient-form": {
     "width": 1440,
     "height": 2676,
-    "bytes": 621363,
-    "sha256": "430c1d8e29d91b301e7b00ad640c927a17c6bd61c7e393c31d6c9b5fd5d0aadc"
+    "bytes": 621364,
+    "sha256": "ef3a0bbe289403b15cd537c804903be323c96c5d2eb89c45962992634e79bae6"
   },
   "payroll": {
     "width": 1440,
     "height": 1345,
-    "bytes": 469325,
-    "sha256": "97e5f60cc4292c909c52df1913d7be49a96732bcb18c97331f94e88108c51af9"
+    "bytes": 469326,
+    "sha256": "85fcac62b53bd6ce55dcbc7d4002044f970ab444a3292d19db1eb92cd7843c05"
   },
   "personnel": {
     "width": 1440,
     "height": 1262,
-    "bytes": 432814,
-    "sha256": "b90ad9e4eebb322ca5bd28ddadd4af720d68c07377cfff094c17b522ea91380e"
+    "bytes": 432826,
+    "sha256": "266de5a8e3fa61c3c345ae51e1820d1dd6e46313bd7675aee4c06ecb58adec1d"
   },
   "pharmacy": {
     "width": 1440,
     "height": 1120,
-    "bytes": 528699,
-    "sha256": "4653ec31a137ecb877bc51dfa269cb7d5c5a2c294ba0592107082209569e51ca"
+    "bytes": 531068,
+    "sha256": "6b0e478c843f9688ca4d2ad7b8eb9616d5a49a81581d36a63d6175a33020f8d8"
   },
   "portal": {
     "width": 1440,
     "height": 900,
-    "bytes": 272373,
-    "sha256": "997f8e37b66d90ebfa348dbdb5147148a7bbe3ea5c47a8b0f6ea475aa13e695f"
+    "bytes": 272640,
+    "sha256": "08043fdd85a4cbd9ccec3a1c294c7f6e0cc6aeaa96e6f1ec3bd3537f0d09ad6a"
   },
   "profile": {
     "width": 1440,
     "height": 1332,
-    "bytes": 453935,
-    "sha256": "acc4cc8e98413f6b7dd17992f5fa62f7541c31713fbcf5eafb727f879aed9eee"
+    "bytes": 453796,
+    "sha256": "a608cfc3d6485b0611aa2092390ffc7534e63b70fd8c9d44e8fe71439f413a60"
   },
   "registration-form": {
     "width": 1440,
     "height": 2789,
-    "bytes": 630774,
-    "sha256": "742439c74608b6481638693a65d53eaa56724aa1c1278f3679cc96847e87814b"
+    "bytes": 630968,
+    "sha256": "de91fe80100fe32f4108316b3fb23782b0463bff68dd65e863c3e4fdc9548c10"
   },
   "registration": {
     "width": 1440,
     "height": 1228,
-    "bytes": 375777,
-    "sha256": "541dc066466a86f24ce91e8ea6be4a069655fc09f350582e08d4439f0d68f466"
+    "bytes": 375612,
+    "sha256": "b1e8dc249008f0e92d0baa3ecd1cf729c3f29cff8248fce0c424212611e151c5"
   },
   "reports": {
     "width": 1440,
     "height": 1523,
-    "bytes": 433344,
-    "sha256": "f9a900c19dfa73b093bc4a60ee2dc59a8d0b732dae0fcaded1732399ae276a85"
+    "bytes": 433345,
+    "sha256": "2bc5132106f8987ab01fd20c1d3fec2176bbb0c7fffd7fd8c91b75cc7c0c4142"
   },
   "settings": {
     "width": 1440,
     "height": 1554,
-    "bytes": 459455,
-    "sha256": "fd975afe24b1fa9ef57e799e50abaf9bfa082df5dad69ad6db37fe278eeec479"
+    "bytes": 459456,
+    "sha256": "7a53a1c043d37dc4656c476b41cdadcbef27b89b29eeb61e50091b984c5c3f29"
   },
   "staff": {
     "width": 1440,
     "height": 1262,
-    "bytes": 432814,
-    "sha256": "b90ad9e4eebb322ca5bd28ddadd4af720d68c07377cfff094c17b522ea91380e"
+    "bytes": 432826,
+    "sha256": "266de5a8e3fa61c3c345ae51e1820d1dd6e46313bd7675aee4c06ecb58adec1d"
   },
   "treatment": {
     "width": 1440,
     "height": 1262,
-    "bytes": 444484,
-    "sha256": "0861437f6a498386357a791f0e0fe2821429a3792242acea41517577032ef989"
+    "bytes": 444496,
+    "sha256": "db3f4790d7457d948ff441119226c58870b40b5da2d5a9b8e0d01c4b88cfe7c2"
   }
 }

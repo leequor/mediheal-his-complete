@@ -62,6 +62,9 @@
 .pt-row{display:flex;justify-content:space-between;align-items:center;gap:12px}
 .pt-link{color:#1a7bb0;font-weight:600;font-size:14px;background:none;border:0;padding:0}
 .pt-link.small{font-size:12px}
+/* On the blue top bar the blue link is all but invisible; it needs the header's own text colour. */
+.pt-topbar .pt-link{color:rgba(255,255,255,.94)}
+.pt-topbar .pt-link:hover{color:#fff;text-decoration:underline}
 .pt-box{border:0;background:rgba(255,255,255,.6);border-radius:var(--r);padding:20px;display:grid;gap:14px}
 .pt-box legend{font:600 18px var(--font-title);padding:0}
 .pt-hint{font-size:12px;color:var(--muted-pt)}

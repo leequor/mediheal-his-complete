@@ -64,7 +64,7 @@
       var on = e.id === st.sel;
       h += "<button class='pe-a pe-r" + (on ? ' on' : '') + "' data-emp='" + e.id + "' style='top:" + (547 + 76 * i) + "px'>";
       h += "<span class='av'>" + initials(e.name) + "</span><span class='nm'>" + esc(e.name) + "</span><span class='rl'>" + esc(e.role) + ' \u00b7 ' + esc(e.dept) + "</span><span class='id'>" + e.id + '</span>';
-      h += on ? "<span class='chv'>" + ic('right', 18, 2) + '</span>' : "<span class='dot" + (e.status === 'Active' ? '' : ' off') + "'></span>";
+      h += "<span class='dot" + (e.status === 'Active' ? '' : ' off') + "'></span>";
       h += '</button>';
     });
     if (!v.length) h += at('pe-none', 68, 547, 'No employees match');

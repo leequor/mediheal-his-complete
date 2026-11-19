@@ -14,7 +14,7 @@
 .pf-name{left:90.598px;top:21.711px;margin:0;font:700 17.744px/23.422px var(--font-inter);color:#1f2937;white-space:nowrap}
 .pf-tags{left:90.598px;top:51.351px;height:21.293px;display:flex;gap:8.35px;align-items:flex-start}
 .pf-tag{display:block;height:21.293px;padding:0 9.394px;border-radius:6.2625px;font:700 11.481px/21.293px var(--font-inter);white-space:nowrap}
-.pf-meta{flex:none;width:151.931px;margin-top:2.297px;font:400 12.525px/16.658px var(--font-inter);color:#6b7280}
+.pf-meta{flex:0 1 auto;min-width:0;width:auto;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2.297px;font:400 12.525px/16.658px var(--font-inter);color:#6b7280}
 .pf-btn{position:absolute;top:30.7px;height:32.98px;border:0;border-radius:8.35px;background:#fff;box-shadow:inset 0 0 0 1px #e6e9ee;padding:0 0 0 14.4px;text-align:left;font:500 12.525px/32.98px var(--font-inter);color:#1f2937;white-space:nowrap}
 .pf-btn:hover{background:#f6fafd}
 

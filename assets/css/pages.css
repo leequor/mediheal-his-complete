@@ -38,7 +38,9 @@
 .page-sub{position:absolute;left:77px;top:356px;width:380px;margin:0;font:400 13.5px/17.5px var(--font-lexend);color:#4d6a80}
 .btn-primary{position:absolute;height:46px;border:0;border-radius:10px;background:#1c6d9c;color:#fff;font:600 15px var(--font-inter)}
 .tabs button{position:absolute;top:25px;width:96px;height:38px;border:0;border-radius:10px;background:#4c659f;color:#fff;font:700 14px var(--font-inter)}
-.tabs button.on{box-shadow:0 0 0 2px #15405a}
+/* A 2px ring in almost the same blue was not enough to tell the active filter from the other two;
+   the active pill now takes the darker navy the header uses. */
+.tabs button.on{background:#15405a;box-shadow:0 0 0 2px #15405a}
 .sbox{position:absolute;left:443px;top:30px;width:270px;height:37.6px;display:flex;align-items:center;gap:8px;padding:0 12px;background:#fff;border:1px solid #e6ecf1;border-radius:10px;color:#8a9aa6}
 .sbox input{border:0;outline:0;flex:1;min-width:0;font:400 14px var(--font-inter);background:transparent;color:#0e2a3f}
 .rule{position:absolute;left:0;right:0;top:88px;height:1px;background:rgba(0,0,0,.18)}

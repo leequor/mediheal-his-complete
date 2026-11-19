@@ -102,7 +102,7 @@
       var on = p.id === st.sel;
       h += "<button class='tp-a tp-r" + (on ? ' on' : '') + "' data-pt='" + p.id + "' style='top:" + (547 + 76 * i) + "px'>";
       h += "<span class='av'>" + p.ini + "</span><span class='nm'>" + esc(p.name) + "</span><span class='rl'>" + esc(p.ward + ' \u00b7 ' + p.bed + ' \u00b7 Next due ' + p.next) + "</span><span class='id'>" + p.id + '</span>';
-      h += on ? "<span class='chv'>" + ic('right', 18, 2) + '</span>' : "<span class='dot'></span>";
+      h += "<span class='dot'></span>";
       h += '</button>';
     });
     if (!v.length) h += at('tp-none', 68, 547, 'No patients match');
