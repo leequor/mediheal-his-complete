@@ -30,3 +30,6 @@ qa/*.mjs
 # baselines can be compared by hash; the images are regenerated on demand — see DESIGN-LOCK 17.4.
 qa/baseline-previous/*.png
 qa/prev/
+
+# Screenshots taken during a review. Never part of the deliverable.
+qa/shots/
