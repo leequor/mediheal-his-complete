@@ -751,3 +751,29 @@ Recorded so a later reader does not "fix" them by accident:
 Three states are now preserved: `qa/baseline-previous` (69c9a63, pre-QA), `qa/baseline-release`
 (37e23ce, the published release) and `qa/baseline` (this pass). Manifests are committed; images are
 regenerated on demand with the commands in 17.4, substituting the directory.
+
+---
+
+## 20. Claims dialog — actions that could be covered by content
+
+The claim dialog was a single scrolling card with the action row pinned by
+`position:sticky; bottom:-26px` inside the scroll container. Three consequences, all visible:
+
+- The last status-history entry disappeared behind the footer's white background with nothing to
+  suggest there was more.
+- `bottom:-26px` pushed the footer into the card's padding, so its bottom edge was clipped.
+- The four decisions, "Add note" and "Close" shared one flex row of identical `ad-btn` weight, so a
+  destructive decision sat next to the dismiss button and nothing was marked as the expected path.
+
+The card is now a column — fixed header, scrolling `.cl-body`, anchored `.cl-actions` — which is the
+only structure in which content can never be covered. Inside the footer the decisions sit in their
+own group, ordered as a claim is actually decided (approve → partial → deny → request information),
+with `approve` and `settle` carrying the primary treatment the other modules already use. Note and
+dismiss are a second row, right-aligned.
+
+`.ad-btn.pri` was added for this; it matches `.at-btn.pri` and `.pr-btn.pri` exactly.
+
+**What did not change:** the state machine. `HIS.claims.available()` already filtered transitions by
+status and role, and still does. The dialog shows four decisions only for `under-review`, one for
+`additional-info`, settlement for `approved`/`partially-approved`, and nothing but close/appeal for
+`denied`.

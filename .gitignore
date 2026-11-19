@@ -37,3 +37,6 @@ qa/baseline-release/*.png
 
 # Screenshots from the visual acceptance sweep. Regenerated with scripts/eyeball.mjs.
 qa/eyeball/
+
+# Control census written by scripts/exhaustive-controls-check.mjs.
+qa/control-census.json

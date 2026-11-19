@@ -128,6 +128,11 @@
     if (!c) return;
     open = id;
     var acts = HIS.claims.available(c);
+    // Decisions in the order they are taken, not the order the transition table lists them.
+    var RANK = { approve: 0, partial: 1, settle: 0, deny: 2, close: 3, 'request-info': 4 };
+    acts = acts.slice().sort(function (a, b) {
+      return (RANK[a.action] == null ? 9 : RANK[a.action]) - (RANK[b.action] == null ? 9 : RANK[b.action]);
+    });
     var bill = (HIS.billing.bills || []).filter(function (b) { return b.id === c.invoiceId; })[0];
     var balance = bill ? HIS.ledger.balanceOf(bill) : null;
     var collected = bill ? HIS.ledger.paidOf(bill) : null;
@@ -142,6 +147,7 @@
       "<p class='cl-sub'>" + esc(c.patientName) + ' \u00b7 ' + esc(c.invoiceId) + ' \u00b7 ' + esc(c.memberRef) + '</p></div>' +
       "<div class='cl-h-r'>" + pill(c) + "<button class='cl-x' data-close aria-label='Close'>\u00d7</button></div></div>" +
 
+      "<div class='cl-body'>" +
       "<div class='cl-kv'>" +
       kv('Claim amount', money(c.claimAmount)) +
       kv('Requested', money(c.requestedAmount)) +
@@ -186,13 +192,20 @@
         esc(c.settlement.transactionId) + ' \u00b7 ' + money(c.settlement.amount) + ' posted as coverage. No cash was recorded.</div>'
         : '') +
 
+      '</div>' +
+      // The decisions sit together on the left, in the order a claim is actually decided; note and
+      // dismiss sit apart on the right so a destructive decision is never adjacent to "Close".
       "<div class='cl-actions'>" +
+      "<div class='cl-acts'>" +
       (acts.length ? acts.map(function (t) {
-        return "<button class='ad-btn" + (t.action === 'settle' ? ' pri' : '') + "' data-act='" + t.action + "'>" + esc(t.label) + '</button>';
+        var pri = (t.action === 'approve' || t.action === 'settle') ? ' pri' : '';
+        return "<button class='ad-btn" + pri + "' data-act='" + t.action + "'>" + esc(t.label) + '</button>';
       }).join('') : "<span class='cl-none'>No action is available to your role at this status.</span>") +
+      '</div>' +
+      "<div class='cl-acts-r'>" +
       "<button class='ad-btn' data-note='1'>Add note</button>" +
-      "<button class='ad-btn ghost' data-close>Close</button></div>" +
-      '</div>';
+      "<button class='ad-btn ghost' data-close>Close</button>" +
+      '</div></div>';
     document.body.appendChild(bg);
     bg.addEventListener('mousedown', function (e) { if (e.target === bg) close(); });
     bg.addEventListener('click', function (e) {
