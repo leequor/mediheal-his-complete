@@ -207,6 +207,7 @@
       "<button class='ad-btn ghost' data-close>Close</button>" +
       '</div></div>';
     document.body.appendChild(bg);
+    document.addEventListener('keydown', escKey);
     bg.addEventListener('mousedown', function (e) { if (e.target === bg) close(); });
     bg.addEventListener('click', function (e) {
       var T = e.target;
@@ -233,8 +234,10 @@
   function close() {
     var bg = document.querySelector('.cl-bg');
     if (bg) bg.remove();
+    document.removeEventListener('keydown', escKey);
     open = null;
   }
+  function escKey(e) { if (e.key === 'Escape') close(); }
 
   // ---- transitions ----------------------------------------------------------------------------
   function ask(id, action) {
@@ -261,7 +264,8 @@
       var r = HIS.claims.transition(id, action, {});
       HIS.kit.toast(r.ok ? 'Claim ' + r.claim.id + ' \u2192 ' + HIS.claims.STATUS[r.claim.status].label : r.error);
       close();
-      if (r.ok) render();
+      render();
+      if (r.ok) detail(id);          // show the claim in its new state
       return;
     }
     HIS.kit.modal({
@@ -269,14 +273,15 @@
       sub: c.id + ' \u00b7 ' + c.payer + ' \u00b7 ' + c.patientName,
       body: body,
       saveLabel: t.label,
-      onSave: function (data) {
+      onSave: function (data, err) {
         var r = HIS.claims.transition(id, action, data);
-        if (!r.ok) { HIS.kit.toast(r.error); return; }
+        if (!r.ok) { err.textContent = r.error; return false; }   // stay open, keep what was typed
         var msg = 'Claim ' + r.claim.id + ' \u2192 ' + HIS.claims.STATUS[r.claim.status].label;
         if (action === 'settle') msg += ' \u00b7 ledger ' + r.claim.settlement.transactionId + ' posted as coverage';
         HIS.kit.toast(msg);
         close();
         render();
+        detail(id);                    // reopen on the claim so the new status and history are visible
       }
     });
   }
@@ -287,10 +292,11 @@
       sub: 'Notes are appended to the claim and shown in its history panel.',
       body: "<label class='cl-f'><span>Note</span><textarea name='text' rows='3'></textarea></label>",
       saveLabel: 'Save note',
-      onSave: function (data) {
+      onSave: function (data, err) {
         var r = HIS.claims.addNote(id, data.text);
-        HIS.kit.toast(r.ok ? 'Note added' : r.error);
-        close(); render();
+        if (!r.ok) { err.textContent = r.error; return false; }
+        HIS.kit.toast('Note added');
+        close(); render(); detail(id);
       }
     });
   }

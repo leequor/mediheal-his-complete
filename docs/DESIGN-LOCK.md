@@ -777,3 +777,58 @@ dismiss are a second row, right-aligned.
 status and role, and still does. The dialog shows four decisions only for `under-review`, one for
 `additional-info`, settlement for `approved`/`partially-approved`, and nothing but close/appeal for
 `denied`.
+
+---
+
+## 21. Modal layering — one stack, not per-page guesses
+
+### The defect
+
+The claim dialog (`.cl-bg`) sat at `z-index: 2500`. The shared action form it opens — `HIS.kit.modal()`,
+`.modal-bg` — sat at **60**. Clicking "Record approval" therefore created a form *underneath* the
+dialog that spawned it: present in the DOM, reachable by `element.click()` from a script, and
+completely invisible to a person. Cancelling was the only thing a user could do, because the Cancel
+button they could reach belonged to the parent.
+
+The previous pass "fixed" this dialog's footer and reported the actions working. They were tested by
+calling `.click()` on the button node, which bypasses stacking entirely. A real pointer at the centre
+of the form hit `.cl-docs` — a cell of the parent dialog.
+
+### The fix
+
+`assets/js/kit.js` now owns a modal stack. Every overlay joins it — `.modal-bg`, `.ac-bg`, `.cl-bg` —
+and receives an explicit layer from a single scale:
+
+```
+content        < 30
+page overlays  < 1000        .at-scrim / .pr-scrim and their dialogs, never nested
+modal band       4000 + 10n  every overlay in the stack, in the order it was opened
+toasts           5000        feedback stays readable over an open dialog
+```
+
+- `HIS.modalStack.open(el)` / `.close(el)` assign and release a layer; `top()` and `depth()` expose
+  the state for tests.
+- A `MutationObserver` on `document.body` registers and retires overlays the kit does not create
+  itself, so the page-level `.ac-bg` editors and the claim dialog are covered without each file
+  opting in.
+- Removing an overlay restacks the rest, so closing a child restores the parent as the top.
+- `body.modal-open` locks page scroll while anything is open and releases it when the stack empties.
+- **Escape belongs to the top overlay.** With one dialog open nothing changes; with two, a
+  capture-phase listener stops the event and clicks the inner dialog's close control, so the parent
+  keeps its state. Before this, Escape closed both.
+
+### The submission contract
+
+`HIS.kit.modal()` called `spec.onSave(...)` and then closed unconditionally. A rejected approval
+therefore closed the form and lost what the user typed, reporting the failure in a toast behind the
+parent dialog. `onSave(values, errEl)` may now return `false` to keep the dialog open; the message it
+writes into `errEl` appears above the actions in `.modal-err`. Anything else closes as before, so
+every existing caller keeps its behaviour.
+
+The claim callbacks use it: a rejected transition writes the reason into the form and stays open, and
+a successful one refreshes the claim rather than dropping back to the register.
+
+### Also fixed
+
+The claim dialog was the only overlay with no Escape handler. It has one now, and it unregisters on
+close.

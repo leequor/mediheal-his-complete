@@ -256,7 +256,8 @@ Run with `PW=<path to playwright-core>` set (see `README.md`). Counts are the ac
 | `qa-check.mjs` | 91 | Sign-in routes, appointment counts, avatars, role notifications, dashboard sources, bed dialog, payslip modal, build-text sweep |
 | `qa-final-check.mjs` | 73 | Payslip archive inspected byte-for-byte, duplicate submit, notification read/read-all/switch, fresh-session isolation, Departments as dept head, both sign-in routes |
 | `qa-nav-check.mjs` | 115 |
-| `exhaustive-controls-check.mjs` | 36 | Control census, row-action targeting, claim dialog geometry and outcomes, repeat and permission guards | Avatar ink-centroid centring, per-account profile identity, notification destination and read-versus-done, role scoping | Noon cutoff edges, transfer pricing, idempotency, reopen, reload, derived occupancy, two-tab lost update |
+| `exhaustive-controls-check.mjs` | 36 |
+| `claims-modal-stack-check.mjs` | 76 | Nested modal layering, real clicks and hit tests, validation contract, stack cleanup | Control census, row-action targeting, claim dialog geometry and outcomes, repeat and permission guards | Avatar ink-centroid centring, per-account profile identity, notification destination and read-versus-done, role scoping | Noon cutoff edges, transfer pricing, idempotency, reopen, reload, derived occupancy, two-tab lost update |
 | `acceptance-audit.mjs` | 180 | Independent M10 acceptance |
 | `m10-1-audit.mjs` | 77 | Pag-IBIG tiers, wage floor, corrections, negative balances |
 | `m10-2-audit.mjs` | 78 | Wage conversion factors and boundaries |
@@ -267,7 +268,7 @@ Run with `PW=<path to playwright-core>` set (see `README.md`). Counts are the ac
 | `visual-check.mjs` | 28 pages | Pixel diff against `qa/baseline` at 1440 and 1366 |
 | `buttons.mjs` | all pages | 0 dead controls |
 
-**Total: 1,294 assertions across 19 rule-asserting harnesses, plus 144 role checks — 1,438 in all.**, plus a 28-page smoke sweep, a 27-page axe audit, 140 responsive checks and 56 visual baselines (28 pages × 2 widths).
+**Total: 1,370 assertions across 20 rule-asserting harnesses, plus 144 role checks — 1,514 in all.**, plus a 28-page smoke sweep, a 27-page axe audit, 140 responsive checks and 56 visual baselines (28 pages × 2 widths).
 
 ## 7. Where to start reading
 
