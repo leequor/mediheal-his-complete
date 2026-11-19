@@ -83,6 +83,28 @@ try { ctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, a
 catch { ctx = browser.contexts()[0]; }
 await ctx.addInitScript(() => { window.__printed = 0; window.print = function () { window.__printed++; }; });
 
+// Protected pages sit behind the sign-in guard, so without a session the sweep would only ever see
+// the login screen. Seed the session, then sweep the real controls.
+const PUBLIC_PAGES = new Set(['index.html', 'portal.html']);
+const AUTH_EMAIL = process.env.AUTH_EMAIL || 'superadmin@mediheal.test';
+{
+  const probe = await ctx.newPage();
+  await probe.goto(BASE + '/index.html', { waitUntil: 'load' });
+  const acct = await probe.evaluate(email => {
+    const a = HIS.accounts.byEmail(email);
+    return a ? { id: a.id, email: a.email, role: a.role } : null;
+  }, AUTH_EMAIL);
+  await probe.close();
+  if (!acct) { console.error('No seeded account for ' + AUTH_EMAIL); process.exit(2); }
+  await ctx.addInitScript(a => {
+    localStorage.setItem('mh_session', JSON.stringify({
+      userId: a.id, email: a.email, role: a.role,
+      at: new Date().toISOString(), expiresAt: new Date(Date.now() + 864e5).toISOString(), remember: true
+    }));
+  }, acct);
+  console.log('buttons: sweeping as ' + AUTH_EMAIL);
+}
+
 const report = { base: BASE, pages: [], anomalies: [] };
 const note = (page, kind, label, extra) => {
   report.anomalies.push({ page, kind, label, ...(extra ? { extra } : {}) });
@@ -92,7 +114,13 @@ const note = (page, kind, label, extra) => {
 for (const name of pages) {
   console.log(`\n== ${name}`);
   const url = BASE + '/' + name;
-  const page = await ctx.newPage();
+  // The public pages are captured without a session so the sign-in form is actually swept.
+  const page = await (PUBLIC_PAGES.has(name)
+    ? browser.newContext({ viewport: { width: 1440, height: 900 }, acceptDownloads: true })
+    : Promise.resolve(ctx)).then(async c => {
+      if (c !== ctx) { await c.addInitScript(() => { window.__printed = 0; window.print = function () { window.__printed++; }; }); }
+      return c.newPage();
+    });
   const errors = [];
   page.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
   page.on('pageerror', e => errors.push('pageerror: ' + e.message));
