@@ -1,0 +1,63 @@
+name: Deploy website to GitHub Pages
+
+# Publishes the static demonstration to https://leequor.github.io/mediheal-his-complete/.
+#
+# Only the runtime website is uploaded: the HTML pages and the assets they reference. The test
+# harnesses, QA reports, design documentation and screenshots stay in the repository, where they are
+# useful, but they are not part of what a visitor downloads.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One deployment at a time; never cancel a run that is already publishing.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the release commit
+        uses: actions/checkout@v4
+
+      - name: Stage the website
+        run: |
+          set -eu
+          mkdir -p _site
+          cp ./*.html _site/
+          cp -r assets _site/assets
+          # A project site is served from /mediheal-his-complete/, and every path in the site is
+          # relative, so no rewrite is needed. Fail the build if a root-absolute reference ever
+          # creeps in, because that would only break once deployed.
+          if grep -rnoE "(src|href)=['\"]/[^'\"]*" _site --include='*.html'; then
+            echo "Root-absolute path found; it will not resolve under a project site." >&2
+            exit 1
+          fi
+          echo "Staged $(find _site -type f | wc -l) files."
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload the artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
