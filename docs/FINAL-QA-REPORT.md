@@ -257,3 +257,32 @@ the URL commits *before* the destination's scripts mount the header. It now wait
 Visual: every page still matches the approved baseline at both widths. The avatar correction and the
 row highlight are both below the harness's 128-level pixel threshold, which is why they do not appear
 as diffs; they are recorded here rather than implied.
+
+---
+
+## 9. Release — published to `mediheal-his-complete`
+
+The completed tree is published to a new, independent public repository with its own GitHub Pages
+deployment. The original `leequor/mediheal-his` is untouched: same remote, same `main` (`fd5bf9f`),
+no pushes, no deployment changes.
+
+| | |
+|---|---|
+| Repository | https://github.com/leequor/mediheal-his-complete |
+| Visibility | public |
+| Default branch | `main` |
+| Live site | https://leequor.github.io/mediheal-his-complete/ |
+| Source commit | the tip of `dev/autonomous-milestones` at release time |
+| Deployment | `.github/workflows/deploy-pages.yml`, triggered by pushes to `main` |
+
+**The artifact is the website, not the repository.** The workflow copies the HTML pages and `assets/`
+into `_site` and uploads only that. The test harnesses, QA reports, design documentation and baseline
+manifests stay in the repository, where they are useful, but a visitor never downloads them. The
+workflow also fails the build if a root-absolute path (`src="/…"` or `href="/…"`) ever appears,
+because such a path resolves on a local server and only breaks once served from
+`/mediheal-his-complete/`.
+
+`scripts/deployed-check.mjs` verifies the **deployed** site over HTTPS rather than the local copy:
+29 assertions covering the root response, asset loading, console errors, staff sign-in, the profile
+menu, the notification deep link, the patient portal, direct page loads by URL, refresh, and a deep
+link after a cold load.

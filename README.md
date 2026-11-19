@@ -141,7 +141,8 @@ PW=<path-to-playwright-core> node scripts/qa-check.mjs
 `smoke`, `a11y-check`, `responsive-check`, `buttons`, `visual-check` and the domain suites
 (`revenue-check`, `charges-check`, `ledger-check`, `claims-check`, `payroll-check`, `adt-boundary-check`,
 `clinical-check`, `finance-check`, `portal-check`, `auth-check`, `roles-check`, `acceptance-audit`,
-`m10-1..4-audit`, `qa-final-check`, `qa-nav-check`) follow the same pattern. Current results are in
+`m10-1..4-audit`, `qa-final-check`, `qa-nav-check`) follow the same pattern, and `deployed-check` runs the
+same kind of checks against the live GitHub Pages site rather than a local server. Current results are in
 [`docs/FINAL-QA-REPORT.md`](docs/FINAL-QA-REPORT.md).
 
 ## Deploying
