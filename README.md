@@ -1,87 +1,151 @@
 # MediHeal HIS
 
-Hospital Information System, built from the Figma file "Overview (Dashboard, Departments)" as a
-static site: plain HTML, CSS and vanilla JavaScript, no build step.
+A hospital information system, built as a static website: plain HTML, CSS and vanilla JavaScript.
+No build step, no backend, no database.
 
-**Live site:** https://leequor.github.io/mediheal-his/ — serves an **older build**. Nothing from M5
-onward has been deployed, and `main` has not moved since `fd5bf9f`.
+**Live demonstration:** https://leequor.github.io/mediheal-his-complete/
 
-**Start here:** [`docs/PROJECT-STATUS.md`](docs/PROJECT-STATUS.md) describes what actually works.
-[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) explains how it fits together.
-[`docs/FEATURE-MATRIX.md`](docs/FEATURE-MATRIX.md) classifies every capability.
+The design is taken from the Figma file *"Overview (Dashboard, Departments)"*. The visual contract —
+tokens, type scale, component geometry — is recorded in [`docs/DESIGN-LOCK.md`](docs/DESIGN-LOCK.md)
+and is not changed casually.
+
+---
 
 ## What it is
 
-A desktop-first demonstration of a Philippine hospital information system: **28 pages, 14 roles**,
-one authoritative patient record, and a single money chain from a clinical service to an invoice.
+A complete demonstration of hospital operations across fourteen staff roles and a patient portal,
+driven by synthetic data. Every screen is real markup and real logic: a charge raised in a
+consultation lands on an invoice, a dispensed prescription decrements a batch, a discharged admission
+posts its room charges and closes the bill.
+
+It is **not** a production hospital system. See [Limitations](#limitations).
+
+## Features
 
 | Area | What works |
 |---|---|
-| Authentication | demo email + password against a browser-local account table; per-account role, navigation and dashboard (not security — see `docs/AUTH.md`) |
-| Patients | one registry read by the staff console, billing and the patient portal |
-| Clinical | consultation, treatment, nursing, laboratory (order → collect → process → result → validate), pharmacy (batch stock, dispensing, expiry, returns) |
-| Inpatient | admissions, 172-bed board, transfers, daily room-and-board accrual, discharge |
-| Revenue | charge master, unbilled queue, invoices, payments, refunds, coverage and discounts |
-| Claims | 13-state lifecycle with partial approval and capped settlement |
-| HR | personnel, attendance, payroll with effective-dated statutory tables |
-| Portal | six patient views, own records only, released results only |
-| Configuration | charge master: effective-dated prices, per-code history, audit on every change |
-| Configuration | charge master with effective-dated prices and per-code history |
+| **Authentication** | Staff sign-in and a separate patient portal, fourteen staff roles with per-role page allowlists, remember-me or tab-scoped sessions, password reset through the Accounts screen |
+| **Dashboards** | One per role, every figure derived from the module that owns it |
+| **Patient management** | Registry, registration (outpatient and inpatient), patient records |
+| **Appointments** | Booking, editing, cancelling, rescheduling, status and doctor filters, pagination |
+| **Clinical** | Consultations, treatment plans, orders, diagnoses, nursing observations |
+| **Laboratory** | Order → collection → processing → result → validation → release, with critical-result acknowledgement |
+| **Pharmacy** | Prescription → verification → batch selection → dispensing, stock receiving, adjustment, disposal, returns, low-stock and expiry tracking |
+| **Admissions** | Ward and bed management, transfer, discharge, room charges from the tariff in force at the time |
+| **Billing** | Charges, invoices, payments, coverage, refunds, ledger reconciliation |
+| **Claims** | Submission, review, approval, denial, settlement simulation |
+| **Attendance** | Clock records, leave requests, timesheet review |
+| **Payroll** | Attendance-driven payroll runs, corrections, approval, release, payslip archive |
+| **Reports** | Revenue, collections, departmental summaries |
+| **Configuration** | Tariffs with effective dates, catalogue, hospital settings |
+| **Accounts** | Account creation, role assignment, password reset, deactivation |
+| **Audit** | Every state change is recorded with who, what and when |
+| **Patient portal** | Own profile, appointments, released results, prescriptions, invoices, payments |
+| **Notifications** | Per-role, derived from live records, each one a deep link to the exact record |
 
-Every record is fictitious and lives in the tab session (`sessionStorage`): it survives navigation and
-refresh, and is gone when the tab closes. Sign out or use **Reset sample data** to restore the seed
-during a visit. It does not synchronise between devices and it is not a hospital database. Read
-`docs/PROJECT-STATUS.md` §3 before treating any figure as real.
+## Technology
 
-## Run locally
+- HTML, CSS and vanilla JavaScript — no framework, no bundler
+- Browser storage only: `sessionStorage` for demonstration records (they die with the tab) and
+  `localStorage` for an explicitly remembered sign-in token
+- SVG icons inline, fonts from Google Fonts, PDFs written by a small built-in PDF 1.4 writer
 
-```
-python3 -m http.server 8000
-```
+## Running it locally
 
-Then open http://localhost:8000 and sign in with a demo account (`index.html` lists them).
+Any static file server works. From the repository root:
 
-## Verify
-
-Every claim in the documentation is produced by a script in `scripts/`. They need `playwright-core`;
-set `PW` to its `index.js` if it is not resolvable from the repository root.
-
-```
-export PW=/abs/path/to/playwright-core/index.js
-node scripts/smoke.mjs                  # 28 pages: console errors, overflow, clickable controls
-node scripts/visual-check.mjs --check   # pixel diff of all pages against qa/baseline @1440
-node scripts/visual-check.mjs --width 1366 --check
-node scripts/auth-check.mjs             # sign-in, session, expiry, reset, deactivation
-node scripts/roles-check.mjs            # every role reaches its allowlist and is blocked elsewhere
-node scripts/portal-check.mjs           # patient identity, scoping, guardians, documents
-node scripts/clinical-check.mjs         # laboratory and pharmacy rules and their integration
-node scripts/finance-check.mjs          # one money chain across Billing, Reports and the portal
-node scripts/charges-check.mjs          # clinical activity becomes a charge, once
-node scripts/revenue-check.mjs          # charge master, consultation billing, ADT, queue, returns
-node scripts/payroll-check.mjs          # payroll arithmetic against hand-calculated figures
-node scripts/claims-check.mjs           # claim state machine, role gates, settlement boundary
-node scripts/ledger-check.mjs           # payments, refunds, coverage, idempotency, invariants
-node scripts/acceptance-audit.mjs       # independent M10 acceptance
-node scripts/m10-1-audit.mjs            # Pag-IBIG tiers, wage floor, corrections
-node scripts/m10-2-audit.mjs            # wage conversion factors and boundaries
-node scripts/m10-3-audit.mjs            # divisor policy per purpose, regional orders
-node scripts/m10-4-audit.mjs            # hour classification, absence basis, Article 83
-node scripts/a11y-check.mjs             # axe audit, 27 pages
-node scripts/responsive-check.mjs       # 28 pages × 5 widths, no overflow
-node scripts/buttons.mjs                # dead-control sweep
-node scripts/qa-check.mjs                # 91 presentation and interaction checks
-node scripts/qa-final-check.mjs          # 68 end-to-end acceptance checks
-node scripts/qa-nav-check.mjs            # 115 avatar, profile and notification checks
-node scripts/mobile-audit.mjs           # rendered text size and touch targets at 5 widths
+```bash
+python -m http.server 8000
+# then open http://127.0.0.1:8000/
 ```
 
-Run two or three at a time: a single shell loop over all of them exceeds the default timeout.
+or
 
-## Images
+```bash
+npx serve .
+```
 
-Logo, background texture and avatar are expected in `assets/img/`. See `assets/img/README.md`.
+Opening `index.html` directly from the filesystem will not work: the app relies on `sessionStorage`
+and on script order that needs an HTTP origin.
 
-## Branches
+## Demonstration accounts
 
-- `dev/autonomous-milestones` — development. All work happens here.
-- `main` — frozen at `fd5bf9f`. Not merged, not deployed.
+All accounts use the sample password **`MediHeal2026!`**. These are demonstration credentials written
+into the source; they are not secure authentication.
+
+| Account | Role |
+|---|---|
+| `superadmin@mediheal.test` | Super Administrator |
+| `admin@mediheal.test` | Hospital Administrator |
+| `reception@mediheal.test` | Receptionist |
+| `admissions@mediheal.test` | Admissions Officer |
+| `doctor@mediheal.test` | Doctor |
+| `nurse@mediheal.test` | Nurse |
+| `pharmacy@mediheal.test` | Pharmacist |
+| `laboratory@mediheal.test` | Medical Technologist |
+| `cashier@mediheal.test` | Cashier |
+| `finance@mediheal.test` | Finance Officer |
+| `hr@mediheal.test` | HR Officer |
+| `department.head@mediheal.test` | Department Head |
+| `auditor@mediheal.test` | Auditor |
+| `patient@mediheal.test` | Patient (portal only) |
+
+## Demonstration behaviour
+
+- Sample records are created on first load and held in **`sessionStorage`**.
+- Changes survive navigation and refresh within the tab, and are lost when the tab closes.
+- **Sign out** and **Reset sample data** both restore the original sample set.
+- A new tab is a new demonstration: it never inherits another visitor's payments, edits or audit
+  entries.
+- "Keep me signed in" writes a token to `localStorage` so the session survives closing the browser;
+  that token is the only thing that outlives the tab, and signing out removes it.
+
+## Limitations
+
+- **Static demonstration.** There is no server and no database. Records live in the browser tab and
+  are not durable, shareable or auditable in any real sense.
+- **Not for real patients.** It must not be used to store real patient records or to operate a
+  hospital.
+- **Authentication is a demonstration.** Passwords are compared in the browser against seeded values.
+  There is no transport security, no server-side enforcement and no real identity provider.
+- **Permissions are UI-level.** Role allowlists decide which pages render; they are not a security
+  boundary.
+- **Integrations are simulated.** PhilHealth eClaims, HMO eligibility and payment gateways have no
+  credentials and are represented by local simulations only.
+- **Payroll proration is not modelled.** New-hire and separation proration needs an employer policy
+  decision; the deferred statutory research was not reopened.
+- **Catalogue and bed inventories are read-only** in Configuration; editing them needs a retirement
+  policy for records that already reference them.
+
+## Repository layout
+
+```
+*.html                 one file per screen
+assets/css/            tokens, base, per-module styles, responsive
+assets/js/             data modules, domain logic, page controllers
+assets/img/            logo and icons
+docs/                  design lock, architecture, data model, feature matrix, QA reports
+scripts/               Playwright test harnesses
+qa/baseline*/          accepted visual baselines (manifests committed, images regenerated on demand)
+.github/workflows/     GitHub Pages deployment
+```
+
+## Tests
+
+The suites are Playwright scripts run against a local static server:
+
+```bash
+PW=<path-to-playwright-core> node scripts/qa-check.mjs
+```
+
+`smoke`, `a11y-check`, `responsive-check`, `buttons`, `visual-check` and the domain suites
+(`revenue-check`, `charges-check`, `ledger-check`, `claims-check`, `payroll-check`, `adt-boundary-check`,
+`clinical-check`, `finance-check`, `portal-check`, `auth-check`, `roles-check`, `acceptance-audit`,
+`m10-1..4-audit`, `qa-final-check`, `qa-nav-check`) follow the same pattern. Current results are in
+[`docs/FINAL-QA-REPORT.md`](docs/FINAL-QA-REPORT.md).
+
+## Deploying
+
+Pushing to `main` triggers `.github/workflows/deploy-pages.yml`, which stages only the HTML pages and
+`assets/`, checks that no root-absolute path has crept in, and publishes the artifact to GitHub Pages.
+Documentation, tests and QA artefacts stay in the repository but are not part of the website.
