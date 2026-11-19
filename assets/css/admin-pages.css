@@ -155,7 +155,12 @@
 .ad-tr.ad-g-claims .badge{min-width:0;padding:0 12px;height:26px;font-size:11px}
 
 .cl-bg{position:fixed;inset:0;z-index:2500;background:var(--scrim);display:grid;place-items:center;padding:24px}
-.cl-card{width:840px;max-width:100%;max-height:90vh;overflow-y:auto;background:#fff;border-radius:16px;padding:26px 28px;box-shadow:0 20px 50px rgba(15,30,46,.25)}
+/* A column: fixed header, scrolling body, anchored footer. The footer used to be sticky inside a
+   scrolling card with bottom:-26px, so the last status-history line vanished behind it with no sign
+   that anything was hidden. */
+.cl-card{width:840px;max-width:100%;max-height:90vh;display:flex;flex-direction:column;overflow:hidden;background:#fff;border-radius:16px;padding:0;box-shadow:0 20px 50px rgba(15,30,46,.25)}
+.cl-h{flex:none;padding:26px 28px 0}
+.cl-body{flex:1 1 auto;min-height:0;overflow-y:auto;padding:0 28px 22px}
 .cl-h{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
 .cl-h h3{margin:0;font:500 21px/26px var(--font-lexend);color:var(--section)}
 .cl-sub{margin:4px 0 0;font:400 12.5px/17px var(--font-inter);color:var(--muted)}
@@ -183,7 +188,14 @@
 .cl-tl-row:first-child{border-top:0}
 .cl-tl-row .w{color:var(--muted);font-size:11.5px}
 .cl-tl-row .why{color:var(--muted)}
-.cl-actions{display:flex;flex-wrap:wrap;align-items:center;gap:9px;position:sticky;bottom:-26px;margin:20px -28px 0;padding:14px 28px 18px;background:#fff;border-top:1px solid #e3edf3}
+/* Two rows on purpose: the decisions get the full width so four of them never wrap mid-group,
+   and the housekeeping pair sits under them, right-aligned. */
+.cl-actions{flex:none;display:flex;flex-direction:column;align-items:stretch;gap:9px;padding:13px 28px 15px;background:#fff;border-top:1px solid #e3edf3}
+.cl-acts,.cl-acts-r{display:flex;flex-wrap:wrap;align-items:center;gap:9px}
+.cl-acts-r{justify-content:flex-end}
+/* The primary decision takes the same treatment the other modules give theirs. */
+.ad-btn.pri{background:#1c6d9c;border-color:#1c6d9c;color:#fff}
+.ad-btn.pri:hover{background:#17597f}
 .cl-actions .ad-btn{height:36px}
 .cl-none{font:400 12.5px/18px var(--font-inter);color:var(--muted)}
 .cl-settled{margin-top:16px;padding:11px 14px;border-radius:10px;background:#f1f9f4;border:1px solid #bfe0cc;font:400 12.5px/18px var(--font-inter);color:var(--body)}

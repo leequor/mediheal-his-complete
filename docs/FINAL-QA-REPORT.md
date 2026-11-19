@@ -336,3 +336,56 @@ Six pages moved against the release baseline, all for the reasons above: Admissi
 Laboratory 1.730 %, Pharmacy 1.156 %, Registration 0.209 % at 1440; Treatment 7.963 %,
 Nursing 8.017 %, Consultation 7.177 %, Registration 0.458 % at 1366 (where those three reflow, so a
 one-element change moves everything below it). Everything else is pixel-identical.
+
+---
+
+## 11. Exhaustive control audit
+
+`scripts/exhaustive-controls-check.mjs` — 36 assertions across five groups.
+
+### 11.1 Census
+
+| | |
+|---|---|
+| Pages | 28 |
+| Controls rendered | **1,430** (749 buttons, 582 links, 8 selects, 91 inputs) |
+| Action-bearing elements (`data-act`, `data-open`, `data-tab`, `data-close`, `data-note`, `data-doc`, `data-more`) | **184** |
+| Controls with no handler | **0** |
+
+Every action string rendered on a page is resolved against that page's own scripts. An orphan control
+— rendered, clickable, wired to nothing — fails the suite.
+
+### 11.2 Targeting
+
+Row actions are clicked on the **last** row that offers them, and the record that changes must be
+that row's id:
+
+- Laboratory: the clicked order is the only one whose status moves.
+- Pharmacy: the clicked prescription is the only one verified.
+- Appointments: the last visit is the only one cancelled.
+
+### 11.3 The claim dialog
+
+Nine geometry assertions across 1440×900, 1366×768 and 1280×800: the footer is inside the dialog, no
+control escapes it, and the body scrolls independently. Three state assertions: `under-review` offers
+approval, partial, denial and a request for information; `approved` offers settlement and not
+approval; `denied` offers no approval of any kind. Four outcome assertions:
+
+- **Add note** records the note, leaves the status unchanged, moves no money.
+- **Close** changes nothing at all and removes the dialog.
+- **Approve** moves the claim to approved, records the amount, adds one history entry, and posts
+  **nothing** to the ledger — neither cash nor coverage. Settlement is what posts coverage.
+- Exactly one decision is marked primary, and the four sit on one row.
+
+### 11.4 Repeat and permission
+
+- A second dispense does not dispense again.
+- A cashier is not offered claim approval, and `HIS.claims.transition` refuses it even when called
+  directly — the UI is not the only guard.
+
+### 11.5 Defect found
+
+The claim dialog's action row was pinned with `position:sticky; bottom:-26px` inside its own scroll
+container: the last status-history line was hidden behind the footer with no sign that more existed,
+and the footer's bottom edge was clipped. It is now a fixed header, a scrolling body and an anchored
+footer. See `DESIGN-LOCK` §20.
