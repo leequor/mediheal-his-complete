@@ -709,3 +709,45 @@ moves. `.dl-tip` is the fallback notice when a record is no longer present.
 Because the flash is a background tint and the outline is 2 px of `#1c6d9c`, the sweep still reports
 0.000% — the row is only highlighted after a notification click, which the baseline capture never
 performs. That is stated here so a future reader does not treat the highlight as a regression.
+
+---
+
+## 19. Visual acceptance pass — six corrections found by looking
+
+Every page was rendered at 1440×900, 1366×768 and 1280×800 and inspected. Six defects survived the
+whole test suite because no assertion can see them. Each is a shared-component correction, not a
+per-page patch.
+
+| # | What a visitor saw | Cause | Correction |
+|---|---|---|---|
+| 1 | Provider names cut to "Dr. Jeremias Esp…" under every order, prescription and admission id | The first grid column was sized for the record id alone (84–112 px) while the second line carries a name | Order 112→140, prescription 84→132, admission 104→134. The flexible columns absorb it; no other column truncates |
+| 2 | The calendar glyph sat on top of "dd/mm/yyyy" on the inpatient registration form | `.rf-cal` is drawn at the field's left edge and the input's padding was 13.8 px | Date inputs get `padding-left:28px` |
+| 3 | The patient's id-and-age line wrapped, leaving "Inpatient" alone on a second line | `.pf-meta` had a fixed 152 px width and the row is 21 px tall | `width:auto` + `white-space:nowrap` with an ellipsis fallback |
+| 4 | Selecting a patient replaced their status dot with a chevron, so the PLAN / QUEUE / DUE column lost its meaning | The row template chose one or the other | The dot is always drawn. The selected row is already marked by its tint and left accent |
+| 5 | The registry's All / Inpatient / Outpatient pills looked identically pressed | The active state was a 2 px ring in a blue almost equal to the fill | The active pill takes `#15405a` |
+| 6 | "Staff sign in" was invisible on the portal's blue header | `.pt-link` is blue, and the top bar is blue | The header link inherits the bar's white |
+
+Defects 1–3 are text-level; 4–6 are state-level. All six were invisible to `visual-check` (the
+changes fall under its 128-level pixel threshold or sit inside a component the baseline never opens)
+and to every functional suite, which is why the inspection mattered.
+
+### 19.1 Seen, judged, and deliberately left alone
+
+Recorded so a later reader does not "fix" them by accident:
+
+- **Appointments and Registration put the page title below the KPI strip.** That is the Figma frame
+  for those two screens, not a mistake in the shell.
+- **Departments uses `.dp-stat`, not `.kpi`.** Two different stat components exist in the Figma
+  source; both are internally consistent.
+- **Below 1440 px the admin tables stack into cards.** The responsive layer reflows rather than
+  scaling, by design (see `fit.js`). 1366 gets the stacked layout, which is readable but is not the
+  1440 table.
+- **Bed tiles ellipsis the occupant's name.** A 102 px tile cannot hold "Isabel Geliz V. Ramos".
+- **Short pages leave empty canvas below the content.** Each screen is a fixed Figma frame
+  (1120–2789 px); the stage height is part of the design.
+
+### 19.2 Baselines
+
+Three states are now preserved: `qa/baseline-previous` (69c9a63, pre-QA), `qa/baseline-release`
+(37e23ce, the published release) and `qa/baseline` (this pass). Manifests are committed; images are
+regenerated on demand with the commands in 17.4, substituting the directory.

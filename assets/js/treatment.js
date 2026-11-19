@@ -95,7 +95,7 @@
       var on = p.id === st.sel;
       h += "<button class='tp-a tp-r" + (on ? ' on' : '') + "' data-plan='" + p.id + "' style='top:" + (547 + 76 * i) + "px'>";
       h += "<span class='av'>" + p.ini + "</span><span class='nm'>" + esc(p.name) + "</span><span class='rl'>" + esc(p.sub) + "</span><span class='id'>" + p.id + '</span>';
-      h += on ? "<span class='chv'>" + ic('right', 18, 2) + '</span>' : "<span class='dot" + (p.pstat ? ' off' : '') + "'></span>";
+      h += "<span class='dot" + (p.pstat ? ' off' : '') + "'></span>";
       h += '</button>';
     });
     if (!v.length) h += at('tp-none', 68, 547, 'No plans match');

@@ -286,3 +286,53 @@ because such a path resolves on a local server and only breaks once served from
 29 assertions covering the root response, asset loading, console errors, staff sign-in, the profile
 menu, the notification deep link, the patient portal, direct page loads by URL, refresh, and a deep
 link after a cold load.
+
+---
+
+## 10. Visual acceptance — every page, looked at
+
+The whole site was rendered at **1440×900, 1366×768 and 1280×800** (84 screenshots) and inspected
+page by page, with a measurement pass alongside it for the things the eye misses: text clipped by its
+own box, children wider than their container, controls outside the window, a button overlapping a
+sibling, rows shorter than their content.
+
+`scripts/eyeball.mjs` produces both: the screenshots and `report.json`.
+
+### 10.1 Found and fixed
+
+| Defect | Where | Fix |
+|---|---|---|
+| Provider name truncated to "Dr. Jeremias Esp…" | Laboratory, Pharmacy, Admissions | First grid column widened to fit a name, not just an id |
+| Calendar icon overlapping "dd/mm/yyyy" | Inpatient registration | 28 px left padding on date inputs |
+| Patient meta line wrapping onto a second line | Patient profile header | Fixed width replaced by auto + nowrap + ellipsis |
+| Selected patient lost their status dot | Treatment, Consultation, Nursing, Personnel | Dot always drawn; the tint and left accent already mark selection |
+| Active registry filter indistinguishable from the others | Patient registry | Active pill takes the darker navy |
+| "Staff sign in" invisible on the blue header | Patient portal | Header link inherits the bar's white |
+
+### 10.2 Measured, then judged
+
+The measurement pass flagged 87 "small text" hits and 6 "off-screen" hits. Both were examined and
+dismissed: 11 px uppercase column labels and the 10 px badge numeral are the project's own type
+scale, and the off-screen elements are the closed navigation drawer. Reporting them as defects would
+have meant changing the design to satisfy a rule that does not apply.
+
+One real hit remains: bed tiles ellipsis the occupant's name. A 102 px tile cannot hold a full name;
+this is recorded as intentional in `DESIGN-LOCK` §19.1.
+
+### 10.3 Result
+
+| Suite | Result |
+|---|---|
+| qa-check · qa-final-check · qa-nav-check | 91 · 73 · 115 |
+| revenue · charges · adt · clinical · finance · ledger · claims | 81 · 44 · 65 · 53 · 31 · 46 · 41 |
+| portal · auth · payroll · acceptance | 40 · 25 · 89 · 180 |
+| m10-1…4 · roles | 77 · 78 · 75 · 54 · 144 |
+| smoke · a11y · responsive · buttons | 28 pages · 27 pages **0 violations** · 140 · **0** |
+| visual | 0.000% at 1440 and 1366 after re-capture |
+
+**1,258 assertions across 18 harnesses + 144 role checks = 1,402. 0 failures.**
+
+Six pages moved against the release baseline, all for the reasons above: Admissions 0.963 %,
+Laboratory 1.730 %, Pharmacy 1.156 %, Registration 0.209 % at 1440; Treatment 7.963 %,
+Nursing 8.017 %, Consultation 7.177 %, Registration 0.458 % at 1366 (where those three reflow, so a
+one-element change moves everything below it). Everything else is pixel-identical.

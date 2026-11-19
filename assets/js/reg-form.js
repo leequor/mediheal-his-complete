@@ -62,7 +62,7 @@
     let h = "<div class='rf-f'><span class='rf-l'>" + f.l + (f.r ? '<i>*</i>' : '') + '</span>';
     if (f.sel) h += "<div class='rf-ctl rf-sel' id='f-" + f.k + "' data-k='" + f.k + "'></div>";
     else if (f.ta) h += "<textarea class='rf-ctl' id='f-" + f.k + "' maxlength='500' aria-label='" + f.l + "' placeholder=\"" + f.ph + "\"></textarea><div class='rf-cc' id='cc-" + f.k + "'>0/500</div>";
-    else h += "<input class='rf-ctl' id='f-" + f.k + "' aria-label='" + f.l + "' placeholder='" + f.ph + "' autocomplete='off'>" + (f.date ? "<span class='rf-cal'>" + ico('cal', 18, '#4d6a80', 1.6) + '</span>' : '');
+    else h += "<input class='rf-ctl" + (f.date ? ' has-cal' : '') + "' id='f-" + f.k + "' aria-label='" + f.l + "' placeholder='" + f.ph + "' autocomplete='off'>" + (f.date ? "<span class='rf-cal'>" + ico('cal', 18, '#4d6a80', 1.6) + '</span>' : '');
     if (f.hint) h += "<div class='rf-hint" + (f.ta ? ' t' : '') + "'>" + f.hint + '</div>';
     return h + '</div>';
   };
