@@ -881,6 +881,19 @@
     var form = $('#pt-signin');
     if (form) form.onsubmit = function (e) { e.preventDefault(); signIn(form); };
 
+    // Same show/hide control as the staff sign-in and the sign-up form.
+    var siEye = $('#pt-si-eye');
+    if (siEye) siEye.onclick = function () {
+      var f = $('#pt-signin');
+      var pwf = f ? f.querySelector('input[name=password]') : null;
+      if (!pwf) return;
+      var show = pwf.type === 'password';
+      pwf.type = show ? 'text' : 'password';
+      siEye.setAttribute('aria-pressed', show ? 'true' : 'false');
+      siEye.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+      pwf.focus();
+    };
+
     var su = $('#pt-signup');
     if (su) {
       su.onsubmit = function (e) { e.preventDefault(); signUp(su); };
