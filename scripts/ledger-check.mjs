@@ -48,7 +48,7 @@ const errs = [];
 page.on('pageerror', e => errs.push(String(e.message)));
 page.on('console', m => { if (m.type() === 'error') errs.push(m.text()); });
 await page.goto(BASE + '/index.html', { waitUntil: 'load' });
-await page.evaluate(() => HIS.auth.attempt('cashier@mediheal.test', 'MediHeal2026!', true));
+await page.evaluate(() => HIS.auth.attempt('finance@mediheal.test', 'MediHeal2026!', true));
 await page.goto(BASE + '/billing.html', { waitUntil: 'load' });
 await page.waitForTimeout(400);
 

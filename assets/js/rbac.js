@@ -13,6 +13,12 @@
 (function () {
   // `pages` are page stems (filename without .html). `nav` is the order of the drawer links.
   // `home` must always be present in `pages`.
+  //
+  // 2026-11-22 — the roster was cut from 14 roles to 11. Three of them overlapped enough that the
+  // demo was showing the same work twice: Hospital Administrator duplicated the Super Administrator
+  // (every page except Accounts), Receptionist duplicated Front Desk Registration, and Cashier
+  // duplicated Billing & Finance. Merging them keeps every screen reachable and makes the account
+  // list readable. `registration` and `finance` below are the merged roles.
   var ROLES = {
     superadmin: {
       label: 'Super Administrator', short: 'Super Admin',
@@ -26,30 +32,10 @@
         'pharmacy', 'laboratory', 'charges', 'attendance', 'personnel', 'payroll', 'departments', 'billing', 'claims', 'reports', 'audit', 'accounts', 'settings'],
       home: 'dashboard'
     },
-    hospitaladmin: {
-      label: 'Hospital Administrator', short: 'Hospital Admin',
-      person: { name: 'Atty. Ramon Silva', title: 'Hospital Administrator' },
-      scope: 'Operational oversight: admissions, occupancy, staffing, department performance and financial summaries.',
-      pages: ['dashboard', 'registration', 'profile', 'appointments', 'admissions', 'consultation', 'treatment',
-        'nursing', 'pharmacy', 'attendance', 'personnel', 'payroll', 'departments', 'billing',
-        'claims', 'laboratory', 'charges', 'reports', 'audit', 'settings'],
-      nav: ['dashboard', 'registration', 'admissions', 'appointments', 'consultation', 'treatment', 'nursing',
-        'pharmacy', 'attendance', 'personnel', 'payroll', 'departments', 'billing', 'claims', 'laboratory', 'charges', 'reports', 'audit', 'settings'],
-      home: 'dashboard'
-    },
-    receptionist: {
-      label: 'Receptionist / Front Desk', short: 'Front Desk',
-      person: { name: 'Maricel Bautista', title: 'Front Desk Officer' },
-      scope: 'Patient lookup, registration, appointment booking, rescheduling, check-in and the walk-in queue.',
-      pages: ['dashboard', 'registration', 'registration-form', 'outpatient-form', 'profile',
-        'appointments', 'appointment-form', 'appointment-confirmed'],
-      nav: ['dashboard', 'registration', 'appointments'],
-      home: 'dashboard'
-    },
     registration: {
-      label: 'Registration & Admissions', short: 'Registration',
-      person: { name: 'Joel Aquino', title: 'Admissions Officer' },
-      scope: 'Patient identification, demographics, PhilHealth and HMO details, inpatient and outpatient admission paperwork.',
+      label: 'Front Desk & Registration', short: 'Front Desk',
+      person: { name: 'Maricel Bautista', title: 'Front Desk Officer' },
+      scope: 'Patient lookup and registration, appointment booking and check-in, the walk-in queue, and the corrections patients send from the portal.',
       pages: ['dashboard', 'registration', 'registration-form', 'outpatient-form', 'profile',
         'appointments', 'appointment-form', 'appointment-confirmed', 'admissions'],
       nav: ['dashboard', 'registration', 'admissions', 'appointments'],
@@ -87,19 +73,11 @@
       nav: ['dashboard', 'laboratory', 'treatment', 'consultation'],
       home: 'laboratory'
     },
-    cashier: {
-      label: 'Cashier / Billing', short: 'Cashier',
-      person: { name: 'Aileen Ramos', title: 'Cashier' },
-      scope: 'Invoices, charges, payments, deposits, outstanding balances, refunds and receipts.',
-      pages: ['dashboard', 'billing', 'charges', 'claims', 'profile'],
-      nav: ['dashboard', 'billing', 'charges', 'claims'],
-      home: 'billing'
-    },
     finance: {
-      label: 'Finance / Accounting', short: 'Finance',
-      person: { name: 'Rowena Lim', title: 'Finance Officer' },
-      scope: 'Collections, revenue, reconciliation, payer mix and financial reporting.',
-      pages: ['dashboard', 'billing', 'charges', 'claims', 'reports'],
+      label: 'Billing & Finance', short: 'Billing',
+      person: { name: 'Rowena Lim', title: 'Billing & Finance Officer' },
+      scope: 'Invoices, charges, payments and receipts, payer claims, collections, reconciliation and financial reporting.',
+      pages: ['dashboard', 'billing', 'charges', 'claims', 'reports', 'profile'],
       nav: ['dashboard', 'billing', 'charges', 'claims', 'reports'],
       home: 'billing'
     },
@@ -136,27 +114,29 @@
   };
 
   // Nav metadata lives here so rbac.js owns the whole navigation model.
+  // [stem, label, icon, group]. The group is what the drawer prints as a section heading; a role
+  // with items in one group only (Front Desk) gets no headings at all.
   var NAV = [
-    ['dashboard', 'Dashboard', 'grid'],
-    ['registration', 'Registration', 'users'],
-    ['admissions', 'Admissions', 'bed'],
-    ['appointments', 'Appointments', 'calendar-check'],
-    ['consultation', 'Consultation', 'clipboard-plus'],
-    ['treatment', 'Treatment', 'bag'],
-    ['nursing', 'Nursing', 'heart'],
-    ['pharmacy', 'Pharmacy', 'pill'],
-    ['laboratory', 'Laboratory', 'flask'],
-    ['charges', 'Charges', 'tag'],
-    ['attendance', 'Attendance', 'users'],
-    ['personnel', 'Personnel', 'id'],
-    ['payroll', 'Payroll', 'peso'],
-    ['departments', 'Departments', 'branches'],
-    ['billing', 'Billing', 'receipt'],
-    ['claims', 'Claims', 'claim'],
-    ['reports', 'Reports', 'chart'],
-    ['audit', 'Audit log', 'shield'],
-    ['accounts', 'Accounts', 'key'],
-    ['settings', 'Configuration', 'sliders']
+    ['dashboard', 'Dashboard', 'grid', 'Overview'],
+    ['registration', 'Registration', 'users', 'Patients'],
+    ['admissions', 'Admissions', 'bed', 'Patients'],
+    ['appointments', 'Appointments', 'calendar-check', 'Patients'],
+    ['consultation', 'Consultation', 'clipboard-plus', 'Clinical'],
+    ['treatment', 'Treatment', 'bag', 'Clinical'],
+    ['nursing', 'Nursing', 'heart', 'Clinical'],
+    ['pharmacy', 'Pharmacy', 'pill', 'Clinical'],
+    ['laboratory', 'Laboratory', 'flask', 'Clinical'],
+    ['charges', 'Charges', 'tag', 'Revenue'],
+    ['billing', 'Billing', 'receipt', 'Revenue'],
+    ['claims', 'Claims', 'claim', 'Revenue'],
+    ['personnel', 'Personnel', 'id', 'People'],
+    ['attendance', 'Attendance', 'users', 'People'],
+    ['payroll', 'Payroll', 'peso', 'People'],
+    ['departments', 'Departments', 'branches', 'Organisation'],
+    ['reports', 'Reports', 'chart', 'Organisation'],
+    ['audit', 'Audit log', 'shield', 'Organisation'],
+    ['accounts', 'Accounts', 'key', 'Organisation'],
+    ['settings', 'Configuration', 'sliders', 'Organisation']
   ];
 
   // No session means no role. A guest role keeps every helper total instead of returning undefined.
@@ -183,6 +163,17 @@
     var allowed = current().nav;
     return NAV.filter(function (n) { return allowed.indexOf(n[0]) > -1; });
   }
+  // Same links, grouped for the drawer. A role with a single group returns one entry so the
+  // renderer can skip the heading.
+  function navGroups() {
+    var out = [], seen = {};
+    nav().forEach(function (n) {
+      var g = n[3] || 'Menu';
+      if (!seen[g]) { seen[g] = { group: g, items: [] }; out.push(seen[g]); }
+      seen[g].items.push(n);
+    });
+    return out;
+  }
   // Land on the role's home when the current page is out of scope.
   function home() {
     var r = current();
@@ -199,6 +190,6 @@
   HIS.rbac = {
     ROLES: ROLES, NAV: NAV,
     key: key, current: current, person: person, stem: stem,
-    allows: allows, nav: nav, home: home, guard: guard
+    allows: allows, nav: nav, navGroups: navGroups, home: home, guard: guard
   };
 })();

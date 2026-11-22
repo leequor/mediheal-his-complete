@@ -62,7 +62,7 @@ console.log('\n--- 1. patient and staff sign-in are one click apart ---');
   ok('the staff link is visible without scrolling the panel', portal && portal.visible, portal && portal.visible);
 
   // A staff account must not be able to sit in a patient session, and the refusal must be actionable.
-  await page.fill('#pt-si-email', 'cashier@mediheal.test');
+  await page.fill('#pt-si-email', 'finance@mediheal.test');
   await page.fill('#pt-signin form input[type=password], #pt-signin input[type=password]', DEMO);
   await page.evaluate(() => document.querySelector('#pt-signin').requestSubmit());
   await page.waitForTimeout(300);
@@ -109,7 +109,7 @@ console.log('\n--- 1. patient and staff sign-in are one click apart ---');
 // =================================================================================================
 console.log('\n--- 2. appointment counts come from the records ---');
 {
-  const { ctx, page, errors } = await fresh('admissions@mediheal.test');
+  const { ctx, page, errors } = await fresh('reception@mediheal.test');
   await page.goto(BASE + '/appointments.html', { waitUntil: 'load' });
   await page.waitForTimeout(350);
   const r = await page.evaluate(() => {
@@ -180,7 +180,7 @@ console.log('\n--- 2. appointment counts come from the records ---');
 console.log('\n--- 3. every account has its own initials avatar ---');
 {
   const seen = [];
-  for (const email of ['superadmin@mediheal.test', 'admissions@mediheal.test', 'laboratory@mediheal.test', 'hr@mediheal.test']) {
+  for (const email of ['superadmin@mediheal.test', 'reception@mediheal.test', 'laboratory@mediheal.test', 'hr@mediheal.test']) {
     const { ctx, page } = await fresh(email);
     await page.goto(BASE + '/dashboard.html', { waitUntil: 'load' });
     await page.waitForTimeout(300);
@@ -230,7 +230,7 @@ console.log('\n--- 4. notifications follow the account, not a fixed list ---');
 {
   const byRole = {};
   for (const [email, role] of [['laboratory@mediheal.test', 'lab'], ['pharmacy@mediheal.test', 'pharmacist'],
-    ['cashier@mediheal.test', 'cashier'], ['hr@mediheal.test', 'hr'], ['admissions@mediheal.test', 'registration'],
+    ['finance@mediheal.test', 'cashier'], ['hr@mediheal.test', 'hr'], ['reception@mediheal.test', 'registration'],
     ['auditor@mediheal.test', 'auditor']]) {
     const { ctx, page } = await fresh(email);
     await page.goto(BASE + '/appointments.html', { waitUntil: 'load' });
@@ -315,8 +315,8 @@ console.log('\n--- 4. notifications follow the account, not a fixed list ---');
 // =================================================================================================
 console.log('\n--- 5. role dashboards carry real metrics ---');
 {
-  const roles = ['laboratory@mediheal.test', 'pharmacy@mediheal.test', 'cashier@mediheal.test',
-    'doctor@mediheal.test', 'nurse@mediheal.test', 'hr@mediheal.test', 'admissions@mediheal.test', 'auditor@mediheal.test'];
+  const roles = ['laboratory@mediheal.test', 'pharmacy@mediheal.test', 'finance@mediheal.test',
+    'doctor@mediheal.test', 'nurse@mediheal.test', 'hr@mediheal.test', 'reception@mediheal.test', 'auditor@mediheal.test'];
   const bad = [];
   const clipped = [];
   for (const email of roles) {

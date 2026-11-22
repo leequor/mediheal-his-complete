@@ -34,17 +34,18 @@
 
   // Seeded roster. `role` keys must exist in HIS.rbac.ROLES; `patientId` links the patient account
   // to a real hospital record (M5). Emails are `.test` reserved names, not real mailboxes.
+  //
+  // 2026-11-22 — eleven accounts, not fourteen. Hospital Administrator, Receptionist and Cashier
+  // were removed when their roles were merged (see the note in rbac.js): the demo was listing the
+  // same person's work under two names, and a fourteen-row account list is a wall, not a roster.
   var SEED = [
     ['superadmin@mediheal.test', 'Dr. Elsie Chen', 'superadmin', 'Administration', 'Chief Physician', null],
-    ['admin@mediheal.test', 'Atty. Ramon Silva', 'hospitaladmin', 'Administration', 'Hospital Administrator', null],
-    ['reception@mediheal.test', 'Maricel Bautista', 'receptionist', 'Front Desk', 'Front Desk Officer', null],
-    ['admissions@mediheal.test', 'Joel Aquino', 'registration', 'Admissions', 'Admissions Officer', null],
+    ['reception@mediheal.test', 'Maricel Bautista', 'registration', 'Front Desk', 'Front Desk Officer', null],
     ['doctor@mediheal.test', 'Dr. Laurice Laureta', 'doctor', 'Cardiology', 'Consultant', null],
     ['nurse@mediheal.test', 'Sofia Mendoza', 'nurse', 'Nursing', 'Staff Nurse', null],
     ['pharmacy@mediheal.test', 'Miguel Reyes', 'pharmacist', 'Pharmacy', 'Pharmacist', null],
     ['laboratory@mediheal.test', 'Daniel Cruz', 'lab', 'Laboratory', 'Medical Technologist', null],
-    ['cashier@mediheal.test', 'Aileen Ramos', 'cashier', 'Billing', 'Cashier', null],
-    ['finance@mediheal.test', 'Rowena Lim', 'finance', 'Finance', 'Finance Officer', null],
+    ['finance@mediheal.test', 'Rowena Lim', 'finance', 'Billing', 'Billing & Finance Officer', null],
     ['hr@mediheal.test', 'Carmela Dizon', 'hr', 'Human Resources', 'HR Officer', null],
     ['department.head@mediheal.test', 'Dr. Marc Laureta', 'depthead', 'Orthopedics', 'Department Head', null],
     ['auditor@mediheal.test', 'Ferdinand Yap', 'auditor', 'Compliance', 'Compliance Auditor', null],

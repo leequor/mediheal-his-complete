@@ -1,6 +1,6 @@
 /* Billing state frames: dropdown menus (Figma 2064:3236 status panel) and action modal (Figma 2064:2089). Frame-local coordinates. Shadows ESTIMATED. */
 .bl-mlayer{position:absolute;left:0;top:0;width:1440px;height:1120px;z-index:300}
-.bl-menu{position:absolute;top:422px;width:170px;box-sizing:border-box;background:#fff;border:1px solid #d9e2ea;border-radius:12px;padding:7px;z-index:301;box-shadow:0 8px 24px rgba(15,30,46,.12)}
+.bl-menu{position:absolute;top:422px;width:170px;box-sizing:border-box;background:#fff;border:1px solid #d6e5ef;border-radius:12px;padding:7px;z-index:301;box-shadow:0 8px 24px rgba(15,30,46,.12)}
 .bl-opt{display:block;width:154px;height:34px;border:0;border-radius:8px;background:transparent;text-align:left;padding:0 12px;font:500 13px/34px Inter,sans-serif;color:#5c6b7a;cursor:pointer}
 .bl-opt.on{background:#eef5f9;color:#1c2b3d;font-weight:700}
 .bl-opt:hover{background:#f3f8fb}

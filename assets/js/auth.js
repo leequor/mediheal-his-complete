@@ -114,8 +114,13 @@
     // a log that erased itself would not be a log — and both are discarded when the tab closes.
     // See docs/PROJECT-STATUS.md §5.2.
     var trail = window.HIS.audit ? HIS.audit.list() : null;
+    // A correction request is a message addressed to staff, not session state: if signing out
+    // erased it, the patient's request would vanish exactly when the front desk came to read it.
+    // It survives the reset for the same reason the audit trail does.
+    var reqs = window.HIS.requests ? HIS.store.get(HIS.requests.KEY, null) : null;
     clear();
     if (window.HIS.store) HIS.store.reset({ includeOwner: true });
+    if (window.HIS.requests && Array.isArray(reqs) && reqs.length) HIS.store.set(HIS.requests.KEY, reqs);
     if (window.HIS.audit) {
       if (trail) HIS.store.set(HIS.audit.KEY, trail);
       if (a) {

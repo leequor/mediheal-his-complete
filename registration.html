@@ -41,7 +41,7 @@
 <div class='stage'>
   <div id='kpis'></div>
   <h1 class='page-h'>Patient Registration</h1>
-  <p class='page-sub'>Registry of all inpatient and outpatient registrations across departments</p>
+  <p class='page-sub'>Every inpatient and outpatient registration, by department</p>
   <button class='btn-primary' id='new' style='left:489px;top:336px;width:165px'>+ New Registration</button>
   <section class='card-lg' style='left:50px;top:410px;width:1350px;min-height:638px;padding-top:136px;padding-bottom:24px;border-radius:10px'>
     <div class='tabs' id='tabs'></div>
@@ -51,16 +51,25 @@
     <div id='dd-dept' style='left:783px;top:26px;width:236px;height:45px'></div>
     <div id='dd-stat' style='left:1071px;top:26px;width:236px;height:45px'></div>
     <div class='rule'></div>
-    <div class='thead'><span>PATIENT</span><span>TYPE</span><span>DEPARTMENT</span><span>DOCTOR</span><span>REGISTERED</span><span>STATUS</span><span>ACTION</span></div>
+    <div class='thead' id='thead'><span>PATIENT</span><span>TYPE</span><span>DEPARTMENT</span><span>DOCTOR</span><span>REGISTERED</span><span>STATUS</span><span>ACTION</span></div>
     <div id='rows'></div>
   </section>
 </div>
-<script src='assets/js/data.js'></script><script src='assets/js/store.js'></script><script src='assets/js/audit.js'></script><script src='assets/js/kit.js'></script><script src='assets/js/data-records.js'></script><script src='assets/js/data-departments.js'></script><script src='assets/js/data-billing.js'></script><script src='assets/js/ledger.js'></script><script src='assets/js/tariffs.js'></script><script src='assets/js/encounters.js'></script><script src='assets/js/charges.js'></script><script src='assets/js/lab.js'></script><script src='assets/js/pharmacy.js'></script><script src='assets/js/claims.js'></script><script src='assets/js/admissions.js'></script><script src='assets/js/data-attendance.js'></script><script src='assets/js/registry.js'></script><script src='assets/js/icons.js'></script><script src='assets/js/ui.js'></script><script src='assets/js/accounts.js'></script><script src='assets/js/auth.js'></script><script src='assets/js/rbac.js'></script><script src='assets/js/deeplink.js'></script><script src='assets/js/shell.js'></script>
+<script src='assets/js/data.js'></script><script src='assets/js/store.js'></script><script src='assets/js/audit.js'></script><script src='assets/js/kit.js'></script><script src='assets/js/data-records.js'></script><script src='assets/js/data-departments.js'></script><script src='assets/js/data-billing.js'></script><script src='assets/js/ledger.js'></script><script src='assets/js/tariffs.js'></script><script src='assets/js/encounters.js'></script><script src='assets/js/charges.js'></script><script src='assets/js/lab.js'></script><script src='assets/js/pharmacy.js'></script><script src='assets/js/claims.js'></script><script src='assets/js/admissions.js'></script><script src='assets/js/data-attendance.js'></script><script src='assets/js/registry.js'></script><script src='assets/js/icons.js'></script><script src='assets/js/ui.js'></script><script src='assets/js/accounts.js'></script><script src='assets/js/auth.js'></script><script src='assets/js/rbac.js'></script><script src='assets/js/requests.js'></script><script src='assets/js/deeplink.js'></script><script src='assets/js/shell.js'></script>
 <script>
 const $ = id => document.getElementById(id);
 const state = { tab: 'All', q: '', dept: 'All Departments', stat: 'All Statuses' };
 $('sicon').innerHTML = svg('search', 16);
-$('tabs').innerHTML = [['All', 0], ['Inpatient', 105], ['Outpatient', 210]].map(t => "<button data-t='" + t[0] + "' style='left:" + (50 + t[1]) + "px'>" + t[0] + '</button>').join('');
+// Requests tab (2026-11-22): the destination for "Request a correction" in the patient portal.
+// Before this, the portal wrote a request that no screen read.
+function renderTabs() {
+  const open = HIS.requests.open().length;
+  const tabs = [['All', 0], ['Inpatient', 105], ['Outpatient', 210]];
+  $('tabs').innerHTML = tabs.map(t => "<button data-t='" + t[0] + "' style='left:" + (50 + t[1]) + "px'>" + t[0] + '</button>').join('') +
+    "<button data-t='Requests' class='tab-req' style='left:365px'>Requests" + (open ? "<b class='tab-n'>" + open + '</b>' : '') + '</button>';
+  document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.t === state.tab));
+}
+renderTabs();
 makeDropdown($('dd-dept'), { options: ['All Departments', ...HIS.departments], onChange: v => { state.dept = v; render(); } });
 makeDropdown($('dd-stat'), { options: ['All Statuses', ...HIS.patientStatuses], onChange: v => { state.stat = v; render(); } });
 
@@ -75,8 +84,43 @@ function renderKpis() {
   $('kpis').innerHTML = k.map((c, i) => "<div class='rstat' style='left:" + (77 + 337.7 * i).toFixed(1) + "px'><div class='lb'>" + c[0] + "</div><div class='ic'>" + svg(c[3], 18) + "</div><div class='vl'>" + c[1] + "</div><div class='ft'>" + c[2] + '</div></div>').join('');
 }
 
+// ---- patient requests (from the portal) ------------------------------------------------------
+function reqRows() {
+  const q = state.q.trim().toLowerCase();
+  const rows = HIS.requests.all()
+    .filter(r => !q || (r.patientName + ' ' + r.patientId + ' ' + r.text + ' ' + r.field).toLowerCase().includes(q))
+    .sort((a, b) => (a.status === 'open' ? 0 : 1) - (b.status === 'open' ? 0 : 1) || (a.at < b.at ? 1 : -1));
+  if (!rows.length) return "<div class='empty'>No patient requests" + (q ? ' match this search' : ' yet') + '. Requests sent from the patient portal appear here.</div>';
+  return rows.map(r => {
+    const when = new Date(r.at).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' });
+    const badge = r.status === 'resolved' ? "<span class='badge ok'>Resolved</span>"
+      : r.status === 'dismissed' ? "<span class='badge off'>No change</span>"
+        : "<span class='badge in'>Open</span>";
+    return "<div class='rrow req-row'>" +
+      "<div class='pt'><span class='ini'>" + initialsOf(r.patientName || '?') + '</span><div><b>' + HIS.kit.esc(r.patientName || r.patientId) + '</b><small>' + HIS.kit.esc(r.id) + ' \u00b7 ' + HIS.kit.esc(r.patientId) + '</small></div></div>' +
+      "<div class='tx'>" + HIS.kit.esc(r.field) + '</div>' +
+      "<div class='req-text' title='" + HIS.kit.esc(r.text) + "'>" + HIS.kit.esc(r.text) + '</div>' +
+      "<div class='tx'>" + when + '</div>' +
+      '<div>' + badge + '</div>' +
+      "<div class='req-act'>" +
+      (r.status === 'open'
+        ? "<button class='go-btn req-go' data-req-open='" + r.id + "' title='Open the patient record to apply the change' aria-label='Open patient record'>" + svg('arrow', 16) + '</button>' +
+          "<button class='req-btn ok' data-req-resolve='" + r.id + "'>Resolve</button>" +
+          "<button class='req-btn' data-req-dismiss='" + r.id + "'>Dismiss</button>"
+        : "<span class='req-by'>" + HIS.kit.esc(r.handledBy || '\u2014') + '</span>') +
+      '</div></div>';
+  }).join('');
+}
+
 function render() {
-  document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.t === state.tab));
+  renderTabs();
+  const isReq = state.tab === 'Requests';
+  $('thead').style.display = isReq ? 'none' : '';
+  $('dd-dept').style.display = isReq ? 'none' : '';
+  $('dd-stat').style.display = isReq ? 'none' : '';
+  $('q').placeholder = isReq ? 'Search requests...' : 'Search records...';
+  document.querySelector('.rule').style.display = isReq ? 'none' : '';
+  if (isReq) { $('rows').innerHTML = reqRows(); return; }
   const q = state.q.trim().toLowerCase();
   const list = HIS.patients.filter(p =>
     (state.tab === 'All' || p.type === state.tab) &&
@@ -91,10 +135,60 @@ function render() {
     "<div><button class='go-btn' data-id='" + p.id + "' aria-label='Open profile for " + HIS.kit.esc(p.name) + "' title='Open patient profile'>" + svg('arrow', 16) + '</button></div></div>').join('')
     : "<div class='empty'>No patients match these filters.</div>";
 }
-$('tabs').onclick = e => { if (e.target.dataset.t) { state.tab = e.target.dataset.t; render(); } };
+$('tabs').onclick = e => { const b = e.target.closest('[data-t]'); if (b) { state.tab = b.dataset.t; state.q = ''; $('q').value = ''; render(); } };
 $('q').oninput = e => { state.q = e.target.value; render(); };
 // Row arrow -> patient profile (session 6; profile.html reads ?id= and uses HIS.profiles)
-$('rows').onclick = e => { const b = e.target.closest('.go-btn'); if (b) location.href = 'profile.html?id=' + encodeURIComponent(b.dataset.id); };
+$('rows').onclick = e => {
+  const go = e.target.closest('.go-btn[data-id]');
+  if (go) { location.href = 'profile.html?id=' + encodeURIComponent(go.dataset.id); return; }
+  const open = e.target.closest('[data-req-open]');
+  if (open) {
+    const r = HIS.requests.byId(open.dataset.reqOpen);
+    if (r) location.href = 'profile.html?id=' + encodeURIComponent(r.patientId) + '&req=' + encodeURIComponent(r.id);
+    return;
+  }
+  const res = e.target.closest('[data-req-resolve]');
+  if (res) { resolveRequest(res.dataset.reqResolve); return; }
+  const dis = e.target.closest('[data-req-dismiss]');
+  if (dis) { dismissRequest(dis.dataset.reqDismiss); }
+};
+
+function resolveRequest(id) {
+  const r = HIS.requests.byId(id);
+  if (!r) return;
+  HIS.kit.modal({
+    title: 'Mark ' + r.id + ' resolved?',
+    sub: 'Only do this once the record has actually been corrected. The change itself is saved from the patient profile, which writes its own audit entry.',
+    body: "<p style='margin:12px 0 0;font-size:13px;color:#6f8890'>" + HIS.kit.esc(r.field) + ' \u2014 ' + HIS.kit.esc(r.text) + '</p>' +
+      "<label style='display:block;margin-top:14px;font:600 12px Inter,sans-serif;color:#6f8890'>What was changed (optional)</label>" +
+      "<input name='note' placeholder='e.g. mobile number updated on the patient record'>",
+    saveLabel: 'Mark resolved',
+    onSave: vals => {
+      const out = HIS.requests.close(id, 'resolved', vals.note);
+      if (!out.ok) return false;
+      HIS.kit.toast(r.id + ' closed as resolved.');
+      render(); renderKpis();
+    }
+  });
+}
+function dismissRequest(id) {
+  const r = HIS.requests.byId(id);
+  if (!r) return;
+  HIS.kit.modal({
+    title: 'Dismiss ' + r.id + '?',
+    sub: 'The patient sees the reason you give here, so say why no change is needed.',
+    body: "<p style='margin:12px 0 0;font-size:13px;color:#6f8890'>" + HIS.kit.esc(r.field) + ' \u2014 ' + HIS.kit.esc(r.text) + '</p>' +
+      "<label style='display:block;margin-top:14px;font:600 12px Inter,sans-serif;color:#6f8890'>Reason</label>" +
+      "<input name='note' placeholder='e.g. the number on file was confirmed with the patient'>",
+    saveLabel: 'Dismiss request',
+    onSave: vals => {
+      const out = HIS.requests.close(id, 'dismissed', vals.note);
+      if (!out.ok) return false;
+      HIS.kit.toast(r.id + ' dismissed.');
+      render(); renderKpis();
+    }
+  });
+}
 
 // Figma 2027:2164 Find existing patient (registry guard before a new registration)
 $('new').onclick = findPatient;
@@ -137,6 +231,8 @@ function findPatient() {
 
 // Registrations saved from registration-form.html (localStorage key mh_regs_extra via HIS.store, oldest first); newest ends up on top.
 HIS.store.get('mh_regs_extra', []).forEach(p => HIS.patients.unshift(p));
+// A notification can point straight at the requests tab.
+if (new URLSearchParams(location.search).get('tab') === 'requests') state.tab = 'Requests';
 renderKpis(); render();
 </script>
 </body></html>

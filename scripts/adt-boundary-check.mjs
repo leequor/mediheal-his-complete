@@ -457,7 +457,9 @@ await withHospital(async page => {
     return { before, cleared, trail, after };
   })()`);
   ok('the session had added records before signing out', r.before.admissions === 3 && r.before.charges > 0, JSON.stringify(r.before));
-  ok('signing out clears every charge raised in the session', r.cleared.charges === 0, r.cleared.charges);
+  // 2026-11-22: the charge store seeds two unbilled charges, so a cleared session leaves those two
+  // and nothing else. Anything the run raised is gone.
+  ok('signing out clears every charge raised in the session', r.cleared.charges === 2, r.cleared.charges + ' left (the two seeded charges)');
   ok('and restores the seeded admissions', r.cleared.admissions === 2 && r.cleared.active === 2, JSON.stringify(r.cleared));
   ok('the audit trail survives the reset so the session remains readable',
     r.trail.some(w => /Signed out/.test(w)), r.trail.length + ' entries');

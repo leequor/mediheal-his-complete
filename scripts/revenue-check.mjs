@@ -53,6 +53,10 @@ page.on('console', m => { if (m.type() === 'error') errs.push(m.text()); });
 
 await page.goto(BASE + '/index.html', { waitUntil: 'load' });
 await page.evaluate(() => HIS.auth.attempt('superadmin@mediheal.test', 'MediHeal2026!', true));
+// 2026-11-22: the charge store seeds two unbilled charges so the queue is not empty on a first
+// visit. This harness counts what its own workflow raises, so it starts from an empty store.
+await page.goto(BASE + '/charges.html', { waitUntil: 'load' });
+await page.evaluate(() => HIS.store.set('mh_charges', { charges: [], version: 2 }));
 
 // =================================================================================================
 // 1. THE CHARGE MASTER — EFFECTIVE DATES AND PRICE SNAPSHOTS

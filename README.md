@@ -13,7 +13,7 @@ and is not changed casually.
 
 ## What it is
 
-A complete demonstration of hospital operations across fourteen staff roles and a patient portal,
+A complete demonstration of hospital operations across eleven roles and a patient portal,
 driven by synthetic data. Every screen is real markup and real logic: a charge raised in a
 consultation lands on an invoice, a dispensed prescription decrements a batch, a discharged admission
 posts its room charges and closes the bill.
@@ -24,7 +24,7 @@ It is **not** a production hospital system. See [Limitations](#limitations).
 
 | Area | What works |
 |---|---|
-| **Authentication** | Staff sign-in and a separate patient portal, fourteen staff roles with per-role page allowlists, remember-me or tab-scoped sessions, password reset through the Accounts screen |
+| **Authentication** | Staff sign-in and a separate patient portal, eleven roles with per-role page allowlists, remember-me or tab-scoped sessions, password reset through the Accounts screen |
 | **Dashboards** | One per role, every figure derived from the module that owns it |
 | **Patient management** | Registry, registration (outpatient and inpatient), patient records |
 | **Appointments** | Booking, editing, cancelling, rescheduling, status and doctor filters, pagination |
@@ -76,19 +76,20 @@ into the source; they are not secure authentication.
 | Account | Role |
 |---|---|
 | `superadmin@mediheal.test` | Super Administrator |
-| `admin@mediheal.test` | Hospital Administrator |
-| `reception@mediheal.test` | Receptionist |
-| `admissions@mediheal.test` | Admissions Officer |
+| `reception@mediheal.test` | Front Desk & Registration |
 | `doctor@mediheal.test` | Doctor |
 | `nurse@mediheal.test` | Nurse |
 | `pharmacy@mediheal.test` | Pharmacist |
 | `laboratory@mediheal.test` | Medical Technologist |
-| `cashier@mediheal.test` | Cashier |
-| `finance@mediheal.test` | Finance Officer |
-| `hr@mediheal.test` | HR Officer |
+| `finance@mediheal.test` | Billing & Finance |
+| `hr@mediheal.test` | HR / Payroll Officer |
 | `department.head@mediheal.test` | Department Head |
 | `auditor@mediheal.test` | Auditor |
 | `patient@mediheal.test` | Patient (portal only) |
+
+Eleven accounts, not fourteen. Hospital Administrator, Receptionist and Cashier were merged into
+roles that already did the same work — the account list had become a wall, and two of its rows
+opened almost exactly the same pages.
 
 ## Demonstration behaviour
 

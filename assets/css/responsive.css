@@ -458,7 +458,7 @@
   .bl-tr { position: static !important; height: auto !important; display: grid !important; grid-template-columns: 1fr auto !important; gap: 2px 12px !important; padding: 9px 0 !important; }
   .bl-tr > * { position: static !important; text-align: left !important; white-space: normal !important; }
   .bl-tr .c1 { grid-column: 1 / -1; font-weight: 600; }
-  .bl-tr .c2, .bl-tr .c3, .bl-tr .c4 { text-align: right !important; font-size: 12px !important; color: #8a97a6 !important; }
+  .bl-tr .c2, .bl-tr .c3, .bl-tr .c4 { text-align: right !important; font-size: 12px !important; color: #8aa4b6 !important; }
   .bl-tr.h { display: none !important; }
 
   .bl-tot { position: static !important; width: auto !important; margin-top: 12px !important; }
@@ -1059,7 +1059,7 @@
   .at-r > .c::before, .pr-r > .am::before {
     display: block;
     font: 600 10.5px/14px Inter, sans-serif;
-    color: #8a97a6;
+    color: #8aa4b6;
     text-transform: uppercase;
     letter-spacing: .04em;
     margin-bottom: 1px;

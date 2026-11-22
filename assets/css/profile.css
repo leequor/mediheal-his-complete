@@ -4,31 +4,42 @@
 .pf{height:985px;min-height:0}
 .pf.has-th{height:1332px}
 .pf>*{position:absolute}
-.pf-back{left:129px;top:94px;font:400 13.569px/18.318px var(--font-inter);color:#6b7280;white-space:nowrap}
-.pf-back:hover{color:#1f2937}
-.pf-card{background:#fff;border-radius:14.6125px;box-shadow:inset 0 0 0 1px #e6e9ee,0 4px 4px rgba(0,0,0,.25)}
+.pf-back{left:129px;top:94px;font:400 13.569px/18.318px var(--font-inter);color:#6f8890;white-space:nowrap}
+.pf-back:hover{color:#1c2b30}
+.pf-card{background:#fff;border-radius:14.6125px;box-shadow:inset 0 0 0 1px #d6e5ef,0 4px 4px rgba(0,0,0,.25)}
 
 /* patient header card (Figma 459:699) */
 .pf-head>*{position:absolute}
-.pf-av{left:25.885px;top:22.129px;width:50.1px;height:50.1px;border-radius:50%;background:#0f766e;color:#fff;display:grid;place-items:center;font:700 16.7px/22.545px var(--font-inter)}
-.pf-name{left:90.598px;top:21.711px;margin:0;font:700 17.744px/23.422px var(--font-inter);color:#1f2937;white-space:nowrap}
+.pf-av{left:25.885px;top:22.129px;width:50.1px;height:50.1px;border-radius:50%;background:#1c6d9c;color:#fff;display:grid;place-items:center;font:700 16.7px/22.545px var(--font-inter)}
+.pf-name{left:90.598px;top:21.711px;margin:0;font:700 17.744px/23.422px var(--font-inter);color:#1c2b30;white-space:nowrap}
 .pf-tags{left:90.598px;top:51.351px;height:21.293px;display:flex;gap:8.35px;align-items:flex-start}
 .pf-tag{display:block;height:21.293px;padding:0 9.394px;border-radius:6.2625px;font:700 11.481px/21.293px var(--font-inter);white-space:nowrap}
-.pf-meta{flex:0 1 auto;min-width:0;width:auto;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2.297px;font:400 12.525px/16.658px var(--font-inter);color:#6b7280}
-.pf-btn{position:absolute;top:30.7px;height:32.98px;border:0;border-radius:8.35px;background:#fff;box-shadow:inset 0 0 0 1px #e6e9ee;padding:0 0 0 14.4px;text-align:left;font:500 12.525px/32.98px var(--font-inter);color:#1f2937;white-space:nowrap}
+.pf-meta{flex:0 1 auto;min-width:0;width:auto;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2.297px;font:400 12.525px/16.658px var(--font-inter);color:#6f8890}
+.pf-btn{position:absolute;top:30.7px;height:32.98px;border:0;border-radius:8.35px;background:#fff;box-shadow:inset 0 0 0 1px #d6e5ef;padding:0 0 0 14.4px;text-align:left;font:500 12.525px/32.98px var(--font-inter);color:#1c2b30;white-space:nowrap}
 .pf-btn:hover{background:#f6fafd}
 
 /* info cards */
 .pf-ch{position:absolute;left:21.71px;top:19.62px;height:29.225px;width:300px}
-.pf-ic{position:absolute;left:0;top:0;width:29.225px;height:29.225px;border-radius:7.306px;background:#e6f5f2;font-style:normal}
-.pf-ic span{position:absolute;left:5.295px;top:5.427px;font:400 13.569px/18.318px var(--font-inter);color:#0f766e;white-space:nowrap}
-.pf-h3{position:absolute;left:38.62px;top:5.426px;margin:0;font:700 13.569px/18.318px var(--font-inter);color:#1f2937;white-space:nowrap}
+.pf-ic{position:absolute;left:0;top:0;width:29.225px;height:29.225px;border-radius:7.306px;background:#e8f4fb;font-style:normal}
+.pf-ic span{position:absolute;left:5.295px;top:5.427px;font:400 13.569px/18.318px var(--font-inter);color:#1c6d9c;white-space:nowrap}
+.pf-h3{position:absolute;left:38.62px;top:5.426px;margin:0;font:700 13.569px/18.318px var(--font-inter);color:#1c2b30;white-space:nowrap}
 .pf-row{position:absolute;left:21.71px;width:346.238px;border-bottom:1px solid #f2f4f7}
 .pf-w .pf-row{width:549.43px}
 .pf-th .pf-row{width:1158.7px}
 .pf-row.last{border-bottom:0}
-.pf-l{position:absolute;left:0;top:8.35px;font:400 13.047px/17.483px var(--font-inter);color:#6b7280;white-space:nowrap}
+.pf-l{position:absolute;left:0;top:8.35px;font:400 13.047px/17.483px var(--font-inter);color:#6f8890;white-space:nowrap}
 /* value boxes overhang the row's right edge by 8.35px in Figma (narrow and wide cards); the Treatment History card has no overhang */
-.pf-v{position:absolute;right:-8.35px;top:8.35px;width:194.568px;text-align:right;font:500 13.047px/17.483px var(--font-inter);color:#1f2937}
+.pf-v{position:absolute;right:-8.35px;top:8.35px;width:194.568px;text-align:right;font:500 13.047px/17.483px var(--font-inter);color:#1c2b30}
 .pf-w .pf-v{width:400px}
 .pf-th .pf-v{right:0;width:460px}
+
+/* Correction request banner (2026-11-22). Sits in the empty strip to the right of the back link,
+   so it never pushes the measured Figma cards down. */
+.pf-req{left:320px;top:82px;width:1000px;min-height:44px;display:flex;align-items:center;gap:14px;padding:8px 14px;border-radius:10px;background:#f2f8fd;box-shadow:inset 0 0 0 1px #c8dcea;z-index:5}
+.pf-req-main{display:grid;gap:1px;min-width:0;flex:1 1 auto}
+.pf-req-main b{font:600 12.5px/16px var(--font-inter);color:#15405a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pf-req-main span{font:400 12px/16px var(--font-inter);color:#5b7385;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pf-req-b{flex:none;height:30px;padding:0 12px;border-radius:8px;border:1px solid #c8dcea;background:#fff;color:#15405a;font:600 12px var(--font-inter);cursor:pointer}
+.pf-req-b:hover{background:#eef6fb}
+.pf-req-b.ok{border-color:#9ed0b4;background:#e7f6ee;color:#14532d}
+.pf-req-b.ok:hover{background:#d5efe1}

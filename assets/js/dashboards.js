@@ -129,58 +129,6 @@
         };
       }
 
-      case 'hospitaladmin':
-        return {
-          greet: 'Hospital overview',
-          kpis: [
-            { label: 'Registered patients', value: String(P.length), delta: inpatients + ' inpatient \u00b7 ' + outpatients + ' outpatient', icon: 'users' },
-            { label: 'Admitted', value: String(admitted), delta: waiting + ' waiting for a bed or consult', icon: 'bed' },
-            { label: 'Appointments', value: String(A.length), delta: count(A, function (a) { return a.status === 'Confirmed'; }) + ' confirmed today', icon: 'calendar-check' },
-            { label: 'Billed (ledger)', value: money(billed), delta: money(outstanding) + ' still outstanding', icon: 'receipt' }
-          ],
-          table: {
-            title: 'Departments', sub: 'Occupancy and staffing from the department records',
-            cols: [{ t: 'DEPARTMENT', left: 20, w: 170 }, { t: 'HEAD', left: 200, w: 170 }, { t: 'BEDS', left: 380, w: 80 }, { t: 'OCCUPANCY', left: 470, w: 100 }, { t: 'REVENUE', left: 590, w: 110 }, { t: 'STATUS', left: 710, w: 93 }],
-            rows: depts().slice(0, 6).map(function (d) {
-              return { cells: [[d.name, d.doctors + ' doctors \u00b7 ' + d.nurses + ' nurses'], d.head, String(d.beds), d.pct + '%', d.rev, [d.pct >= 85 ? 'High' : 'Normal', d.pct >= 85 ? 'in' : 'ok']] };
-            }),
-            empty: 'No departments configured'
-          },
-          feed: {
-            title: 'Operational activity', sub: 'Latest recorded changes', icon: 'chart',
-            items: AUD.slice(0, 4).map(function (r) {
-              return { time: new Date(r.at).toLocaleTimeString('en-PH', { timeZone: 'Asia/Manila', hour: 'numeric', minute: '2-digit', hour12: true }), title: r.who, line1: r.what, line2: r.role };
-            }),
-            empty: 'No operational activity recorded yet'
-          }
-        };
-
-      case 'receptionist':
-        return {
-          greet: 'Welcome back, ' + first(person.name) + '!',
-          kpis: [
-            { label: "Today's appointments", value: String(A.length), delta: count(A, function (a) { return a.status === 'Confirmed'; }) + ' confirmed', icon: 'calendar-check' },
-            { label: 'Waiting now', value: String(waiting), delta: 'In the front-desk queue', icon: 'clock' },
-            { label: 'Checked in', value: String(admitted), delta: 'Admitted or in consultation', icon: 'check-circle' },
-            { label: 'Registered today', value: String(P.length), delta: 'Patients on file', icon: 'users' }
-          ],
-          table: {
-            title: 'Appointments today', sub: 'Book, reschedule, check in or cancel',
-            cols: [{ t: 'PATIENT', left: 20, w: 170 }, { t: 'TIME', left: 200, w: 140 }, { t: 'TYPE', left: 360, w: 160 }, { t: 'DOCTOR', left: 530, w: 160 }, { t: 'STATUS', left: 710, w: 93 }],
-            rows: A.slice(0, 6).map(function (a) {
-              return { cells: [[a.patient, a.kind], a.when.replace(/^.*\u2022\s*/, ''), a.kind, a.doctor, [a.status, HIS.statusClass[a.status] || 'off']] };
-            }),
-            empty: 'No appointments booked today'
-          },
-          feed: {
-            title: 'Upcoming check-ins', sub: 'Next patients expected at the desk', icon: 'clock',
-            items: A.slice(0, 4).map(function (a) {
-              return { time: a.when.replace(/^.*\u2022\s*/, ''), title: a.patient, line1: a.kind, line2: a.doctor, status: a.status, kind: HIS.statusClass[a.status] || 'off' };
-            }),
-            empty: 'No check-ins expected'
-          }
-        };
-
       case 'registration':
         return {
           greet: 'Welcome back, ' + first(person.name) + '!',
@@ -332,34 +280,6 @@
           }
         };
       }
-
-      case 'cashier':
-        return {
-          greet: 'Welcome back, ' + first(person.name) + '!',
-          kpis: [
-            { label: 'Open invoices', value: String(openBills.length), delta: money(outstanding) + ' to collect', icon: 'receipt' },
-            { label: 'Collected', value: money(collected), delta: 'Across ' + B.length + ' invoices', icon: 'peso' },
-            { label: 'Partial payments', value: String(count(B, function (b) { return (paidOf(b) > 0 || HIS.ledger.coveredOf(b) > 0) && balOf(b) > 0.005; })), delta: 'Balance still due', icon: 'clock' },
-            { label: 'Paid in full', value: String(count(B, function (b) { return balOf(b) <= 0.005; })), delta: 'Closed invoices', icon: 'check-circle' }
-          ],
-          table: {
-            title: 'Invoices to settle', sub: 'Balance due per patient',
-            cols: [{ t: 'INVOICE', left: 20, w: 170 }, { t: 'PATIENT', left: 200, w: 170 }, { t: 'AMOUNT', left: 380, w: 100 }, { t: 'PAID', left: 490, w: 100 }, { t: 'BALANCE', left: 600, w: 100 }, { t: 'STATUS', left: 712, w: 85 }],
-            rows: B.map(function (b) {
-              var p = paidOf(b);
-              return { cells: [[b.id, b.date], b.name, money(b.amount), money(p), money(b.amount - p), [p >= b.amount ? 'Paid' : (p > 0 ? 'Partial' : 'Pending'), p >= b.amount ? 'ok' : (p > 0 ? 'in' : 'off')]] };
-            }),
-            empty: 'No invoices on file'
-          },
-          feed: {
-            title: 'Collection notes', sub: 'Where the money stands', icon: 'receipt',
-            items: B.slice(0, 4).map(function (b) {
-              var p = paidOf(b);
-              return { time: money(b.amount - p), title: b.name, line1: b.id + ' \u00b7 ' + b.dept, line2: 'Paid ' + money(p) + ' of ' + money(b.amount), status: p >= b.amount ? 'Settled' : 'Open', kind: p >= b.amount ? 'ok' : 'in' };
-            }),
-            empty: 'Nothing to collect'
-          }
-        };
 
       case 'finance': {
         var rate = billed ? Math.round((collected / billed) * 100) : 0;

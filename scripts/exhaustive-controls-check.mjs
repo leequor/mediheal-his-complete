@@ -197,7 +197,7 @@ console.log('\n--- 2. row actions target their own record ---');
 }
 {
   // Appointments: cancel the LAST confirmed visit from its own row menu.
-  const { ctx, page } = await fresh('admissions@mediheal.test');
+  const { ctx, page } = await fresh('reception@mediheal.test');
   await page.goto(BASE + '/appointments.html', { waitUntil: 'load' });
   await page.waitForTimeout(500);
   const before = await page.evaluate(() => HIS.appointments.map(a => a.status));
@@ -404,7 +404,9 @@ console.log('\n--- 4. a repeated action does not apply twice ---');
 // =================================================================================================
 console.log('\n--- 5. restricted actions are refused, not just hidden ---');
 {
-  const { ctx, page } = await fresh('cashier@mediheal.test');
+  // 2026-11-22: the Cashier role was merged into Billing & Finance, which does hold approval
+  // rights. The separation-of-duties case is the auditor, who can read claims but not decide them.
+  const { ctx, page } = await fresh('auditor@mediheal.test');
   await page.goto(BASE + '/claims.html', { waitUntil: 'load' });
   await page.waitForTimeout(500);
   await page.evaluate(() => {
@@ -417,8 +419,8 @@ console.log('\n--- 5. restricted actions are refused, not just hidden ---');
     can: HIS.claims.can('approve', HIS.claims.get('CLM-2026-0003')),
     attempt: HIS.claims.transition('CLM-2026-0003', 'approve', { approvedAmount: 1000 }).ok
   }));
-  ok('a cashier is not offered claim approval', !cashier.acts.includes('approve'), cashier.acts.join(','));
-  ok('the claims API refuses a cashier approval', cashier.can === false && cashier.attempt === false, JSON.stringify(cashier.can) + '/' + JSON.stringify(cashier.attempt));
+  ok('a read-only role is not offered claim approval', !cashier.acts.includes('approve'), cashier.acts.join(','));
+  ok('the claims API refuses that approval', cashier.can === false && cashier.attempt === false, JSON.stringify(cashier.can) + '/' + JSON.stringify(cashier.attempt));
   await ctx.close();
 }
 

@@ -289,7 +289,7 @@ async function open(ctx) {
     const out = {};
     const acct = HIS.accounts.byEmail('nurse@mediheal.test');
     out.link = HIS.registry.linkAccount(acct.id, 'PT-99215');
-    out.second = HIS.registry.linkAccount(HIS.accounts.byEmail('cashier@mediheal.test').id, 'PT-99215');
+    out.second = HIS.registry.linkAccount(HIS.accounts.byEmail('finance@mediheal.test').id, 'PT-99215');
     out.badPatient = HIS.registry.linkAccount(acct.id, 'PT-00000');
     out.accountFor = !!HIS.registry.accountFor('PT-99215');
     HIS.registry.linkAccount(acct.id, null);

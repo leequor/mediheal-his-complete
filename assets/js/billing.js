@@ -18,7 +18,7 @@
   var pill = function (s) { return "<span class='bl-pill " + s + "'>" + s + '</span>'; };
 
   function shell() {
-    var h = "<h1 class='bl-title'>Billing</h1><div class='bl-sub'>Monday, August 31, 2026</div><div class='bl-search'>" + SEARCH + "<input id='blq' placeholder='Search records...' aria-label='Search'></div>";
+    var h = "<h1 class='bl-title'>Billing</h1><div class='bl-sub'>Invoices, payments and the balance still due · Monday, August 31, 2026</div><div class='bl-search'>" + SEARCH + "<input id='blq' placeholder='Search records...' aria-label='Search'></div>";
     // M7: the KPI strip is DERIVED from the ledger, not from the Figma sample text.
     // The frame's placeholder figures (482K / 395K / 87K / 12) had no relationship to the four
     // invoices underneath them — the invoices total 160,860. Every figure here comes from

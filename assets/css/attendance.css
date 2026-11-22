@@ -54,8 +54,8 @@
 .at-p i{width:10px;height:10px;border-radius:50%;background:#2d9d27;margin-right:6px;flex:none}
 .at-p.Present{background:#d8ffd3;color:#084d02}
 .at-p.Late{background:#ffcba3;color:#a6460a}
-.at-p.On{background:#e9ecef;color:#1a1a1a}
-.at-p.Absent{background:#e9ecef;color:#1a1a1a}
+.at-p.On{background:#e3edf3;color:#1c2b30}
+.at-p.Absent{background:#e3edf3;color:#1c2b30}
 .at-ps{position:absolute;left:1186px;top:24.5px;width:94px;height:15px;border:0;padding:0;background:transparent;cursor:pointer;color:#1c6d9c;font:600 12px/14.52px Inter,sans-serif}
 .at-ps svg{position:absolute;left:33px;top:0}
 .at-ps span{position:absolute;left:53px;top:0}
@@ -92,7 +92,7 @@
 .at-lp{width:84px;height:28px;border-radius:999px;text-align:center;font:600 11px/28px Lexend,sans-serif}
 .at-lp.Approved{background:#d8ffd3;color:#084d02}
 .at-lp.Pending{background:#ffcba3;color:#a6460a}
-.at-lp.Declined{background:#e9ecef;color:#1a1a1a}
+.at-lp.Declined{background:#e3edf3;color:#1c2b30}
 .at-hr{height:1px;background:#e3edf3}
 .at-sv{font:700 27px/32.68px Inter,sans-serif;color:#1b4e6b}
 .at-trk{height:8px;border-radius:4px;background:#e8f4fb}

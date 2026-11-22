@@ -87,7 +87,7 @@ async function inkOffset(page, selector) {
 // =================================================================================================
 console.log('\n--- 1. initials are centred inside the disc ---');
 {
-  const accounts = [['hr@mediheal.test', 'CD'], ['laboratory@mediheal.test', 'DC'], ['admissions@mediheal.test', 'JA'], ['doctor@mediheal.test', 'LL']];
+  const accounts = [['hr@mediheal.test', 'CD'], ['laboratory@mediheal.test', 'DC'], ['reception@mediheal.test', 'MB'], ['doctor@mediheal.test', 'LL']];
   for (const [email, want] of accounts) {
     const { ctx, page } = await fresh(email, 1440, 768, 3);
     await page.goto(BASE + '/dashboard.html', { waitUntil: 'load' });
@@ -136,13 +136,14 @@ console.log('\n--- 1. initials are centred inside the disc ---');
 // =================================================================================================
 console.log('\n--- 2. the profile shows the signed-in account ---');
 {
+  // 2026-11-22: one row per account. The Hospital Administrator, Receptionist and Cashier accounts
+  // were merged away, so this list no longer contains their names.
   const ACCOUNTS = [
     ['superadmin@mediheal.test', 'Dr. Elsie Chen'],
-    ['admin@mediheal.test', 'Atty. Ramon Silva'],
-    ['admissions@mediheal.test', 'Joel Aquino'],
+    ['reception@mediheal.test', 'Maricel Bautista'],
     ['laboratory@mediheal.test', 'Daniel Cruz'],
     ['hr@mediheal.test', 'Carmela Dizon'],
-    ['cashier@mediheal.test', 'Aileen Ramos'],
+    ['finance@mediheal.test', 'Rowena Lim'],
     ['department.head@mediheal.test', 'Dr. Marc Laureta']
   ];
   const seen = [];
@@ -173,7 +174,7 @@ console.log('\n--- 2. the profile shows the signed-in account ---');
     ok(name + ': no script error', errors.length === 0, errors[0]);
     await ctx.close();
   }
-  ok('seven accounts show seven different names', new Set(seen).size === 7, seen.join(', '));
+  ok('six accounts show six different names', new Set(seen).size === 6, seen.join(', '));
 }
 {
   // A patient account must resolve to its own registry record, never a staff profile.
@@ -203,9 +204,9 @@ console.log('\n--- 3. a notification opens its record ---');
 const CASES = [
   ['laboratory@mediheal.test', 'laboratory.html', 'Critical result', 'LAB-', 'order'],
   ['pharmacy@mediheal.test', 'pharmacy.html', 'Prescriptions to verify', 'RX-', 'rx'],
-  ['cashier@mediheal.test', 'billing.html', 'Invoices with a balance', 'BL-', 'invoice'],
+  ['finance@mediheal.test', 'billing.html', 'Outstanding balance', 'BL-', 'invoice'],
   ['hr@mediheal.test', 'attendance.html', 'Leave requests', 'EMP-', 'leave'],
-  ['admissions@mediheal.test', 'appointments.html', 'Appointments awaiting', 'APT-', 'appointment'],
+  ['reception@mediheal.test', 'appointments.html', 'Appointments awaiting', 'APT-', 'appointment'],
   ['superadmin@mediheal.test', 'laboratory.html', 'Critical result', 'LAB-', 'order']
 ];
 for (const [email, pageName, title, prefix, kind] of CASES) {
@@ -230,7 +231,9 @@ for (const [email, pageName, title, prefix, kind] of CASES) {
   }, title);
   ok(email.split('@')[0] + ': the panel offers the expected notification', !!item, item);
 
-  await page.click('.nf-r');
+  // Click the row the assertion is about, not whatever happens to be first: the list is ordered by
+  // urgency and changes with the data, so "first" is not a stable way to pick a notification.
+  await page.locator('.nf-r', { hasText: item }).first().click();
   await page.waitForTimeout(1300);
   const after = await page.evaluate(k => ({
     page: location.pathname.split('/').pop(),
@@ -265,7 +268,7 @@ console.log('\n--- 4. notifications stay inside the role ---');
 {
   const seen = {};
   for (const [email, role] of [['laboratory@mediheal.test', 'lab'], ['pharmacy@mediheal.test', 'pharmacy'],
-    ['cashier@mediheal.test', 'cashier'], ['hr@mediheal.test', 'hr'], ['auditor@mediheal.test', 'auditor']]) {
+    ['finance@mediheal.test', 'finance'], ['hr@mediheal.test', 'hr'], ['auditor@mediheal.test', 'auditor']]) {
     const { ctx, page } = await fresh(email);
     await page.goto(BASE + '/dashboard.html', { waitUntil: 'load' });
     await page.waitForTimeout(450);
@@ -281,7 +284,7 @@ console.log('\n--- 4. notifications stay inside the role ---');
   ok('every role has at least one notification', Object.values(seen).every(r => r.titles.length > 0), JSON.stringify(Object.entries(seen).map(([k, v]) => k + ':' + v.titles.length)));
   ok('the unread badge equals the unread rows for every role', Object.values(seen).every(r => r.badge === r.unread), JSON.stringify(Object.entries(seen).map(([k, v]) => k + ':' + v.badge + '/' + v.unread)));
   ok('HR sees no laboratory work', !seen.hr.titles.some(t => /specimen|validation|critical/i.test(t)), seen.hr.titles.join(' | '));
-  ok('the cashier sees no leave or payroll', !seen.cashier.titles.some(t => /leave|payroll|timesheet/i.test(t)), seen.cashier.titles.join(' | '));
+  ok('billing sees no leave or payroll', !seen.finance.titles.some(t => /leave|payroll|timesheet/i.test(t)), seen.finance.titles.join(' | '));
   ok('the technologist sees no invoices', !seen.lab.titles.some(t => /invoice|balance/i.test(t)), seen.lab.titles.join(' | '));
   ok('no two roles open with the same notification', new Set(Object.values(seen).map(r => r.titles[0])).size >= 4, Object.values(seen).map(r => r.titles[0]).join(' | '));
 }

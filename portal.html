@@ -2,19 +2,24 @@
 <html lang='en'><head>
 <meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'>
 <title>Patient portal · MediHeal</title>
-<link rel='icon' type='image/png' href='assets/img/logo-removebg-preview%201.png'>
+<link rel='icon' type='image/png' href='assets/img/logo-mark.png'>
 <link href='https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lexend:wght@300;400;500;600;700&family=Outfit:wght@700&display=swap' rel='stylesheet'>
 <link rel='stylesheet' href='assets/css/tokens.css'><link rel='stylesheet' href='assets/css/portal.css'>
 <link rel='stylesheet' href='assets/css/responsive.css'></head><body class='pt'>
 <!-- Addition (not in Figma): public patient portal. Design supplied by the owner from the emailed
      prototype. M5 replaced the prototype's placeholder "you're signed in" card with a real
      patient experience that reads the SHARED hospital records through HIS.registry — the same
-     patient row Registration, Consultation, Billing and the laboratory see. -->
+     patient row Registration, Consultation, Billing and the laboratory see.
+
+     2026-11-22 — the portal now wears the same shell as the staff console: the same gradient
+     header, the same real MediHeal mark (it used to draw a letter "M" in a white circle, which is
+     not the logo), and a persistent left navigation instead of a floating tab bar, so a patient
+     moving between the portal and the staff screens does not feel like they changed product. -->
 
 <!-- LANDING -->
 <section class='pt-view' id='landing'>
   <header class='pt-topbar'>
-    <a class='pt-brand' href='#landing'><span class='pt-logo'>M</span>MediHeal</a>
+    <a class='pt-brand' href='#landing'><img class='pt-mark' src='assets/img/logo-mark.png' alt=''><span>MediHeal</span></a>
     <div class='pt-row' style='gap:18px'>
       <a class='pt-link small' href='index.html'>Staff sign in</a>
       <a class='pt-btn sm' href='#signin'>Sign In</a>
@@ -22,22 +27,31 @@
   </header>
   <main class='pt-hero'>
     <div>
-      <h1>All your hospital operations, in one place.</h1>
-      <p class='pt-lead'>One workspace for registration, scheduling, staffing, and billing, built to keep patient care safe, accurate, and on time.</p>
+      <span class='pt-eyebrow'>Patient portal</span>
+      <h1>Your care, your records, in one place.</h1>
+      <p class='pt-lead'>See your appointments, results and bills from the same system your care team uses — and ask for a correction when something is out of date.</p>
       <ul class='pt-features'>
-        <li><b>Patient Registration</b><span>Admit inpatients &amp; outpatients instantly</span></li>
-        <li><b>Appointment &amp; Scheduling</b><span>Real-time doctor &amp; appointment slots</span></li>
-        <li><b>Billing &amp; Management Reports</b><span>Clear, accurate reports for management</span></li>
+        <li><b>Appointments</b><span>Every visit, past and upcoming, with the doctor you saw</span></li>
+        <li><b>Medical record</b><span>Consultations, prescriptions and released laboratory results</span></li>
+        <li><b>Billing</b><span>Itemised statements, payments and the balance still due</span></li>
       </ul>
-      <a class='pt-btn' href='#signup'>Create Account &rarr;</a>
+      <div class='pt-row pt-cta'>
+        <a class='pt-btn' href='#signup'>Create an account</a>
+        <a class='pt-btn ghost' href='#signin'>I already have one</a>
+      </div>
     </div>
-    <div class='pt-preview'>
-      <div class='pt-preview-bar'>MediHeal</div>
-      <div class='pt-preview-grid'>
-        <div class='pt-tile'><b>Quick registration</b><span>Admit a patient in under a minute</span></div>
-        <div class='pt-tile'><b>Staff roster</b><span>Know who's on duty at a glance</span></div>
-        <div class='pt-tile'><b>Live scheduling</b><span>See open doctor slots in real time</span></div>
-        <div class='pt-tile'><b>Management reports</b><span>Revenue and activity, always up to date</span></div>
+    <div class='pt-preview' aria-hidden='true'>
+      <div class='pt-preview-bar'><img class='pt-mark sm' src='assets/img/logo-mark.png' alt=''><span>MediHeal</span><i>Patient portal</i></div>
+      <div class='pt-preview-body'>
+        <div class='pt-preview-hero'><b>Good morning, Isabel</b><span>PT-99213 · Outpatient</span></div>
+        <div class='pt-preview-grid'>
+          <div class='pt-tile'><em>Next appointment</em><b>Aug 31, 2026</b><span>Cardiology · Dr. Laurice Laureta</span></div>
+          <div class='pt-tile'><em>Balance due</em><b class='bad'>₱7,360</b><span>2 invoices on file</span></div>
+          <div class='pt-tile'><em>Results available</em><b>2</b><span>Validated by the laboratory</span></div>
+          <div class='pt-tile'><em>Active medications</em><b>2</b><span>Amlodipine, Metformin</span></div>
+        </div>
+        <div class='pt-preview-row'><span class='dot'></span><b>Cardiology follow-up</b><i>Confirmed</i></div>
+        <div class='pt-preview-row'><span class='dot'></span><b>Lipid profile</b><i>Released</i></div>
       </div>
     </div>
   </main>
@@ -45,42 +59,58 @@
 
 <!-- SIGN UP -->
 <section class='pt-view' id='signup'>
+  <header class='pt-topbar'>
+    <a class='pt-brand' href='#landing'><img class='pt-mark' src='assets/img/logo-mark.png' alt=''><span>MediHeal</span></a>
+    <div class='pt-row' style='gap:18px'>
+      <span class='pt-chip'>Patient account</span>
+      <a class='pt-btn sm' href='#signin'>Sign in</a>
+    </div>
+  </header>
   <form class='pt-panel wide' id='pt-signup' novalidate>
-    <div class='pt-row'>
-      <h2>Create your account</h2>
+    <div class='pt-panel-head'>
+      <div>
+        <h2>Create your account</h2>
+        <p class='pt-muted'>This form creates a patient account. Staff accounts are issued by the hospital administrator — <a class='pt-link small' href='index.html'>staff sign in</a>.</p>
+      </div>
       <a class='pt-link' href='#signin'>Already registered? Sign in</a>
     </div>
-    <p class='pt-muted'>Let's connect you with your care. All fields are required unless marked optional.</p>
-    <div class='pt-grid'>
-      <label class='pt-label'>First name<input class='pt-input' name='first' required placeholder='Juan'></label>
-      <label class='pt-label'>Middle name <small>(optional)</small><input class='pt-input' name='middle' placeholder='Santos'></label>
-      <label class='pt-label'>Last name<input class='pt-input' name='last' required placeholder='Dela Cruz'></label>
-      <label class='pt-label'>Suffix <small>(optional)</small><input class='pt-input' name='suffix' placeholder='Jr., III'></label>
-      <label class='pt-label'>Date of birth<input class='pt-input' type='date' name='dob' required></label>
-      <label class='pt-label'>Mobile number<input class='pt-input' type='tel' name='mobile' required placeholder='+63 917 555 0124'></label>
-      <label class='pt-label'>Email address<input class='pt-input' type='email' name='email' required placeholder='name@mediheal.com' autocomplete='username'></label>
-      <label class='pt-label'>Create password<input class='pt-input' type='password' name='password' id='pt-pw' required minlength='12' autocomplete='new-password'></label>
-    </div>
-    <p class='pt-hint' id='pt-pw-hint'>Use at least 12 characters, including letters and numbers.</p>
+
+    <fieldset class='pt-box'>
+      <legend>Your details</legend>
+      <div class='pt-grid'>
+        <label class='pt-label'>First name<input class='pt-input' name='first' required placeholder='Juan'></label>
+        <label class='pt-label'>Middle name <small>(optional)</small><input class='pt-input' name='middle' placeholder='Santos'></label>
+        <label class='pt-label'>Last name<input class='pt-input' name='last' required placeholder='Dela Cruz'></label>
+        <label class='pt-label'>Suffix <small>(optional)</small><input class='pt-input' name='suffix' placeholder='Jr., III'></label>
+        <label class='pt-label'>Date of birth<input class='pt-input' type='date' name='dob' required></label>
+        <label class='pt-label'>Mobile number<input class='pt-input' type='tel' name='mobile' required placeholder='+63 917 555 0124'></label>
+        <label class='pt-label'>Email address<input class='pt-input' type='email' name='email' required placeholder='name@example.com' autocomplete='username'></label>
+        <label class='pt-label'>Create password<input class='pt-input' type='password' name='password' id='pt-pw' required minlength='12' autocomplete='new-password'></label>
+      </div>
+      <p class='pt-hint' id='pt-pw-hint'>Use at least 12 characters, including letters and numbers.</p>
+    </fieldset>
 
     <fieldset class='pt-box'>
       <legend>Link your existing patient record</legend>
-      <label class='pt-check'><input type='checkbox' id='pt-hasid' checked> I have a MediHeal patient ID or hospital record</label>
-      <div class='pt-grid' id='pt-idfields'>
+      <label class='pt-check'><input type='checkbox' id='pt-hasid'> I have a MediHeal patient ID or hospital record</label>
+      <div class='pt-grid' id='pt-idfields' hidden>
         <label class='pt-label'>Patient ID<input class='pt-input' name='pid' placeholder='PT-99212'></label>
         <label class='pt-label'>Hospital / facility
           <select class='pt-select' name='facility'><option>MediHeal Medical Center</option><option>MediHeal Annex</option></select>
         </label>
       </div>
-      <p class='pt-muted pt-small'>We match your name and birthdate against the hospital record before linking it. New patient? Untick the box above and a record is created for you.</p>
+      <p class='pt-muted pt-small' id='pt-link-help'>We check your name and date of birth against the hospital record. New patient? Leave the box unticked and a record is created for you.</p>
     </fieldset>
 
-    <h3>Your privacy matters</h3>
-    <p class='pt-muted pt-small'>Under the Philippine Data Privacy Act of 2012 (RA 10173), MediHeal processes your personal and health information to verify your identity, provide care, and manage your portal.</p>
-    <label class='pt-check'><input type='checkbox' id='pt-privacy' required> I have read the Privacy Notice and consent to the processing described above.</label>
-    <label class='pt-check'><input type='checkbox' id='pt-terms' required> I agree to the Patient Portal Terms of Use.</label>
-    <label class='pt-check'><input type='checkbox' id='pt-news'> Send me optional health tips and hospital news (optional).</label>
-    <p class='pt-error' id='pt-signup-error' role='alert'></p>
+    <fieldset class='pt-box'>
+      <legend>Your privacy matters</legend>
+      <p class='pt-muted pt-small'>Under the Philippine Data Privacy Act of 2012 (RA 10173), MediHeal processes your personal and health information to verify your identity, provide care, and manage your portal.</p>
+      <label class='pt-check'><input type='checkbox' id='pt-privacy' required> I have read the Privacy Notice and consent to the processing described above.</label>
+      <label class='pt-check'><input type='checkbox' id='pt-terms' required> I agree to the Patient Portal Terms of Use.</label>
+      <label class='pt-check'><input type='checkbox' id='pt-news'> Send me optional health tips and hospital news (optional).</label>
+    </fieldset>
+
+    <div class='pt-msg' id='pt-signup-error' role='alert' hidden></div>
     <button class='pt-btn full' type='submit'>Create account &rarr;</button>
     <p class='pt-foot'>&copy; 2026 MediHeal &middot; For urgent medical care, call 911. This portal is not for emergencies.</p>
   </form>
@@ -89,19 +119,20 @@
 <!-- SIGN IN -->
 <section class='pt-view split' id='signin'>
   <aside class='pt-side'>
-    <a class='pt-brand' href='#landing'><span class='pt-logo'>M</span>MediHeal</a>
-    <h1>All your hospital operations, in one place.</h1>
-    <p>One workspace for registration, scheduling, staffing, and billing, built to keep patient care safe, accurate, and on time.</p>
+    <a class='pt-brand' href='#landing'><img class='pt-mark' src='assets/img/logo-mark.png' alt=''><span>MediHeal</span></a>
+    <span class='pt-eyebrow on-dark'>Patient portal</span>
+    <h1>Your care, your records, in one place.</h1>
+    <p>See your appointments, results and bills from the same system your care team uses.</p>
     <ul class='pt-features'>
-      <li><b>Patient Registration</b><span>Admit inpatients &amp; outpatients instantly</span></li>
-      <li><b>Appointment &amp; Scheduling</b><span>Real-time doctor &amp; appointment slots</span></li>
-      <li><b>Billing &amp; Management Reports</b><span>Clear, accurate reports for management</span></li>
+      <li><b>Appointments</b><span>Every visit, past and upcoming</span></li>
+      <li><b>Medical record</b><span>Consultations, prescriptions, released results</span></li>
+      <li><b>Billing</b><span>Itemised statements and payments</span></li>
     </ul>
   </aside>
   <form class='pt-panel' id='pt-signin' novalidate>
     <h2>Sign in</h2>
     <p class='pt-muted'>Enter your email and password to access your medical profile.</p>
-    <label class='pt-label'>Email address<input class='pt-input' id='pt-si-email' type='email' name='email' required placeholder='name@mediheal.com' autocomplete='username'></label>
+    <label class='pt-label'>Email address<input class='pt-input' id='pt-si-email' type='email' name='email' required placeholder='name@example.com' autocomplete='username'></label>
     <label class='pt-label'>Password<input class='pt-input' type='password' name='password' required placeholder='Enter your password' autocomplete='current-password'></label>
     <div class='pt-row'>
       <label class='pt-check'><input type='checkbox' id='pt-keep' checked> Keep me signed in</label>
@@ -110,22 +141,22 @@
     <p class='pt-error' id='pt-signin-error' role='alert'></p>
     <button class='pt-btn full' type='submit'>Sign in &rarr;</button>
     <p class='pt-muted pt-small'>New patient? <a class='pt-link small' href='#signup'>Create an account</a></p>
-    <p class='pt-muted pt-small' style='margin-top:14px;padding-top:14px;border-top:1px solid #e2ecf4'>Hospital staff? <a class='pt-link small' href='index.html'>Staff sign in &rarr;</a></p>
-    <p class='pt-demo' style='margin-top:12px'>Sample patient account &mdash; <b>patient@mediheal.test</b> &middot; password <b>MediHeal2026!</b></p>
+    <p class='pt-muted pt-small pt-split-line'>Hospital staff? <a class='pt-link small' href='index.html'>Staff sign in &rarr;</a></p>
+    <p class='pt-demo'>Sample patient account &mdash; <b>patient@mediheal.test</b> &middot; password <b>MediHeal2026!</b></p>
   </form>
 </section>
 
 <!-- FORGOT PASSWORD (3 steps) -->
 <section class='pt-view' id='forgot'>
   <header class='pt-topbar'>
-    <a class='pt-brand' href='#landing'><span class='pt-logo'>M</span>MediHeal</a>
-    <a class='pt-btn sm' href='#signin'>Back to sign in</a>
+    <a class='pt-brand' href='#landing'><img class='pt-mark' src='assets/img/logo-mark.png' alt=''><span>MediHeal</span></a>
+    <a class='pt-btn sm ghost' href='#signin'>Back to sign in</a>
   </header>
   <div class='pt-steps'>
     <div class='pt-step on' data-step='1'>
       <h2>Forgot your password?</h2><span class='pt-pill'>Step 1 &middot; Request code</span>
       <p class='pt-muted'>Enter the email linked to your patient account.</p>
-      <label class='pt-label'>Email address<input class='pt-input' id='pt-recv' type='email' placeholder='name@mediheal.com' autocomplete='username'></label>
+      <label class='pt-label'>Email address<input class='pt-input' id='pt-recv' type='email' placeholder='name@example.com' autocomplete='username'></label>
       <p class='pt-error' id='pt-f1err' role='alert'></p>
       <button class='pt-btn full' type='button' id='pt-send'>Send recovery code</button>
     </div>
@@ -162,22 +193,32 @@
 <section class='pt-view' id='app'>
   <div class='pt-app'>
     <header class='pt-appbar'>
-      <a class='pt-brand' href='#home'><span class='pt-logo'>M</span>MediHeal</a>
-      <nav class='pt-nav' aria-label='Patient portal'>
-        <a href='#home' data-nav='home'>Overview</a>
-        <a href='#appts' data-nav='appts'>Appointments</a>
-        <a href='#medical' data-nav='medical'>Medical record</a>
-        <a href='#billing' data-nav='billing'>Billing</a>
-        <a href='#docs' data-nav='docs'>Documents</a>
-        <a href='#me' data-nav='me'>My profile</a>
-      </nav>
+      <a class='pt-brand' href='#home'><img class='pt-mark' src='assets/img/logo-mark.png' alt=''><span>MediHeal</span></a>
+      <span class='pt-chip on-bar'>Patient portal</span>
       <div class='pt-user'>
         <span class='pt-av' id='pt-av'>--</span>
-        <div><b id='pt-who'>--</b><small id='pt-pid'>--</small></div>
-        <button class='pt-btn sm' type='button' id='pt-signout'>Sign out</button>
+        <div class='pt-user-tx'><b id='pt-who'>--</b><small id='pt-pid'>--</small></div>
+        <button class='pt-btn sm ghost' type='button' id='pt-signout'>Sign out</button>
       </div>
     </header>
-    <div class='pt-wrap' id='pt-stage'><!-- rendered by portal.js --></div>
+    <div class='pt-body'>
+      <aside class='pt-sidenav' aria-label='Patient portal'>
+        <nav>
+          <a href='#home' data-nav='home'><svg viewBox='0 0 24 24' aria-hidden='true'><rect x='3' y='3' width='7' height='7' rx='1.6'/><rect x='14' y='3' width='7' height='7' rx='1.6'/><rect x='3' y='14' width='7' height='7' rx='1.6'/><rect x='14' y='14' width='7' height='7' rx='1.6'/></svg><span>Overview</span></a>
+          <a href='#appts' data-nav='appts'><svg viewBox='0 0 24 24' aria-hidden='true'><rect x='3' y='5' width='18' height='16' rx='2.5'/><path d='M8 3v4M16 3v4M3 10h18M8.5 15l2 2 4-4'/></svg><span>Appointments</span></a>
+          <a href='#medical' data-nav='medical'><svg viewBox='0 0 24 24' aria-hidden='true'><path d='M6 3h9l4 4v14H6z'/><path d='M14 3v5h5M9 12h6M9 16h4'/></svg><span>Medical record</span></a>
+          <a href='#billing' data-nav='billing'><svg viewBox='0 0 24 24' aria-hidden='true'><path d='M5 3h14v18l-3-2-2 2-2-2-2 2-2-2-3 2z'/><path d='M8 8h8M8 12h8M8 16h5'/></svg><span>Billing</span></a>
+          <a href='#docs' data-nav='docs'><svg viewBox='0 0 24 24' aria-hidden='true'><path d='M4 6h6l2 2h8v11a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z'/><path d='M4 9h16'/></svg><span>Documents</span></a>
+          <a href='#me' data-nav='me'><svg viewBox='0 0 24 24' aria-hidden='true'><circle cx='12' cy='8' r='4'/><path d='M4 21a8 8 0 0 1 16 0'/></svg><span>My profile</span></a>
+        </nav>
+        <div class='pt-sidenav-foot'>
+          <b>Need help?</b>
+          <span>Front desk &middot; +63 2 8888 0000</span>
+          <span>For emergencies call 911.</span>
+        </div>
+      </aside>
+      <main class='pt-wrap' id='pt-stage'><!-- rendered by portal.js --></main>
+    </div>
   </div>
 </section>
 
@@ -193,5 +234,7 @@
 <script src='assets/js/registry.js'></script>
 <script src='assets/js/accounts.js'></script>
 <script src='assets/js/auth.js'></script>
+<script src='assets/js/rbac.js'></script>
+<script src='assets/js/requests.js'></script>
 <script src='assets/js/lab.js'></script><script src='assets/js/pharmacy.js'></script><script src='assets/js/pdf.js'></script><script src='assets/js/portal.js'></script>
 </body></html>

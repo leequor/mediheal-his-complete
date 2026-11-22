@@ -48,15 +48,15 @@
   // cannot open this page. Demo-only: it is browser-side and not a security boundary.
   if (window.HIS.rbac && !HIS.rbac.guard()) return;
   // favicon: stops the /favicon.ico 404 on every page (small logo PNG)
-  if (!document.querySelector('link[rel~="icon"]')) document.head.insertAdjacentHTML('beforeend', "<link rel='icon' type='image/png' href='assets/img/logo-removebg-preview%201.png'>");
+  if (!document.querySelector('link[rel~="icon"]')) document.head.insertAdjacentHTML('beforeend', "<link rel='icon' type='image/png' href='assets/img/logo-mark.png'>");
   const u = HIS.rbac ? HIS.rbac.person() : HIS.user;
-  const navLinks = HIS.rbac ? HIS.rbac.nav() : NAV;
+  const navGroups = HIS.rbac ? HIS.rbac.navGroups() : [{ group: 'Menu', items: NAV }];
   const acct = HIS.auth && HIS.auth.account ? HIS.auth.account() : null;
   const av = HIS.avatar.disc(u.name, (acct && acct.email) || u.name, 42, u.name);
   document.body.insertAdjacentHTML('afterbegin',
     "<header class='header'><div class='hd'>" +
-    "<button class='burger' id='burger' aria-label='Open menu'><i></i><i></i><i></i></button>" +
-    "<img class='logo' src='assets/img/logo-large.png' data-fallback='assets/img/logo-removebg-preview%201.png' alt=''>" +
+    "<button class='burger' id='burger' aria-label='Open menu' aria-expanded='false'><i></i><i></i><i></i></button>" +
+    "<img class='logo' src='assets/img/logo-large.png' data-fallback='assets/img/logo-mark.png' alt=''>" +
     "<span class='brand'>MediHeal</span>" +
     "<div class='hd-date'>" + svg('calendar', 18) + '<span>' + HIS.fmtShort(HIS.today) + '</span></div>' +
     "<button class='bell' aria-label='Notifications'>" + svg('bell', 20) + '<b style="display:none"></b></button>' +
@@ -65,18 +65,36 @@
     av + "<div><div class='nm'>" + u.name + '</div><small>' + u.title.toUpperCase() + '</small></div></div>' +
     '</div></header>' +
     "<div class='scrim' id='scrim'></div>" +
-    "<aside class='drawer' aria-label='Main menu'><div class='dr-in'>" +
-    "<span class='dr-brand'>MediHeal</span>" +
-    "<a class='dr-exit' id='drExit' href='index.html' aria-label='Sign out'>" + svg('exit', 25) + '</a>' +
-    '<nav>' + navLinks.map(n => "<a href='" + n[0] + ".html'>" + svg(n[2], 44) + n[1] + '</a>').join('') + '</nav>' +
-    "<a class='dr-out' id='drOut' href='index.html'>Sign out</a>" +
+    "<aside class='drawer' id='drawer' aria-label='Main menu'><div class='dr-in'>" +
+    "<div class='dr-top'>" +
+    "<img class='dr-logo' src='assets/img/logo-mark.png' alt=''>" +
+    "<div class='dr-brand-tx'><b>MediHeal</b><span>Hospital information system</span></div>" +
+    "<button class='dr-x' id='drClose' type='button' aria-label='Close menu'>\u2715</button>" +
+    '</div>' +
+    "<div class='dr-role'><span>Signed in as</span><b>" + u.name + '</b><i>' + (HIS.rbac ? HIS.rbac.current().label : '') + '</i></div>' +
+    '<nav>' + navGroups.map(function (g) {
+      var head = navGroups.length > 1 ? "<div class='dr-g'>" + g.group + '</div>' : '';
+      return head + g.items.map(function (n) {
+        var on = n[0] === HIS.rbac.stem() ? " class='on' aria-current='page'" : '';
+        return "<a href='" + n[0] + ".html'" + on + '>' + svg(n[2], 19) + '<span>' + n[1] + '</span></a>';
+      }).join('');
+    }).join('') + '</nav>' +
+    "<div class='dr-foot'>" +
+    "<a class='dr-out' id='drOut' href='index.html'>" + svg('exit', 17) + 'Sign out</a>' +
     "<div class='dr-contact'>" + HIS.contact.email + '<br>' + HIS.contact.phone + '</div>' +
+    '</div>' +
     '</div></aside>');
   document.querySelectorAll('img[data-fallback]').forEach(i => i.addEventListener('error', () => { i.src = i.dataset.fallback; }, { once: true }));
   document.querySelectorAll('img[data-hide]').forEach(i => i.addEventListener('error', () => i.remove(), { once: true }));
-  const toggle = open => document.body.classList.toggle('menu-open', open);
+  const toggle = open => {
+    document.body.classList.toggle('menu-open', open);
+    const b = document.getElementById('burger');
+    if (b) b.setAttribute('aria-expanded', open ? 'true' : 'false');
+  };
   document.getElementById('burger').onclick = () => toggle(true);
   document.getElementById('scrim').onclick = () => toggle(false);
+  const drx = document.getElementById('drClose');
+  if (drx) drx.onclick = () => toggle(false);
   document.addEventListener('keydown', e => e.key === 'Escape' && toggle(false));
   // Sign out clears the demo session before leaving, so Back cannot reveal a protected page.
   ['drExit', 'drOut'].forEach(id => {
@@ -207,7 +225,7 @@
   // first five that produce anything, so the most urgent work is always at the top.
   function build() {
     const a = window.HIS.auth && HIS.auth.account ? HIS.auth.account() : null;
-    const role = a ? a.role : 'receptionist';
+    const role = a ? a.role : 'registration';
     const out = [];
     // title, body, meta, page, focus. `page` is where the work is; `focus` is the record id that
     // page will locate. A row without a page is informational only and is never rendered.
@@ -259,6 +277,8 @@
     const absent = emps.filter(e => e.status === 'Absent');
     const late = emps.filter(e => e.status === 'Late');
 
+    const reqs = window.HIS.requests && HIS.requests.open ? HIS.requests.open() : [];
+
     const audit = window.HIS.audit && HIS.audit.list ? HIS.audit.list() : [];
     const voids = ch && ch.all ? ch.all().filter(c => c.status === 'void') : [];
 
@@ -296,20 +316,15 @@
         break;
 
       case 'registration':
-      case 'receptionist':
+        if (reqs.length) add('Correction requests from patients', reqs.length + ' waiting at the front desk', 'Patient portal', 'registration.html?tab=requests', reqs[0].id);
         if (apptPending.length) add('Appointments awaiting approval', apptPending.length + ' still pending', 'Appointments', 'appointments.html?status=Pending&focus=' + encodeURIComponent(apptPending[0].id), apptPending[0].id);
         if (apptToday.length) add('Appointments today', apptToday.length + ' on the schedule for ' + today(), 'Appointments', 'appointments.html', null);
         if (beds) add('Beds available', beds.available + ' of ' + beds.total + ' free across ' + (ad.wards ? ad.wards().length : 0) + ' wards', 'Admissions', 'admissions.html', null);
         if (adm.length) add('Active admissions', adm.length + ' patient' + (adm.length === 1 ? '' : 's') + ' on the ward', 'Admissions', 'admissions.html?focus=' + encodeURIComponent(adm[0].id), adm[0].id);
         break;
 
-      case 'cashier':
-        if (unbilled.length) add('Charges awaiting an invoice', unbilled.length + ' charge' + (unbilled.length === 1 ? '' : 's') + ' worth ' + peso(unbilledTotal), 'Billing', 'charges.html?tab=unbilled&focus=' + encodeURIComponent(unbilled[0].id), unbilled[0].id);
-        if (openBills.length) add('Invoices with a balance', openBills.length + ' open \u00b7 ' + peso(outstanding) + ' outstanding', 'Billing', 'billing.html?focus=' + encodeURIComponent(openBills[0].id), openBills[0].id);
-        if (claimDenied.length) add('Claims denied', claimDenied.length + ' needing a correction or an appeal', 'Claims', 'claims.html?focus=' + encodeURIComponent(claimDenied[0].id), claimDenied[0].id);
-        break;
-
       case 'finance':
+        if (claimDenied.length) add('Claims denied', claimDenied.length + ' needing a correction or an appeal', 'Claims', 'claims.html?focus=' + encodeURIComponent(claimDenied[0].id), claimDenied[0].id);
         if (unbilled.length) add('Unbilled revenue', unbilled.length + ' charge' + (unbilled.length === 1 ? '' : 's') + ' worth ' + peso(unbilledTotal), 'Billing', 'charges.html?tab=unbilled&focus=' + encodeURIComponent(unbilled[0].id), unbilled[0].id);
         if (openBills.length) add('Outstanding balance', peso(outstanding) + ' across ' + openBills.length + ' invoice' + (openBills.length === 1 ? '' : 's'), 'Billing', 'billing.html?focus=' + encodeURIComponent(openBills[0].id), openBills[0].id);
         if (claimReview.length) add('Claims awaiting payer review', claimReview.length + ' submitted and not yet decided', 'Claims', 'claims.html?focus=' + encodeURIComponent(claimReview[0].id), claimReview[0].id);
@@ -338,7 +353,8 @@
       case 'patient':
         break;
 
-      default: // superadmin, hospitaladmin — operational oversight across every module
+      default: // superadmin — operational oversight across every module
+        if (reqs.length) add('Correction requests from patients', reqs.length + ' waiting at the front desk', 'Patient portal', 'registration.html?tab=requests', reqs[0].id);
         if (critical.length) add('Critical result awaiting acknowledgement', critical.length + ' flagged result' + (critical.length === 1 ? '' : 's') + ' on file', 'Laboratory', LAB(critical[0].id), critical[0].id);
         if (unbilled.length) add('Unbilled charges', unbilled.length + ' charge' + (unbilled.length === 1 ? '' : 's') + ' worth ' + peso(unbilledTotal), 'Billing', 'charges.html?tab=unbilled&focus=' + encodeURIComponent(unbilled[0].id), unbilled[0].id);
         if (claimReview.length) add('Claims awaiting payer review', claimReview.length + ' submitted and not yet decided', 'Claims', 'claims.html?focus=' + encodeURIComponent(claimReview[0].id), claimReview[0].id);
@@ -397,9 +413,9 @@
   const badge = bell.querySelector('b');
 
   const ROLE_LABEL = {
-    superadmin: 'Hospital operations', hospitaladmin: 'Hospital operations', receptionist: 'Front desk',
-    registration: 'Admissions', doctor: 'Clinical', nurse: 'Nursing', pharmacist: 'Pharmacy',
-    lab: 'Laboratory', cashier: 'Billing', finance: 'Finance', hr: 'Human resources',
+    superadmin: 'Hospital operations', registration: 'Front desk', doctor: 'Clinical',
+    nurse: 'Nursing', pharmacist: 'Pharmacy', lab: 'Laboratory', finance: 'Billing & finance',
+    hr: 'Human resources',
     depthead: 'Department', auditor: 'Compliance', patient: 'Your record'
   };
 

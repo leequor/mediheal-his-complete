@@ -297,7 +297,7 @@ console.log('\n--- 2. notifications respond to the account ---');
 console.log('\n--- 3. a new visitor does not inherit the last one ---');
 {
   // Visitor A: signs in, records real activity, signs out.
-  const a = await fresh('cashier@mediheal.test');
+  const a = await fresh('finance@mediheal.test');
   await a.page.goto(BASE + '/billing.html', { waitUntil: 'load' });
   await a.page.waitForTimeout(400);
   const made = await a.page.evaluate(() => {
@@ -318,7 +318,7 @@ console.log('\n--- 3. a new visitor does not inherit the last one ---');
   await a.ctx.close();
 
   // Visitor B: a completely fresh browser context, i.e. a new visitor.
-  const b = await fresh('cashier@mediheal.test');
+  const b = await fresh('finance@mediheal.test');
   await b.page.goto(BASE + '/audit.html', { waitUntil: 'load' });
   await b.page.waitForTimeout(500);
   const seen = await b.page.evaluate(() => ({
@@ -330,7 +330,7 @@ console.log('\n--- 3. a new visitor does not inherit the last one ---');
   ok('the new visitor starts with only their own sign-in on file', seen.audit === 1, seen.audit);
   ok('none of the previous visitor\'s actions appear', !/QA-ISOLATION/.test(seen.auditText) && !/Payment recorded/.test(seen.auditText), seen.auditText.slice(0, 80));
   ok('the invoice is back at its seeded amount', seen.paid === 10000 || seen.paid > 0, seen.paid);
-  ok('only the new visitor\'s own sign-in is in the log after they act', seen.session === 'cashier@mediheal.test', seen.session);
+  ok('only the new visitor\'s own sign-in is in the log after they act', seen.session === 'finance@mediheal.test', seen.session);
   await b.ctx.close();
 }
 {
