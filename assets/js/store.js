@@ -30,6 +30,8 @@
     guardians: 'mh_guardians',
     transactions: 'mh_tx',
     profileRequests: 'mh_profile_requests',
+    // 2026-11-22: patient correction requests (assets/js/requests.js). Carried across sign-out.
+    patientRequests: 'mh_patient_requests',
     // M10: the pay-period attendance register (one record per employee per day), the payroll runs
     // (with version history), the claim lifecycle and the 13th-month register.
     attendancePeriod: 'mh_attendance_period',
