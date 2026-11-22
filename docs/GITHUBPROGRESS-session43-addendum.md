@@ -135,3 +135,26 @@ buttons.mjs       0 anomalies (264 controls clicked by hand-written audit too)
 ```
 
 `docs/PROJECT-STATUS.md` still describes the shape of the app; the role count there (14) is now 11.
+
+## 10. Personnel: the ninth employee overflowed the card and was not saved (2026-11-22)
+
+**Reported:** "adding another employee makes the page glitched. and it doesnt even get saved."
+
+Two independent defects, both reproduced in the owner's Chrome before changing anything.
+
+1. **Geometry.** Rows were absolutely positioned at `547 + 76i` inside a card that ends at 1226.
+   Eight rows end exactly at the footer (1155); a ninth ran to **1231**, over the footer text and
+   past the card edge. The roster now lives in a 608px scrolling viewport (8 x 76) between the
+   heading strip and the footer, and a newly added record is revealed after the re-render.
+2. **Durability.** Add, Edit and Deactivate only mutated the in-memory `HIS.personnel.emps`, so a
+   refresh discarded them. This was the last create flow in the app still not writing through
+   `HIS.store`; it now persists to `mh_personnel`, registered in `store.js` so sign-out resets it
+   with the rest of the demonstration data. The next id is taken from the highest number present,
+   not from the list length.
+
+**Verified:** `scripts/personnel-add-check.mjs` **28/28** (geometry at 1440 and 1366, add, reload
+persistence, EMP-009/010 ids, edit, deactivate, search, department filter, required fields) ·
+`smoke` all pages clean · `exhaustive-controls-check` 36/36 · `buttons.mjs` 0 anomalies in the
+owner's Playwright Chrome. `visual-check` still reports the repo-wide drift introduced by this
+session's portal rework (1.4% on unrelated pages, 71% on portal); personnel matches the other
+pages' 10 hard pixels, so this change adds no new visual delta at eight rows.

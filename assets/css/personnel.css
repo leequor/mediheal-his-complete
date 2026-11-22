@@ -33,7 +33,13 @@
 .pe-flt svg{position:absolute;left:380px;top:12px;color:#15405a}
 .pe-th{left:68px;top:513px;width:456px;height:34px;background:#e8f4fb;box-shadow:inset 1px 0 0 #c8dcea,inset -1px 0 0 #c8dcea,inset 0 1px 0 #c8dcea,inset 0 -1px 0 #c8dcea}
 .pe-th span{position:absolute;top:10.5px;font:600 11px/13.31px Inter,sans-serif;color:#5b8db8}
-.pe-r{left:68px;width:456px;height:76px;border:0;padding:0;margin:0;background:#fff;box-shadow:inset 1px 0 0 #c8dcea,inset -1px 0 0 #c8dcea,inset 0 -1px 0 #e3edf3;text-align:left;cursor:pointer;font-family:Inter,sans-serif}
+/* Eight rows fill the space between the heading strip and the footer exactly (8 x 76 = 608).
+   A ninth record scrolls inside this viewport instead of painting over the footer and past the card. */
+.pe-rows{position:absolute;left:68px;top:547px;width:456px;height:608px;overflow-y:auto;overflow-x:hidden;scrollbar-width:thin;scrollbar-color:#c8dcea transparent}
+.pe-rows::-webkit-scrollbar{width:8px}
+.pe-rows::-webkit-scrollbar-thumb{background:#c8dcea;border-radius:4px}
+.pe-rows::-webkit-scrollbar-track{background:transparent}
+.pe-r{position:absolute;left:0;width:456px;height:76px;border:0;padding:0;margin:0;background:#fff;box-shadow:inset 1px 0 0 #c8dcea,inset -1px 0 0 #c8dcea,inset 0 -1px 0 #e3edf3;text-align:left;cursor:pointer;font-family:Inter,sans-serif;display:block}
 .pe-r>*{position:absolute;white-space:nowrap}
 .pe-r:hover{background:#f6fafd}
 .pe-r.on{background:#f0f8fd;box-shadow:inset 3px 0 0 #1c6d9c,inset 0 -1px 0 #e3edf3}
@@ -46,8 +52,8 @@
 .pe-r .dot.off{background:#b5c2cc}
 .pe-r .chv{left:420px;top:29px;color:#1c6d9c}
 .pe-r .chv svg{display:block}
-.pe-none{left:68px;top:547px;width:456px;text-align:center;font:500 13px/76px Inter,sans-serif;color:#6f8890}
-.pe-ft{left:68px;top:1155px;width:456px;height:49px}
+.pe-none{left:0;top:0;width:456px;text-align:center;font:500 13px/76px Inter,sans-serif;color:#6f8890}
+.pe-ft{left:68px;top:1155px;width:456px;height:49px;background:#fff;z-index:2}
 .pe-btn2{left:1215px;top:333px;width:133px;height:38px;border:0;padding:0;border-radius:8px;background:#fff;box-shadow:inset 0 0 0 1px #c8dcea;color:#1c6d9c;font:600 12px/14.52px Inter,sans-serif;cursor:pointer;text-align:left}
 .pe-btn2:hover{background:#f6fafd}
 .pe-btn2 svg{position:absolute;left:13px;top:11px}
