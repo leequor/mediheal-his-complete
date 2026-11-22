@@ -693,19 +693,18 @@
     el.innerHTML = html;
   }
   function digits(v) { return String(v == null ? '' : v).replace(/\D/g, ''); }
-  function maskMobile(v) {
-    var d = digits(v);
-    return d.length >= 4 ? '\u2022\u2022\u2022\u2022 ' + d.slice(-4) : '\u2014';
-  }
 
+  // PRIVACY: this page is public. Printing the name, the patient ID or even the last four digits of
+  // the mobile would let anyone who knows a surname and a birthday confirm that a person is a
+  // patient here — and would show an existing patient's details to whoever is filling in the form.
+  // The screen says only that a record MAY match. The owner of the record can still link it, because
+  // linking asks for the mobile number that is already on file.
   function offerLink(p) {
     DUP.patient = p;
-    sayHtml("<b>A hospital record already matches this name and date of birth.</b>" +
-      "<span class='pt-msg-sub'>" + esc(p.id) + ' \u00b7 ' + esc(p.name) + ' \u00b7 born ' + esc(manilaDate(p.dob)) +
-      (p.mobile ? ' \u00b7 mobile ending ' + esc(maskMobile(p.mobile)) : '') + '</span>' +
-      "<span class='pt-msg-sub'>If this is you, link it: we check the mobile number on the record before opening it. " +
+    sayHtml("<b>A hospital record may already match this name and date of birth.</b>" +
+      "<span class='pt-msg-sub'>If this is you, link your record: we check the mobile number on file before opening anything. " +
       'If it is someone else, continue and Registration will review the possible duplicate.</span>' +
-      "<span class='pt-msg-act'><button type='button' class='pt-btn sm' data-dup='link'>This is me \u2014 link " + esc(p.id) + "</button>" +
+      "<span class='pt-msg-act'><button type='button' class='pt-btn sm' data-dup='link'>This is me \u2014 link my record</button>" +
       "<button type='button' class='pt-btn sm ghost' data-dup='new'>This is not me \u2014 continue</button></span>");
   }
 
@@ -715,8 +714,8 @@
     var f = new FormData($('#pt-signup'));
     var mobile = String(f.get('mobile') || '');
     if (digits(p.mobile) && digits(p.mobile) !== digits(mobile)) {
-      say('The mobile number you entered does not match the number on ' + p.id +
-        '. Registration has to verify you in person before this record can be linked — bring a photo ID to the front desk.', 'bad');
+      say('The mobile number you entered does not match the one on that record. Registration has to ' +
+        'verify you in person before it can be linked — bring a photo ID to the front desk.', 'bad');
       return;
     }
     if (HIS.registry.accountFor(p.id)) {
@@ -906,6 +905,16 @@
         if (b.dataset.dup === 'link') linkDuplicate();
         else { DUP.ack = true; signUp(su); }
       });
+      var eye = $('#pt-pw-eye');
+      if (eye) eye.onclick = function () {
+        var pwf = $('#pt-pw');
+        var show = pwf.type === 'password';
+        pwf.type = show ? 'text' : 'password';
+        eye.setAttribute('aria-pressed', show ? 'true' : 'false');
+        eye.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+        pwf.focus();
+        try { pwf.setSelectionRange(pwf.value.length, pwf.value.length); } catch (e) { /* text inputs only */ }
+      };
       var pw = $('#pt-pw');
       if (pw) pw.oninput = function () {
         var hint = $('#pt-pw-hint');

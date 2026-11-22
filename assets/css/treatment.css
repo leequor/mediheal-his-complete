@@ -49,6 +49,13 @@
 .tp-r .dot{left:425px;top:34px;width:8px;height:8px;border-radius:50%;background:#4f9a2b}
 .tp-r .dot.off{background:#b5c2cc}
 .tp-r .chv{left:420px;top:29px;color:#1c6d9c}
+/* A registration waiting to be seen (2026-11-22). The row is an accept action, not a selection:
+   it carries the New chip and an explicit Accept pill so the two kinds of row cannot be confused. */
+.tp-r.new{background:#fbfdff;box-shadow:inset 1px 0 0 #c8dcea,inset -1px 0 0 #c8dcea,inset 0 -1px 0 #e3edf3,inset 3px 0 0 #e0a33a}
+.tp-r.new:hover{background:#f4f9fd}
+.tp-r .newtag{left:316px;top:13px;height:18px;padding:0 7px;border-radius:999px;background:#fdf1e3;color:#8a5a12;font:700 9.5px/18px Inter,sans-serif;letter-spacing:.07em;text-transform:uppercase}
+.tp-r .acc{left:366px;top:31px;height:26px;padding:0 11px;border-radius:7px;background:#1c6d9c;color:#fff;font:600 11px/26px Inter,sans-serif}
+.tp-r.new:hover .acc{background:#175a82}
 .tp-r .chv svg{display:block}
 .tp-none{left:68px;top:547px;width:456px;text-align:center;font:500 13px/76px Inter,sans-serif;color:#6f8890}
 .tp-ft{left:68px;top:1155px;width:456px;height:49px}

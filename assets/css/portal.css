@@ -9,7 +9,9 @@
   --line-pt:#d6e5ef;--ok:#1f7a4d;--warn:#8a5a12;--err:#b3261e;--r:10px;
   --grad:linear-gradient(90deg,#dff9ff 0%,#3393c9 65.9%,#1b4e6b 100%);
   margin:0;min-height:100vh;font:15px/1.55 var(--font-inter);color:var(--ink);
-  background:linear-gradient(170deg,#f6faff,#e6f1fa 55%,#f6faff)
+  /* The same marble the staff console sits on (base.css body::before), under a light veil so the
+     public copy keeps its contrast. Without it the portal read as a different product. */
+  background:linear-gradient(180deg,rgba(255,255,255,.34),rgba(255,255,255,.18)),url(../img/background.jpg) center/cover no-repeat fixed
 }
 .pt *{box-sizing:border-box}
 /* resets stay at zero specificity so the single-class rules below can override them */
@@ -80,11 +82,17 @@
 .pt-tile span{font:400 10.5px/1.35 var(--font-inter);color:#5b7385}
 .pt-preview-row{display:flex;align-items:center;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid #edf4f9;font:600 11.5px var(--font-inter);color:var(--ink)}
 .pt-preview-row .dot{width:7px;height:7px;border-radius:50%;background:var(--blue);flex:none}
+.pt-preview-note{margin:10px 18px 14px;font:400 11px/15px var(--font-inter);color:#5b7385}
 .pt-preview-row i{margin-left:auto;font:600 10.5px var(--font-inter);font-style:normal;color:var(--ok);background:#e7f6ee;padding:2px 8px;border-radius:999px}
 
 /* ---- forms ---------------------------------------------------------------- */
 .pt-panel{padding:52px 6vw;display:flex;flex-direction:column;gap:16px;max-width:560px;margin:auto;width:100%}
 .pt-panel.wide{max-width:1000px}
+/* Sign in: the form sits on a white card over the marble, the same arrangement as the staff
+   console, so the two doors into the product look like the same building. */
+.pt-panel.card{background:#fff;border-radius:20px;box-shadow:0 20px 55px rgba(15,42,61,.16),inset 0 0 0 1px rgba(200,220,234,.6);padding:38px 36px;max-width:470px;margin:56px auto;gap:14px}
+.pt-panel.card h2{font-size:30px}
+.pt-view.split.on{align-items:stretch}
 .pt-panel h2{font-size:32px;color:var(--deep)}
 .pt-panel-head{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;flex-wrap:wrap}
 .pt-panel-head .pt-muted{max-width:560px}
@@ -105,7 +113,18 @@
 .pt-link:hover{text-decoration:underline}
 .pt-link.small{font-size:12px}
 .pt-box{border:1px solid var(--line-pt);background:#fff;border-radius:14px;padding:22px;display:grid;gap:14px;margin:0}
-.pt-box legend{font:600 16px var(--font-lexend);color:var(--deep);padding:0 6px}
+/* The <legend> sat ON the border and read as a heading outside the card. It is now a normal heading
+   inside the box; the legend stays in the DOM (visually hidden) so the fieldset keeps its name. */
+.pt-box legend.pt-sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+.pt-box-h{font:600 16px/22px var(--font-lexend);color:var(--deep);margin:0 0 -2px}
+.pt-pw{position:relative;display:block}
+.pt-pw .pt-input{padding-right:44px}
+.pt-eye{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:32px;height:32px;border:0;border-radius:8px;background:transparent;color:#6f8890;display:grid;place-items:center;padding:0}
+.pt-eye:hover{background:#eef6fb;color:var(--blue)}
+.pt-eye svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.pt-eye .on{display:none}
+.pt-eye[aria-pressed="true"] .on{display:block}
+.pt-eye[aria-pressed="true"] .off{display:none}
 .pt-hint{font-size:12px;color:var(--muted-pt);margin:0}
 .pt-hint.strong{color:var(--ok)}
 .pt-hint.weak{color:var(--err)}
@@ -126,7 +145,9 @@
 .pt-msg-act .pt-btn.sm{height:34px}
 
 /* sign in split */
-.pt-side{background:linear-gradient(160deg,#1b4e6b,#2f7fae 62%,#6fb6d8);color:#fff;padding:96px 6vw 48px;display:flex;flex-direction:column;justify-content:center;gap:14px;position:relative}
+.pt-side{background:linear-gradient(90deg,#1b4e6b 1%,#3393c9 56.7%,#fafeff 100%);color:#fff;padding:96px 6vw 48px;position:relative;display:flex;flex-direction:column;justify-content:center;gap:14px;position:relative}
+.pt-side::before{content:'';position:absolute;inset:0;background:linear-gradient(90deg,rgba(11,42,61,.28),rgba(11,42,61,0) 62%);pointer-events:none}
+.pt-side>*{position:relative;z-index:1}
 .pt-side .pt-brand{position:absolute;top:26px;left:6vw;color:#fff}
 .pt-side .pt-brand span{color:#fff}
 .pt-side h1{color:#fff}

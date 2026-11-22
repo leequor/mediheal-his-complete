@@ -30,11 +30,43 @@
     };
   }
 
+  // A request can outlive the row it is about: a patient who registered themselves in an earlier
+  // demonstration session is gone after sign-out unless their row was carried over, and a stale
+  // link must not dead-end at "Patient not found" with a request nobody can close.
+  const focusReqId = new URLSearchParams(location.search).get('req');
+  const openReqs = () => (window.HIS.requests ? HIS.requests.forPatient(id).filter(r => r.status === 'open') : []);
+
   let P = (HIS.profiles || {})[id];
   if (!P && pat) P = fallback(pat);
   if (!P) {
-    stage.innerHTML = "<a class='pf-back' href='registration.html'>\u2190 Back to Registry</a><section class='pf-card' style='left:118.344px;top:123.133px;width:1202.4px;height:94.355px;padding:36px 26px;font:600 16px var(--font-inter)'>Patient not found</section>";
-    document.title = 'Patient not found \u00b7 MediHeal';
+    const r = focusReqId && window.HIS.requests ? HIS.requests.byId(focusReqId) : null;
+    const when = r ? new Date(r.at).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+    stage.innerHTML =
+      "<a class='pf-back' href='registration.html'>\u2190 Back to Registry</a>" +
+      "<section class='pf-card' style='left:118.344px;top:150px;width:1202.4px;height:230px;padding:30px 32px'>" +
+      "<div style='font:600 20px/26px var(--font-outfit,Outfit),sans-serif;color:#15405a'>This patient record is not in the registry</div>" +
+      "<p style='margin:10px 0 0;max-width:760px;font:400 13.5px/20px var(--font-inter);color:#6f8890'>" +
+      (r ? 'Request <b style=\'color:#15405a\'>' + esc(r.id) + '</b> was sent from the patient portal on ' + esc(when) +
+        ', but the record it refers to (' + esc(id) + ') was created in an earlier demonstration session and is no longer stored in this tab. ' +
+        'The request can still be closed so the queue does not keep a dead item.'
+        : 'That patient ID is not in this session\u2019s registry. It may have been created in an earlier demonstration session.') +
+      '</p>' +
+      (r ? "<div style='margin-top:14px;padding:12px 14px;border-radius:10px;background:#f2f8fd;box-shadow:inset 0 0 0 1px #c8dcea;font:400 13px/19px var(--font-inter);color:#1c2b30;max-width:760px'>" +
+        '<b style=\'color:#15405a\'>' + esc(r.field) + ':</b> ' + esc(r.text) + '</div>' : '') +
+      "<div style='margin-top:18px;display:flex;gap:10px'>" +
+      (r ? "<button class='pf-req-b ok' id='pf-miss-close' style='position:static'>Mark resolved</button>" +
+        "<button class='pf-req-b' id='pf-miss-dismiss' style='position:static'>Dismiss request</button>" : '') +
+      "<a class='pf-req-b' href='registration.html?tab=requests' style='position:static;text-decoration:none;line-height:30px'>All patient requests</a>" +
+      '</div></section>';
+    document.title = 'Record not in registry \u00b7 MediHeal';
+    const closeIt = status => {
+      const out = HIS.requests.close(r.id, status, status === 'dismissed' ? 'Record no longer in the registry for this session.' : '');
+      if (out.ok) { HIS.kit.toast(r.id + ' closed.'); stage.querySelectorAll('.pf-req-b').forEach(b => { if (b.tagName === 'BUTTON') b.disabled = true; }); }
+    };
+    const c1 = document.getElementById('pf-miss-close');
+    const c2 = document.getElementById('pf-miss-dismiss');
+    if (c1) c1.onclick = () => closeIt('resolved');
+    if (c2) c2.onclick = () => closeIt('dismissed');
     return;
   }
   document.title = P.name + ' \u00b7 Patient profile \u00b7 MediHeal';
@@ -80,25 +112,31 @@
   stage.innerHTML = h;
 
   // ---- correction requests from the patient portal --------------------------------------------
-  // The portal promises the request goes to Registration. This is where the person doing the
-  // correction sees it: on the patient's own record, with the text they wrote, and two ways to
-  // close it. Closing does not change the record — the Edit form does that, and writes its own
-  // audit entry — so the trail keeps the ask and the change as separate facts.
+  // A card at the top of the page, and the page moves down to make room. The first version was a
+  // thin strip on the same line as "Back to Registry": it read as a tooltip, and nobody could tell
+  // what it was asking them to do.
   (function requestBanner() {
     if (!window.HIS.requests) return;
-    const focus = new URLSearchParams(location.search).get('req');
-    const open = HIS.requests.forPatient(id).filter(r => r.status === 'open');
-    const shown = focus ? open.filter(r => r.id === focus) : open;
+    const open = openReqs();
+    const shown = focusReqId ? open.filter(r => r.id === focusReqId) : open;
     if (!shown.length) return;
     const r = shown[0];
     const when = new Date(r.at).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' });
-    const el = document.createElement('div');
+    stage.classList.add('has-req');
+    const el = document.createElement('section');
     el.className = 'pf-req';
     el.innerHTML =
-      "<div class='pf-req-main'><b>" + esc(r.id) + ' \u00b7 ' + esc(r.field) + '</b>' +
-      "<span>" + esc(r.text) + ' \u00b7 sent ' + esc(when) + (shown.length > 1 ? ' \u00b7 ' + shown.length + ' open requests' : '') + '</span></div>' +
+      "<span class='pf-req-ic' aria-hidden='true'>" + (window.svg ? svg('bell', 18) : '!') + "</span>" +
+      "<div class='pf-req-tx'>" +
+      "<b>Correction request " + esc(r.id) + " \u00b7 " + esc(r.field) + "</b>" +
+      "<span>\u201c" + esc(r.text) + "\u201d \u00b7 sent " + esc(when) + " from the patient portal" +
+      (shown.length > 1 ? ' \u00b7 ' + shown.length + ' open requests' : '') + "</span>" +
+      "<em>Correct the record with Edit, then mark the request resolved.</em>" +
+      "</div>" +
+      "<div class='pf-req-act'>" +
       "<button class='pf-req-b ok' data-req='resolve'>Mark resolved</button>" +
-      "<button class='pf-req-b' data-req='dismiss'>Dismiss</button>";
+      "<button class='pf-req-b' data-req='dismiss'>Dismiss</button>" +
+      "</div>";
     stage.appendChild(el);
     el.addEventListener('click', ev => {
       const b = ev.target.closest('[data-req]');
@@ -106,7 +144,7 @@
       const dismiss = b.dataset.req === 'dismiss';
       HIS.kit.modal({
         title: dismiss ? 'Dismiss ' + r.id + '?' : 'Mark ' + r.id + ' resolved?',
-        sub: dismiss ? 'Say why no change is needed — the patient sees this note in the portal.'
+        sub: dismiss ? 'Say why no change is needed \u2014 the patient reads this note in the portal.'
           : 'Only after the record has been corrected. Editing the patient writes its own audit entry.',
         body: "<p style='margin:12px 0 0;font-size:13px;color:#6f8890'>" + esc(r.text) + '</p>' +
           "<label style='display:block;margin-top:14px;font:600 12px Inter,sans-serif;color:#6f8890'>" +
@@ -118,6 +156,7 @@
           if (!out.ok) return false;
           HIS.kit.toast(r.id + (dismiss ? ' dismissed.' : ' marked resolved.'));
           el.remove();
+          stage.classList.remove('has-req');
         }
       });
     });

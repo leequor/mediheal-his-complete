@@ -9,7 +9,7 @@
   var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
   var ALL = 'All departments', NA = '\u2014', DR = 'Dr. Laurice Laureta';
   var qid = new URLSearchParams(location.search).get('id');
-  var st = { sel: C.pts.some(function (p) { return p.id === qid; }) ? qid : 'PT-99213', q: '', dept: ALL, menu: false, modal: '', pn: false, f: [], saved: null, prog: 2, comp: 3, done: {} };
+  var st = { sel: C.pts.some(function (p) { return p.id === qid; }) ? qid : 'PT-99213', q: '', dept: ALL, menu: false, modal: '', pn: false, f: [], saved: null, prog: 2, comp: 3, done: {}, accepted: [] };
   HIS.csState = st;
   var css = document.createElement('style');
   css.textContent = '.cs-pn{position:absolute;left:348px;top:270px;width:300px;height:160px;background:#fff;border-radius:12px;box-shadow:inset 0 0 0 1px #c8dcea,0 8px 24px rgba(15,30,46,.12);z-index:5}' +
@@ -56,9 +56,30 @@
   // ---- persistence (localStorage, own key) ----
   var KEY = HIS.store.KEY.consultation;
   function saveState() {
-    var o = { prog: st.prog, comp: st.comp, done: st.done, recs: {} };
+    var o = { prog: st.prog, comp: st.comp, done: st.done, accepted: st.accepted, recs: {} };
     C.pts.forEach(function (p) { o.recs[p.id] = rec(p); });
     HIS.store.set(KEY, o);
+  }
+  // A patient the doctor accepted from the registration queue. Their queue entry is rebuilt from the
+  // registry on every load, so a name or department correction shows up here too.
+  function queueEntry(p) {
+    return {
+      id: p.id, name: p.name, ini: initialsOf(p.name),
+      rl: 'New registration \u00b7 ' + (p.type || 'Outpatient'),
+      cc: 'New registration', dept: p.dept || 'General Medicine',
+      sex: p.sex || p.gender || '', age: p.age ? String(p.age) : '', kind: p.type || 'Outpatient'
+    };
+  }
+  function initialsOf(n) {
+    var w = String(n || '').split(/\s+/).filter(Boolean);
+    return w.length ? (w[0][0] + (w.length > 1 ? w[w.length - 1][0] : '')).toUpperCase() : '?';
+  }
+  function rebuildAccepted() {
+    (st.accepted || []).forEach(function (id) {
+      if (C.pts.some(function (p) { return p.id === id; })) return;
+      var p = window.HIS.registry && HIS.registry.byId(id);
+      if (p) C.pts.unshift(queueEntry(p));
+    });
   }
   (function loadState() {
     var o = HIS.store.get(KEY, null);
@@ -66,10 +87,35 @@
     if (typeof o.prog === 'number') st.prog = o.prog;
     if (typeof o.comp === 'number') st.comp = o.comp;
     if (o.done && typeof o.done === 'object') st.done = o.done;
+    if (Array.isArray(o.accepted)) st.accepted = o.accepted.slice();
     C.pts.forEach(function (p) { if (o.recs && o.recs[p.id]) p.rec = o.recs[p.id]; });
+    rebuildAccepted();
   })();
 
   var wrap = document.createElement('div'); wrap.id = 'tpc'; stage.appendChild(wrap);
+
+  // Registered but not yet seen: the doctor's queue used to be a fixed list from data-consultation.js,
+  // so a patient who registered at the front desk (or through the portal) never reached a doctor.
+  function waiting() {
+    if (!window.HIS.registry) return [];
+    return HIS.registry.all().filter(function (p) {
+      if (p.status !== 'Waiting') return false;
+      return !C.pts.some(function (q) { return q.id === p.id; });
+    });
+  }
+  function accept(id) {
+    var p = HIS.registry && HIS.registry.byId(id);
+    if (!p) { tip('That patient is no longer in the registry.'); return; }
+    var up = HIS.registry.update(id, { status: 'In Consultation' });
+    if (!up.ok) { tip(up.error); return; }
+    var enc = window.HIS.encounters ? HIS.encounters.ensure(id, { kind: p.type === 'Inpatient' ? 'inpatient' : 'outpatient', dept: p.dept }) : null;
+    C.pts.unshift(queueEntry(p));
+    if (st.accepted.indexOf(id) < 0) st.accepted.push(id);
+    st.sel = id;
+    saveState();
+    tip(p.name + ' accepted into the queue' + (enc && enc.ok ? ' \u00b7 ' + enc.encounter.id : ''));
+    render();
+  }
 
   function visible() {
     return C.pts.filter(function (p) {
@@ -91,23 +137,32 @@
   }
 
   function directory() {
-    var v = visible();
+    var v = visible(), w = waiting().filter(function (p) {
+      return (st.dept === ALL || (p.dept || 'General Medicine') === st.dept) &&
+        (!st.q || (p.name + ' ' + p.id).toLowerCase().indexOf(st.q.trim().toLowerCase()) > -1);
+    });
     var h = at('tp-card tp-dir', 68, 309, '');
     h += at('tp-h2', 92, 333, 'Patient queue') + at('tp-s12', 92, 362, 'Select a patient to open the consultation.');
-    h += at('tp-cnt', 400, 347.5, String(v.length), 'width:100px');
+    h += at('tp-cnt', 400, 347.5, String(v.length + w.length), 'width:100px');
     h += "<div class='tp-a tp-search'>" + ic('search', 18, 1.8) + "<input id='tpq' placeholder='Search patient name or ID' aria-label='Search patient' value='" + esc(st.q) + "'></div>";
     h += "<button class='tp-a tp-flt" + (st.menu ? ' open' : '') + "' id='tpd'><span class='v'>" + esc(st.dept) + '</span>' + ic('down', 16, 2) + '</button>';
     h += "<div class='tp-a tp-th'><span style='left:24px'>PATIENT / COMPLAINT</span><span style='left:393px'>QUEUE</span></div>";
+    w.forEach(function (p, i) {
+      h += "<button class='tp-a tp-r new' data-accept='" + p.id + "' style='top:" + (547 + 76 * i) + "px' title='Accept " + esc(p.name) + " into the queue'>";
+      h += "<span class='av'>" + initialsOf(p.name) + "</span><span class='nm'>" + esc(p.name) + "</span><span class='rl'>New registration \u00b7 " + esc(p.type || 'Outpatient') + '</span><span class="id">' + p.id + '</span>';
+      h += "<span class='newtag'>New</span><span class='acc'>Accept</span>";
+      h += '</button>';
+    });
     v.forEach(function (p, i) {
       var on = p.id === st.sel;
-      h += "<button class='tp-a tp-r" + (on ? ' on' : '') + "' data-pt='" + p.id + "' style='top:" + (547 + 76 * i) + "px'>";
+      h += "<button class='tp-a tp-r" + (on ? ' on' : '') + "' data-pt='" + p.id + "' style='top:" + (547 + 76 * (i + w.length)) + "px'>";
       h += "<span class='av'>" + p.ini + "</span><span class='nm'>" + esc(p.name) + "</span><span class='rl'>" + esc(p.rl) + "</span><span class='id'>" + p.id + '</span>';
       h += "<span class='dot'></span>";
       h += '</button>';
     });
-    if (!v.length) h += at('tp-none', 68, 547, 'No patients match');
+    if (!v.length && !w.length) h += at('tp-none', 68, 547, 'No patients match');
     h += "<div class='tp-a tp-ft'>" + at('tp-s12', 24, 18, 'Showing ' + (v.length ? '1\u2013' + v.length : '0') + ' of ' + C.pts.length + ' patients', 'font-size:11px;line-height:13.31px');
-    h += at('tp-l', 375, 18, 'Page 1 of 1', 'color:#15405a') + '</div>';
+    h += at('tp-l', 300, 18, w.length ? w.length + ' waiting to be accepted' : 'Page 1 of 1', 'color:#15405a') + '</div>';
     return h;
   }
 
@@ -274,6 +329,8 @@
     var o = X.closest('.tp-o');
     if (o) { st.dept = o.dataset.opt; st.menu = false; render(); return; }
     if (X.closest('#tpd')) { st.menu = !st.menu; render(); return; }
+    var acc = X.closest('[data-accept]');
+    if (acc) { accept(acc.dataset.accept); return; }
     var r = X.closest('[data-pt]');
     if (r) { st.sel = r.dataset.pt; render(); return; }
     if (X.closest('[data-hist]')) { tip('Visit history is not available in this view'); return; }
