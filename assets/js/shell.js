@@ -309,6 +309,13 @@
         break;
 
       case 'doctor':
+        if (window.HIS.registry) {
+          // Only registrations that are NOT already in the doctor's queue: a patient sitting in the
+          // queue is not "waiting to be accepted".
+          const inQueue = (window.HIS.consult && HIS.consult.pts ? HIS.consult.pts : []).map(p => p.id);
+          const waitReg = HIS.registry.all().filter(p => p.status === 'Waiting' && inQueue.indexOf(p.id) < 0);
+          if (waitReg.length) add('New patients waiting to be seen', waitReg.length + ' registration' + (waitReg.length === 1 ? '' : 's') + ' not yet accepted', 'Consultation', 'consultation.html', waitReg[0].id);
+        }
         if (apptConfirmed.length) add('Consultations today', apptConfirmed.length + ' confirmed appointment' + (apptConfirmed.length === 1 ? '' : 's'), 'Appointments', 'appointments.html?status=Confirmed&focus=' + encodeURIComponent(apptConfirmed[0].id), apptConfirmed[0].id);
         if (toValidate.length) add('Results ready for review', toValidate.length + ' entered and awaiting validation', 'Laboratory', LAB(toValidate[0].id), toValidate[0].id);
         if (released.length) add('Released results on file', released.length + ' report' + (released.length === 1 ? '' : 's') + ' available', 'Laboratory', LAB(released[0].id), released[0].id);
