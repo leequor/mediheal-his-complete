@@ -451,7 +451,7 @@
       "<label class='pt-label'>Details<textarea class='pt-input' id='pt-req' rows='3' placeholder='e.g. my mobile number changed to +63 917 000 0000'></textarea></label>" +
       "<p class='pt-error' id='pt-req-err' role='alert'></p>" +
       "<div class='pt-row pt-row-start'><button class='pt-btn' type='button' id='pt-req-send'>Send request</button>" +
-      "<span class='pt-muted pt-small'>Goes to <b>Registration</b> as request <b>" + esc(nextReqId()) + '</b>, and stays open until a staff member closes it.</span></div>' +
+      "<span class='pt-muted pt-small'>Goes to <b>Registration</b> and stays open until a staff member closes it. The request number appears below.</span></div>" +
       '</div>');
 
     // The patient can see the request after they send it. Before this, the screen said "recorded for
@@ -472,14 +472,6 @@
     return status === 'resolved' ? badge('Resolved', 'ok')
       : status === 'dismissed' ? badge('No change needed', 'off')
         : badge('With registration', 'warn');
-  }
-  function nextReqId() {
-    var rows = HIS.requests.all();
-    var n = rows.reduce(function (m, r) {
-      var v = parseInt(String(r.id).replace(/\D/g, ''), 10);
-      return isNaN(v) ? m : Math.max(m, v);
-    }, 0);
-    return 'PRQ-' + ('000' + (n + 1)).slice(-4);
   }
 
   // ---- document generation --------------------------------------------------------------------
