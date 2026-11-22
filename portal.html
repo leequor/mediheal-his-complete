@@ -145,7 +145,15 @@
     <h2>Sign in</h2>
     <p class='pt-muted'>Enter your email and password to access your medical profile.</p>
     <label class='pt-label'>Email address<input class='pt-input' id='pt-si-email' type='email' name='email' required placeholder='name@example.com' autocomplete='username'></label>
-    <label class='pt-label'>Password<input class='pt-input' type='password' name='password' required placeholder='Enter your password' autocomplete='current-password'></label>
+    <label class='pt-label'>Password
+      <span class='pt-pw'>
+        <input class='pt-input' type='password' name='password' required placeholder='Enter your password' autocomplete='current-password'>
+        <button class='pt-eye' type='button' id='pt-si-eye' aria-label='Show password' aria-pressed='false'>
+          <svg class='off' viewBox='0 0 24 24' aria-hidden='true'><path d='M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z'/><circle cx='12' cy='12' r='3'/><path d='m3 3 18 18'/></svg>
+          <svg class='on' viewBox='0 0 24 24' aria-hidden='true'><path d='M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z'/><circle cx='12' cy='12' r='3'/></svg>
+        </button>
+      </span>
+    </label>
     <div class='pt-row'>
       <label class='pt-check'><input type='checkbox' id='pt-keep' checked> Keep me signed in</label>
       <button class='pt-link small' type='button' id='pt-forgot'>Forgot password?</button>
