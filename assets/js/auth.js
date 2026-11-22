@@ -120,8 +120,17 @@
     // Read by key, not through HIS.requests: sign-out happens on pages that do not load the module.
     var reqKey = (window.HIS.requests && HIS.requests.KEY) || 'mh_patient_requests';
     var reqs = HIS.store.get(reqKey, null);
+    // A patient who registered themselves is a real registry row, and a request from them is only
+    // useful if the row is still there when the front desk opens it. Those rows (and only those)
+    // survive the reset; anything staff edited is still discarded.
+    var selfReg = window.HIS.registry
+      ? HIS.registry.all().filter(function (p) { return p.createdBy === 'Patient self-registration'; })
+      : null;
     clear();
     if (window.HIS.store) HIS.store.reset({ includeOwner: true });
+    if (selfReg && selfReg.length) {
+      try { HIS.registry.save(HIS.registry.all().concat(selfReg)); } catch (e) { /* registry unavailable */ }
+    }
     if (Array.isArray(reqs) && reqs.length) HIS.store.set(reqKey, reqs);
     if (window.HIS.audit) {
       if (trail) HIS.store.set(HIS.audit.KEY, trail);

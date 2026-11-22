@@ -6,19 +6,23 @@
 .si{position:relative;width:1440px;height:1024px;margin:0 auto;overflow:hidden}
 .si>*{position:absolute}
 .si-panel{left:0;top:0;width:721px;height:100%;background:linear-gradient(90deg,#1b4e6b 1%,#3393c9 56.7%,#fafeff 100%)}
-.si-logo{left:0;top:31px;width:148.3px;height:103px;object-fit:contain}
-.si-brand{left:125px;top:70px;font:600 19px/23.75px Lexend,sans-serif;color:#fff}
+/* The card the form sits on (2026-11-22). 780..1282 x 252..792: the measured form column plus
+   40px of breathing room on each side, so no field moves. */
+.si-card{left:780px;top:252px;width:502px;height:540px;background:#fff;border-radius:20px;
+  box-shadow:0 20px 55px rgba(15,42,61,.16),inset 0 0 0 1px rgba(200,220,234,.65)}
+.si-logo{left:57px;top:44px;width:44px;height:44px;object-fit:contain;filter:drop-shadow(0 1px 2px rgba(0,0,0,.18))}
+.si-brand{left:113px;top:54px;font:600 20px/1.2 Lexend,sans-serif;color:#fff}
 .si-h{margin:0;left:57px;top:287px;width:506px;font:700 40px/50px Lexend,sans-serif;color:#fff}
 .si-p{margin:0;left:57px;top:405px;width:432px;font:400 18px/22.5px Lexend,sans-serif;color:#fff}
 .si-ft{font:700 17px/21.25px Lexend,sans-serif;color:#fff;white-space:nowrap}
 .si-fd{font:400 15px/18.75px Lexend,sans-serif;color:rgba(255,255,255,.48);white-space:nowrap}
-.si-t{margin:0;left:820px;top:298px;width:422px;font:700 36px/45.36px Outfit,sans-serif;color:#0f172a;white-space:nowrap}
-.si-s{margin:0;left:820px;top:357px;width:441px;font:400 16px/19.36px Inter,sans-serif;color:#6f8890}
+.si-t{margin:0;left:820px;top:296px;width:422px;font:700 32px/40px Outfit,sans-serif;color:#15405a;white-space:nowrap}
+.si-s{margin:0;left:820px;top:348px;width:422px;font:400 13.5px/19px Inter,sans-serif;color:#6f8890}
 #sif{position:absolute;left:0;top:0;width:0;height:0}
 #sif>*{position:absolute}
-.si-l{font:700 16px/19.36px Inter,sans-serif;color:#000;white-space:nowrap}
-.si-i{width:422px;height:41px;box-sizing:border-box;border:1px solid #8e8e8e;border-radius:10px;background:#fff;padding:0 10px;font:400 16px/19.36px Inter,sans-serif;color:#000;outline:0}
-.si-i::placeholder{color:rgba(0,0,0,.12)}
+.si-l{font:600 13px/17px Inter,sans-serif;color:#425a6b;white-space:nowrap}
+.si-i{width:422px;height:44px;box-sizing:border-box;border:1px solid #c8dcea;border-radius:10px;background:#fff;padding:0 13px;font:400 15px/20px Inter,sans-serif;color:#1c2b30;outline:0}
+.si-i::placeholder{color:#9db1bf}
 .si-i:focus{border-color:#1c6d9c;box-shadow:0 0 0 3px rgba(28,109,156,.18)}
 .si-i.bad{border-color:#dd4f4c}
 .si-k{left:820px;top:607px;width:181px;height:31px;display:block;cursor:pointer}
@@ -30,8 +34,8 @@
 .si-k .tx{position:absolute;left:41px;top:8px;font:400 14px/16.94px Inter,sans-serif;color:#000;white-space:nowrap}
 .si-f{left:1112px;top:615px;width:130px;height:28px;border:0;padding:0;background:transparent;text-align:left;font:700 14px/16.94px Inter,sans-serif;color:#1c4b68;cursor:pointer}
 .si-f:hover{text-decoration:underline}
-.si-b{left:820px;top:680px;width:422px;height:46px;border:0;border-radius:10px;background:#0f172a;color:#d6f4fc;font:700 20px/24.2px Inter,sans-serif;cursor:pointer}
-.si-b:hover{background:#1b2a47}
+.si-b{left:820px;top:680px;width:422px;height:46px;border:0;border-radius:10px;background:#1c6d9c;color:#fff;font:600 15px/1 Inter,sans-serif;cursor:pointer}
+.si-b:hover{background:#175a82}
 /* Addition (not in Figma): link to the public patient portal, under the sign-in button. */
 .si-pt{left:820px;top:744px;width:422px;font:400 12px/15px Inter,sans-serif;color:#6f8890}
 .si-pt:hover{text-decoration:underline;color:#1c6d9c}
@@ -65,9 +69,9 @@
 
 /* Demo-access disclosure. Anchored to the panel bottom, but sized to clear the feature list at the
    780px frame floor (last feature line ends at y718; the button occupies y734-768). */
-.si-demo{position:absolute;left:57px;bottom:12px;display:inline-flex;align-items:center;gap:8px;height:34px;padding:0 13px;border:1px solid rgba(255,255,255,.45);border-radius:10px;background:rgba(255,255,255,.08);color:#fff;font:600 12.5px Inter,sans-serif;cursor:pointer}
-.si-demo:hover{background:rgba(255,255,255,.18)}
-.si-demo:focus-visible{outline:2px solid #fff;outline-offset:2px}
+.si-demo{position:absolute;left:820px;top:806px;display:inline-flex;align-items:center;gap:8px;height:32px;padding:0 12px;border:1px solid #c8dcea;border-radius:9px;background:#fff;color:#1b4e6b;font:600 12px Inter,sans-serif;cursor:pointer;box-shadow:0 1px 2px rgba(15,42,61,.06)}
+.si-demo:hover{background:#eef6fb}
+.si-demo:focus-visible{outline:2px solid #1c6d9c;outline-offset:2px}
 
 /* Password-help paragraphs (replaces the old "reset link sent" state). */
 .si-help{left:820px;width:422px;margin:0;font:400 14px/21px Inter,sans-serif;color:#6f8890}

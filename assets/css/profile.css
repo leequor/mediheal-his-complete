@@ -33,13 +33,26 @@
 .pf-w .pf-v{width:400px}
 .pf-th .pf-v{right:0;width:460px}
 
-/* Correction request banner (2026-11-22). Sits in the empty strip to the right of the back link,
-   so it never pushes the measured Figma cards down. */
-.pf-req{left:320px;top:82px;width:1000px;min-height:44px;display:flex;align-items:center;gap:14px;padding:8px 14px;border-radius:10px;background:#f2f8fd;box-shadow:inset 0 0 0 1px #c8dcea;z-index:5}
-.pf-req-main{display:grid;gap:1px;min-width:0;flex:1 1 auto}
-.pf-req-main b{font:600 12.5px/16px var(--font-inter);color:#15405a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.pf-req-main span{font:400 12px/16px var(--font-inter);color:#5b7385;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.pf-req-b{flex:none;height:30px;padding:0 12px;border-radius:8px;border:1px solid #c8dcea;background:#fff;color:#15405a;font:600 12px var(--font-inter);cursor:pointer}
+/* Correction request panel (2026-11-22, rebuilt).
+   It used to be a 44px strip sharing the line with "Back to Registry", which read as a tooltip.
+   It is now a card in its own band at the top of the page, and the measured cards move down to
+   make room (a transform, so no Figma coordinate below changes). */
+.pf-req{left:118.344px;top:94px;width:1202.4px;height:88px;display:flex;align-items:center;gap:14px;
+  padding:13px 16px;border-radius:14.6125px;background:#fff;z-index:5;
+  box-shadow:inset 0 0 0 1px #ecd3a4,inset 4px 0 0 #e0a33a,0 4px 14px rgba(15,42,61,.08)}
+.pf-req-ic{width:34px;height:34px;flex:none;border-radius:10px;background:#fdf1e3;color:#8a5a12;display:grid;place-items:center}
+.pf-req-ic svg{display:block}
+.pf-req-tx{flex:1 1 auto;min-width:0;display:grid;gap:1px}
+.pf-req-tx b{font:600 13.5px/18px var(--font-inter);color:#15405a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pf-req-tx span{font:400 12.5px/17px var(--font-inter);color:#425a6b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pf-req-tx em{font:400 11.5px/15px var(--font-inter);color:#6f8890;font-style:normal}
+.pf-req-act{display:flex;gap:8px;flex:none}
+.pf-req-b{height:32px;padding:0 14px;border-radius:8px;border:1px solid #c8dcea;background:#fff;color:#15405a;font:600 12.5px var(--font-inter);cursor:pointer}
 .pf-req-b:hover{background:#eef6fb}
 .pf-req-b.ok{border-color:#9ed0b4;background:#e7f6ee;color:#14532d}
 .pf-req-b.ok:hover{background:#d5efe1}
+.pf-req-b:disabled{opacity:.55;cursor:default}
+/* Room for the panel: the page grows by its height and every measured card slides down. */
+.pf.has-req{height:1089px}
+.pf.has-req.has-th{height:1436px}
+.pf.has-req>.pf-back,.pf.has-req>.pf-card{transform:translateY(104px)}
