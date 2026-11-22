@@ -186,24 +186,34 @@ await page.waitForTimeout(400);
     const auditorApprove = c ? HIS.claims.transition(c.id, 'deny', { reason: 'x' }) : { ok: 'no-claim' };
     const auditorCreate = HIS.claims.create({ invoiceId: 'BL-8801', payer: 'X', memberRef: '1', requestedAmount: 1 });
     HIS.auth.clear();
-    HIS.auth.attempt('cashier@mediheal.test', 'MediHeal2026!', true);
+    HIS.auth.attempt('finance@mediheal.test', 'MediHeal2026!', true);
     const cashierRole = HIS.rbac.key();
     const cashierApprove = c ? HIS.claims.transition(c.id, 'approve', { approvedAmount: 1 }) : { ok: 'no-claim' };
     const cashierCreate = HIS.claims.create({ invoiceId: 'BL-8801', payer: 'PhilHealth', memberRef: '12-3', requestedAmount: 500 });
     HIS.auth.clear();
+    // A role with no claims rights at all. Cashier was merged into Billing & Finance, which does
+    // hold them, so the negative case is a clinician now.
+    HIS.auth.attempt('nurse@mediheal.test', 'MediHeal2026!', true);
+    const nurseRole = HIS.rbac.key();
+    const nurseApprove = c ? HIS.claims.transition(c.id, 'deny', { reason: 'x' }) : { ok: 'no-claim' };
+    const nurseCreate = HIS.claims.create({ invoiceId: 'BL-8801', payer: 'X', memberRef: '1', requestedAmount: 1 });
+    HIS.auth.clear();
     HIS.auth.attempt('finance@mediheal.test', 'MediHeal2026!', true);
     return {
-      auditorRole, cashierRole,
+      auditorRole, cashierRole, nurseRole,
       auditorApprove: auditorApprove.ok, auditorCreate: auditorCreate.ok,
       cashierApprove: cashierApprove.ok, cashierCreate: cashierCreate.ok,
-      cashierCreateErr: cashierCreate.error
+      cashierCreateErr: cashierCreate.error,
+      nurseApprove: nurseApprove.ok, nurseCreate: nurseCreate.ok
     };
   });
   ok('the auditor role is active for the test', r.auditorRole === 'auditor', r.auditorRole);
   ok('an auditor cannot record a payer decision', r.auditorApprove === false);
   ok('an auditor cannot create a claim', r.auditorCreate === false);
-  ok('a cashier cannot record a payer decision', r.cashierApprove === false);
-  ok('a cashier can create a claim', r.cashierCreate === true, r.cashierCreateErr);
+  ok('a nurse cannot record a payer decision', r.nurseRole === 'nurse' && r.nurseApprove === false);
+  ok('a nurse cannot create a claim', r.nurseCreate === false);
+  ok('billing & finance can create a claim', r.cashierCreate === true, r.cashierCreateErr);
+  ok('billing & finance can record a payer decision', r.cashierApprove === true);
 }
 
 // ---------------------------------------------------------------- 7. claim amounts are bounded

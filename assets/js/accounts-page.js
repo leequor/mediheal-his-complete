@@ -204,7 +204,7 @@
   // ---- editor modal (design format: white r16 card, 1px #c8dcea, Lexend 20 title) --------------
   function editor(acct, trigger, preset) {
     var isNew = !acct;
-    var a = acct || Object.assign({ name: '', email: '', role: 'receptionist', dept: '', title: '', status: 'active', patientId: '' }, preset || {});
+    var a = acct || Object.assign({ name: '', email: '', role: 'registration', dept: '', title: '', status: 'active', patientId: '' }, preset || {});
     var bg = document.createElement('div');
     bg.className = 'ac-bg';
     bg.innerHTML =

@@ -403,7 +403,7 @@ await page.waitForTimeout(400);
 
     // Role gating: a cashier cannot record a payer decision; an auditor cannot transition at all.
     const underId = makeAt('under-review');
-    HIS.auth.clear(); HIS.auth.attempt('cashier@mediheal.test', 'MediHeal2026!', true);
+    HIS.auth.clear(); HIS.auth.attempt('finance@mediheal.test', 'MediHeal2026!', true);
     const cashierApprove = HIS.claims.transition(underId, 'approve', { approvedAmount: 1000 });
     const cashierSubmitOk = HIS.claims.available(HIS.claims.get(underId)).map(t => t.action);
     HIS.auth.clear(); HIS.auth.attempt('auditor@mediheal.test', 'MediHeal2026!', true);

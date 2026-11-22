@@ -54,7 +54,7 @@ async function session(email, pagePath) {
 
 // ---------------------------------------------------------------- 1. the ledger is the source
 {
-  const { ctx, page, errs } = await session('cashier@mediheal.test', '/billing.html');
+  const { ctx, page, errs } = await session('finance@mediheal.test', '/billing.html');
 
   const r = await page.evaluate(() => {
     const out = {};
@@ -101,7 +101,7 @@ async function session(email, pagePath) {
 
 // ---------------------------------------------------------------- 2. electronic payments stay pending
 {
-  const { ctx, page } = await session('cashier@mediheal.test', '/billing.html');
+  const { ctx, page } = await session('finance@mediheal.test', '/billing.html');
   const r = await page.evaluate(() => {
     const b = HIS.billing.bills.filter(x => x.id === 'BL-8798')[0]; // 52,800, nothing received
     const out = {};
@@ -123,7 +123,7 @@ async function session(email, pagePath) {
 
 // ---------------------------------------------------------------- 3. voids and refunds
 {
-  const { ctx, page } = await session('cashier@mediheal.test', '/billing.html');
+  const { ctx, page } = await session('finance@mediheal.test', '/billing.html');
   const r = await page.evaluate(() => {
     const b = HIS.billing.bills.filter(x => x.id === 'BL-8801')[0];
     const out = { start: HIS.ledger.balanceOf(b) };

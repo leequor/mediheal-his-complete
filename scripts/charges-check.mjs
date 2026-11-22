@@ -50,6 +50,10 @@ page.on('console', m => { if (m.type() === 'error') errs.push(m.text()); });
 
 await page.goto(BASE + '/index.html', { waitUntil: 'load' });
 await page.evaluate(() => HIS.auth.attempt('superadmin@mediheal.test', 'MediHeal2026!', true));
+// 2026-11-22: the charge store now seeds itself from the invoice lines, so a run that assumes it
+// starts empty has to clear it first. This harness tests the workflow, not the seed.
+await page.goto(BASE + '/charges.html', { waitUntil: 'load' });
+await page.evaluate(() => HIS.store.set('mh_charges', { charges: [], version: 2 }));
 
 // =================================================================================================
 // 1. A LABORATORY ORDER BECOMES A CHARGE

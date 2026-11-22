@@ -11,10 +11,22 @@
 .pr-lbl{font:600 11px/13.31px Inter,sans-serif;color:#6f8890}
 .pr-date{font:600 14px/16.94px Inter,sans-serif;color:#1c2b30}
 .pr-meth{font:400 11px/13.31px Inter,sans-serif;color:#6f8890}
-.pr-sel{width:185px;height:40px;border-radius:8px;box-shadow:inset 0 0 0 1px #c8dcea}
-.pr-sel .v{position:absolute;left:37px;top:12px;font:500 13px/16px Inter,sans-serif;color:#1b4e6b}
+.pr-sel{width:185px;height:40px;border-radius:8px;box-shadow:inset 0 0 0 1px #c8dcea;background:#fff;border:0;padding:0;cursor:pointer;text-align:left}
+.pr-sel:hover{background:#f2f8fd;box-shadow:inset 0 0 0 1px #9dc2d8}
+.pr-sel[aria-expanded="true"]{background:#f2f8fd;box-shadow:inset 0 0 0 1px #1c6d9c}
+.pr-sel .v{position:absolute;left:37px;top:12px;font:500 13px/16px Inter,sans-serif;color:#1b4e6b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:136px}
+/* pay-period menu */
+.pr-pm{position:absolute;left:88px;top:292px;width:296px;background:#fff;border-radius:12px;box-shadow:inset 0 0 0 1px #c8dcea,0 14px 34px rgba(15,42,61,.18);z-index:30;overflow:hidden;font-family:Inter,sans-serif}
+.pr-pm-h{padding:11px 14px 6px;font:700 9.5px/1 Inter,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#6f8890}
+.pr-pm-i{position:relative;display:grid;gap:1px;width:100%;padding:9px 14px;border:0;background:#fff;text-align:left;cursor:pointer;font-family:Inter,sans-serif}
+.pr-pm-i:hover{background:#f2f8fd}
+.pr-pm-i.on{background:#e8f4fb}
+.pr-pm-i b{font:600 13px/17px Inter,sans-serif;color:#15405a}
+.pr-pm-i span{font:400 11.5px/15px Inter,sans-serif;color:#6f8890}
+.pr-pm-i i{position:absolute;right:12px;top:11px;font:700 9.5px/1 Inter,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#1c6d9c;font-style:normal;background:#dff0f8;padding:4px 7px;border-radius:999px}
+.pr-pm-f{padding:9px 14px 11px;border-top:1px solid #e3edf3;font:400 11px/15px Inter,sans-serif;color:#8aa4b6;background:#fbfdff}
 .pr-div{width:1px;height:48px;background:#e3edf3}
-.pr-btn{position:absolute;top:29px;height:42px;border:0;padding:0;border-radius:8px;background:#fff;box-shadow:inset 0 0 0 1px #c8dcea;font:600 13px/15.73px Inter,sans-serif;color:#1b4e6b;cursor:pointer;text-align:left}
+.pr-btn{position:absolute;top:29px;pointer-events:auto;height:42px;border:0;padding:0;border-radius:8px;background:#fff;box-shadow:inset 0 0 0 1px #c8dcea;font:600 13px/15.73px Inter,sans-serif;color:#1b4e6b;cursor:pointer;text-align:left}
 .pr-btn:hover{background:#f6fafd}
 .pr-btn.pri{background:#1c6d9c;box-shadow:inset 0 0 0 1px #1c6d9c;color:#fff}
 .pr-btn.pri:hover{background:#185f88}
@@ -55,7 +67,7 @@
 .pr-p i{position:absolute;left:10px;top:9px;width:10px;height:10px;border-radius:50%;background:#2d9d27}
 .pr-p.Paid{width:61px;background:#d8ffd3}.pr-p.Paid .lb{left:26px;color:#084d02}
 .pr-p.Processing{width:80px;background:#ffcba3}.pr-p.Processing .lb{left:10px;color:#a6460a}
-.pr-p.Pending{width:65px;background:#e9ecef}.pr-p.Pending .lb{left:10px;color:#1a1a1a}
+.pr-p.Pending{width:65px;background:#e3edf3}.pr-p.Pending .lb{left:10px;color:#1c2b30}
 .pr-ps{position:absolute;left:1186px;top:24.5px;width:94px;height:15px;border:0;padding:0;background:transparent;cursor:pointer;color:#1c6d9c;font:600 12px/14.52px Inter,sans-serif}
 .pr-ps svg{position:absolute;left:32px;top:0}
 .pr-ps span{position:absolute;left:52px;top:0}

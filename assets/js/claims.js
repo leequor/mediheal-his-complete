@@ -55,16 +55,16 @@
   // `roles` are RBAC keys. `requires` names the payload fields the transition cannot proceed
   // without, so a denial can never be recorded without a reason.
   var TRANSITIONS = [
-    { from: 'draft', to: 'pending-documentation', action: 'prepare', label: 'Request documents', roles: ['cashier', 'finance', 'superadmin'] },
-    { from: 'draft', to: 'ready-for-review', action: 'send-review', label: 'Send for review', roles: ['cashier', 'finance', 'superadmin'], requires: 'documents' },
-    { from: 'pending-documentation', to: 'ready-for-review', action: 'docs-complete', label: 'Documents complete', roles: ['cashier', 'finance', 'superadmin'], requires: 'documents' },
-    { from: 'pending-documentation', to: 'draft', action: 'back-draft', label: 'Return to draft', roles: ['cashier', 'finance', 'superadmin'] },
+    { from: 'draft', to: 'pending-documentation', action: 'prepare', label: 'Request documents', roles: ['finance', 'superadmin'] },
+    { from: 'draft', to: 'ready-for-review', action: 'send-review', label: 'Send for review', roles: ['finance', 'superadmin'], requires: 'documents' },
+    { from: 'pending-documentation', to: 'ready-for-review', action: 'docs-complete', label: 'Documents complete', roles: ['finance', 'superadmin'], requires: 'documents' },
+    { from: 'pending-documentation', to: 'draft', action: 'back-draft', label: 'Return to draft', roles: ['finance', 'superadmin'] },
     { from: 'ready-for-review', to: 'ready-for-submission', action: 'verify', label: 'Verify for submission', roles: ['finance', 'superadmin'] },
     { from: 'ready-for-review', to: 'pending-documentation', action: 'reject-review', label: 'Send back for documents', roles: ['finance', 'superadmin'], requires: ['reason'] },
-    { from: 'ready-for-submission', to: 'submitted', action: 'submit', label: 'Record submission', roles: ['cashier', 'finance', 'superadmin'], requires: ['reference'] },
-    { from: 'submitted', to: 'under-review', action: 'acknowledge', label: 'Payer acknowledged', roles: ['cashier', 'finance', 'superadmin'] },
+    { from: 'ready-for-submission', to: 'submitted', action: 'submit', label: 'Record submission', roles: ['finance', 'superadmin'], requires: ['reference'] },
+    { from: 'submitted', to: 'under-review', action: 'acknowledge', label: 'Payer acknowledged', roles: ['finance', 'superadmin'] },
     { from: 'under-review', to: 'additional-info', action: 'request-info', label: 'Additional information required', roles: ['finance', 'superadmin'], requires: ['reason'] },
-    { from: 'additional-info', to: 'ready-for-submission', action: 'resubmit', label: 'Information provided', roles: ['cashier', 'finance', 'superadmin'] },
+    { from: 'additional-info', to: 'ready-for-submission', action: 'resubmit', label: 'Information provided', roles: ['finance', 'superadmin'] },
     { from: 'under-review', to: 'approved', action: 'approve', label: 'Record approval', roles: ['finance', 'superadmin'], requires: ['approvedAmount'] },
     { from: 'under-review', to: 'partially-approved', action: 'partial', label: 'Record partial approval', roles: ['finance', 'superadmin'], requires: ['approvedAmount', 'reason'] },
     { from: 'under-review', to: 'denied', action: 'deny', label: 'Record denial', roles: ['finance', 'superadmin'], requires: ['reason'] },
@@ -263,7 +263,7 @@
   function create(input) {
     input = input || {};
     var r = role();
-    if (['cashier', 'finance', 'superadmin'].indexOf(r) < 0) {
+    if (['finance', 'superadmin'].indexOf(r) < 0) {
       return { ok: false, error: 'Your role cannot create a claim.' };
     }
     var patient = input.patientId ? (HIS.registry ? HIS.registry.byId(input.patientId) : null) : null;

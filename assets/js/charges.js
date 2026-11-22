@@ -40,11 +40,44 @@
     manual: 'Manual entry'
   };
 
+  // Seeds only when the key is ABSENT. An explicitly stored empty list stays empty, which is what
+  // a harness (or a hospital that has voided everything) needs to be able to say.
   function state() {
     var s = HIS.store.get(KEY, null);
-    if (!s || !Array.isArray(s.charges)) s = { charges: [], version: 1 };
+    if (!s || !Array.isArray(s.charges)) s = seed();
     return s;
   }
+
+  // THE QUEUE STARTED EMPTY, AND THAT READS AS BROKEN.
+  // Charges are only created when someone raises one in this tab, so a first visit showed
+  // "0 charges / PHP 0" next to a Billing screen holding PHP 160,860 of invoiced work. The two
+  // records below are genuinely UNBILLED charges on encounters that are still open: they do not
+  // touch any invoice total (an invoice's amount is its own stored figure, and only an assigned
+  // charge is added to it), and they give the queue something real to work with. Seeding the
+  // invoice lines as charges was tried first and doubled every bill, which the ledger harness
+  // caught — the invoice items are a summary of a stored amount, not a second set of charges.
+  function seed() {
+    if (!bills().length) return { charges: [], version: 2 };
+    var at = '2026-08-31T09:15:00+08:00', rows = [];
+    [['PT-99213', 'ENC-0001', 'Nursing \u2014 wound dressing, sterile field', 1, 850, 'nursing'],
+     ['PT-99210', 'ENC-0003', 'Laboratory \u2014 CBC with platelet count', 1, 650, 'laboratory']].forEach(function (u, i) {
+      rows.push({
+        id: 'CH-' + ('000' + (i + 1)).slice(-4),
+        key: 'seed:unbilled:' + (i + 1),
+        patientId: u[0], encounterId: u[1], invoiceId: null,
+        billingStatus: 'unbilled',
+        unbilledReason: 'Raised after the last invoice was cut for this encounter.',
+        source: u[5], sourceLabel: SOURCES[u[5]], sourceId: 'seed:' + (i + 1), code: '',
+        description: u[2], qty: u[3], unitPrice: r2(u[4]), amount: r2(u[3] * u[4]),
+        priceSnapshot: { unitPrice: r2(u[4]), tariffCode: null, effectiveFrom: null, capturedAt: at },
+        at: at, by: 'Ward clerk', status: 'active', notes: ''
+      });
+    });
+    var st = { charges: rows, version: 2 };
+    HIS.store.set(KEY, st);
+    return st;
+  }
+
   function save(s) { HIS.store.set(KEY, s); return s; }
   function all() { return state().charges.slice(); }
   function active() { return all().filter(function (c) { return c.status !== 'void'; }); }

@@ -12,9 +12,9 @@
 .dd.open .dd-panel{display:block}
 .dd-panel button{display:block;width:100%;height:38px;padding:0 14px;text-align:left;background:#fff;border:0;font:400 14px var(--font-inter);color:#000;white-space:nowrap}
 .dd-panel button:hover{background:#eef6fb}
-.dd.light .dd-btn{border:1px solid #e2e8f0;border-radius:8px;padding:0 12px;color:#1e293b}
-.dd.light .dd-panel{border:1px solid #e2e8f0;border-radius:8px;width:max-content;min-width:100%}
-.dd.light .dd-panel button{height:34px;color:#1e293b}
+.dd.light .dd-btn{border:1px solid #e3edf3;border-radius:8px;padding:0 12px;color:#1c2b30}
+.dd.light .dd-panel{border:1px solid #e3edf3;border-radius:8px;width:max-content;min-width:100%}
+.dd.light .dd-panel button{height:34px;color:#1c2b30}
 
 .empty{padding:36px;text-align:center;color:var(--muted)}
 

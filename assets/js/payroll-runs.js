@@ -21,7 +21,9 @@
 // attendance summary. Nothing on this screen is a literal.
 (function () {
   var KEY = HIS.store.KEY.payrollRuns;
-  var PERIOD = HIS.attendancePeriod.PERIOD;
+  // The cut-off being worked on. Resolved on every call, not captured at load, so switching the
+  // period on the Payroll screen switches which run these functions read and write.
+  function period() { return HIS.attendancePeriod.active(); }
 
   function state() {
     var s = HIS.store.get(KEY, null);
@@ -42,7 +44,8 @@
 
   function list() { return state().runs.slice().sort(function (a, b) { return b.createdAt < a.createdAt ? -1 : 1; }); }
   function get(id) { return state().runs.filter(function (r) { return r.id === id; })[0] || null; }
-  function current() { return list()[0] || null; }
+  function forPeriod(id) { return list().filter(function (r) { return r.periodId === id; })[0] || null; }
+  function current() { return forPeriod(period().id); }
 
   // A cheap fingerprint of the attendance a line was priced from. Approval compares it with the
   // CURRENT summary, so reopening or correcting a timesheet after the run was built blocks the
@@ -75,7 +78,7 @@
   function wageProblems(run) {
     var out = [];
     HIS.employees.all().forEach(function (emp) {
-      var floor = HIS.wageFloor.check(emp, run.payDate || PERIOD.payDate);
+      var floor = HIS.wageFloor.check(emp, run.payDate || period().payDate);
       if (floor.status === 'below') out.push(emp.name + ' (' + floor.explanation + ')');
     });
     return out;
@@ -88,20 +91,20 @@
       if (!att) {
         blocked.push({
           employeeId: emp.id, name: emp.name,
-          reason: 'Timesheet not approved for ' + PERIOD.label
+          reason: 'Timesheet not approved for ' + period().label
         });
         return;
       }
       // A rate below the applicable wage floor is a blocking problem, not a warning: paying it
       // would underpay the employee. An 'unknown' floor (no order in force for the date) is
       // reported on the line but does not block, because there is nothing to test against.
-      var floor = HIS.wageFloor.check(emp, PERIOD.payDate);
+      var floor = HIS.wageFloor.check(emp, period().payDate);
       if (floor.status === 'below') {
         blocked.push({ employeeId: emp.id, name: emp.name, reason: floor.explanation });
         return;
       }
       var line = HIS.payrollCalc.compute(emp, {
-        frequency: PERIOD.frequency,
+        frequency: period().frequency,
         attendance: att
       });
       line.status = 'Pending';
@@ -136,17 +139,18 @@
   function create(opts) {
     opts = opts || {};
     var s = state();
-    var existing = s.runs.filter(function (r) { return r.periodId === PERIOD.id; })[0];
+    var P = period();
+    var existing = s.runs.filter(function (r) { return r.periodId === P.id; })[0];
     if (existing) {
-      return { ok: false, error: 'Payroll for ' + PERIOD.label + ' already exists as ' + existing.id + '. Recompute it instead of creating a second run.' };
+      return { ok: false, error: 'Payroll for ' + P.label + ' already exists as ' + existing.id + '. Recompute it instead of creating a second run.' };
     }
     var built = computeLines();
     var run = {
-      id: 'PR-' + PERIOD.start + '-' + (s.runs.length + 1),
-      periodId: PERIOD.id,
-      periodLabel: PERIOD.label,
-      payDate: PERIOD.payDate,
-      frequency: PERIOD.frequency,
+      id: 'PR-' + P.start + '-' + (s.runs.length + 1),
+      periodId: P.id,
+      periodLabel: P.label,
+      payDate: P.payDate,
+      frequency: P.frequency,
       version: 1,
       status: 'draft',
       lines: built.lines,
@@ -163,7 +167,7 @@
     if (window.HIS.audit) {
       HIS.audit.append({
         who: actor(), role: roleLabel(),
-        what: 'Payroll run created \u2014 ' + run.id + ' for ' + PERIOD.label + ', ' + run.totals.headcount + ' employees, net ' + peso(run.totals.net),
+        what: 'Payroll run created \u2014 ' + run.id + ' for ' + P.label + ', ' + run.totals.headcount + ' employees, net ' + peso(run.totals.net),
         entity: 'payroll:' + run.periodId, before: '\u2014', after: 'draft'
       });
     }
@@ -434,7 +438,7 @@
   function reset() { HIS.store.remove(KEY); return state(); }
 
   HIS.payrollRuns = {
-    KEY: KEY, PERIOD: PERIOD,
+    KEY: KEY, period: period, forPeriod: forPeriod, PERIOD: HIS.attendancePeriod.PERIOD,
     list: list, get: get, current: current,
     create: create, recompute: recompute, review: review, approve: approve, release: release,
     lineFor: lineFor, blockedFor: blockedFor, totalsOf: totalsOf, staleEmployees: staleEmployees,

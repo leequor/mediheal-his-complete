@@ -45,7 +45,7 @@
   function render() {
     var S = HIS.claims.stats();
     var r = rows();
-    var canCreate = ['cashier', 'finance', 'superadmin'].indexOf(HIS.rbac.key()) > -1;
+    var canCreate = ['finance', 'superadmin'].indexOf(HIS.rbac.key()) > -1;
 
     stage.innerHTML =
       "<h1 class='ad-title'>Claims</h1>" +

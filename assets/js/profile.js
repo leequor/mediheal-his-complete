@@ -79,6 +79,50 @@
   }
   stage.innerHTML = h;
 
+  // ---- correction requests from the patient portal --------------------------------------------
+  // The portal promises the request goes to Registration. This is where the person doing the
+  // correction sees it: on the patient's own record, with the text they wrote, and two ways to
+  // close it. Closing does not change the record — the Edit form does that, and writes its own
+  // audit entry — so the trail keeps the ask and the change as separate facts.
+  (function requestBanner() {
+    if (!window.HIS.requests) return;
+    const focus = new URLSearchParams(location.search).get('req');
+    const open = HIS.requests.forPatient(id).filter(r => r.status === 'open');
+    const shown = focus ? open.filter(r => r.id === focus) : open;
+    if (!shown.length) return;
+    const r = shown[0];
+    const when = new Date(r.at).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' });
+    const el = document.createElement('div');
+    el.className = 'pf-req';
+    el.innerHTML =
+      "<div class='pf-req-main'><b>" + esc(r.id) + ' \u00b7 ' + esc(r.field) + '</b>' +
+      "<span>" + esc(r.text) + ' \u00b7 sent ' + esc(when) + (shown.length > 1 ? ' \u00b7 ' + shown.length + ' open requests' : '') + '</span></div>' +
+      "<button class='pf-req-b ok' data-req='resolve'>Mark resolved</button>" +
+      "<button class='pf-req-b' data-req='dismiss'>Dismiss</button>";
+    stage.appendChild(el);
+    el.addEventListener('click', ev => {
+      const b = ev.target.closest('[data-req]');
+      if (!b) return;
+      const dismiss = b.dataset.req === 'dismiss';
+      HIS.kit.modal({
+        title: dismiss ? 'Dismiss ' + r.id + '?' : 'Mark ' + r.id + ' resolved?',
+        sub: dismiss ? 'Say why no change is needed — the patient sees this note in the portal.'
+          : 'Only after the record has been corrected. Editing the patient writes its own audit entry.',
+        body: "<p style='margin:12px 0 0;font-size:13px;color:#6f8890'>" + esc(r.text) + '</p>' +
+          "<label style='display:block;margin-top:14px;font:600 12px Inter,sans-serif;color:#6f8890'>" +
+          (dismiss ? 'Reason' : 'What was changed (optional)') + '</label>' +
+          "<input name='note' placeholder='" + (dismiss ? 'e.g. number on file confirmed with the patient' : 'e.g. mobile number updated on the record') + "'>",
+        saveLabel: dismiss ? 'Dismiss request' : 'Mark resolved',
+        onSave: vals => {
+          const out = HIS.requests.close(r.id, dismiss ? 'dismissed' : 'resolved', vals.note);
+          if (!out.ok) return false;
+          HIS.kit.toast(r.id + (dismiss ? ' dismissed.' : ' marked resolved.'));
+          el.remove();
+        }
+      });
+    });
+  })();
+
   // Prototype links read in session 6: back link 459:697 -> Registration 23:2285; View treatment plan 2047:24708 -> Treatment Plan 2047:17739; Pharmacy 2047:26511 -> 2047:25913; Discharge summary 2047:25312 -> 2047:25314 (both drawn on the Treatment Plan page).
   // Edit 2027:2439 -> 2027:2458, Transfer 2027:2441 -> 2027:2643, Discharge 2027:2443 -> 2027:2828 are built in profile-modal.js.
   // Print opens the Figma "Print profile" state (4011:3773) in profile-modal.js, which saves a PDF; it no longer calls window.print().

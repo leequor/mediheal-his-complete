@@ -19,6 +19,11 @@
   var st = { q: '', dept: ALL_D, status: ALL_S, menu: '', modal: '', emp: null, sel: {}, tsEmp: null, tsTab: 'timesheets', annualEmp: null, corrId: null, corrReason: '' };
   HIS.prState = st;
 
+  // A period can be selected from the pay-period menu. It is applied BEFORE the run is resolved,
+  // so the page renders that cut-off's payroll rather than the one it opened on.
+  var wantPeriod = new URLSearchParams(location.search).get('period');
+  if (wantPeriod) HIS.attendancePeriod.setPeriod(wantPeriod);
+
   // One run per period. Created on first load; afterwards the stored run is reused so a reload
   // never produces a second payroll for the same period.
   function ensureRun() {
@@ -64,6 +69,26 @@
   }
   function sum(a, f) { return a.reduce(function (t, x) { return t + (Number(f(x)) || 0); }, 0); }
 
+  // Pay-period menu. The control used to be a styled <div> with no handler at all: clicking it did
+  // nothing, which is exactly what it looked like it should do. It is now a real menu over the two
+  // cut-offs this hospital runs, and it says which of them already has a payroll run.
+  function periodMenu() {
+    if (st.menu !== 'period') return '';
+    var cur = HIS.attendancePeriod.active();
+    var LAB = { draft: 'Draft', reviewed: 'For approval', approved: 'Approved', released: 'Released' };
+    var items = HIS.attendancePeriod.periods().map(function (p) {
+      var r = HIS.payrollRuns.forPeriod(p.id);
+      var on = p.id === cur.id;
+      return "<button type='button' class='pr-pm-i" + (on ? ' on' : '') + "' data-period-opt='" + p.id + "' role='option' aria-selected='" + on + "'>" +
+        '<b>' + esc(p.label) + '</b>' +
+        '<span>' + (r ? esc(r.id) + ' \u00b7 ' + (LAB[r.status] || r.status) + ' \u00b7 v' + r.version : 'No payroll run yet') + '</span>' +
+        (on ? '<i>Showing</i>' : '') + '</button>';
+    }).join('');
+    return "<div class='pr-pm' role='listbox' aria-label='Pay period'>" +
+      "<div class='pr-pm-h'>Pay period</div>" + items +
+      "<div class='pr-pm-f'>Semi-monthly cut-offs. Attendance and payroll both follow the period chosen here.</div></div>";
+  }
+
   function top() {
     var E = HIS.employees.all(), T = run.totals;
     var paid = run.lines.filter(function (l) { return l.status === 'Paid'; });
@@ -71,10 +96,16 @@
     var h = "<h1 class='pr-a pr-t' style='left:68px;top:115px'>Payroll</h1>" + at('pr-d', 68, 166, 'Review salaries, deductions and payments for each pay period.');
     h += at('pr-card', 68, 207, '', 'width:1304px;height:100px');
     h += at('pr-lbl', 88, 227, 'PAY PERIOD');
-    h += at('pr-sel', 88, 247, ic('calendar', 16, 1.8).replace('<svg', "<svg style='position:absolute;left:12px;top:12px;color:#1b4e6b'") + "<span class='v'>" + esc(run.periodLabel) + '</span>' + ic('chevron', 16, 2).replace('<svg', "<svg style='position:absolute;right:12px;top:12px;color:#1b4e6b'"));
+    h += "<button type='button' class='pr-a pr-sel' data-period-menu aria-haspopup='listbox' aria-expanded='" + (st.menu === 'period') + "' title='Choose a pay period' style='left:88px;top:247px'>" +
+      ic('calendar', 16, 1.8).replace('<svg', "<svg style='position:absolute;left:12px;top:12px;color:#1b4e6b'") +
+      "<span class='v'>" + esc(run.periodLabel) + '</span>' +
+      ic('chevron', 16, 2).replace('<svg', "<svg style='position:absolute;right:12px;top:12px;color:#1b4e6b'") + '</button>' +
+      periodMenu();
     h += at('pr-div', 293, 233, '');
     h += at('pr-lbl', 314, 228.5, 'PAYMENT DATE') + at('pr-date', 314, 248.5, run.payDate) + at('pr-meth', 314, 272.5, 'Semi-monthly \u00b7 ' + P.method + ' \u00b7 ' + statusLabel + ' v' + run.version);
-    h += "<div class='pr-a' style='left:68px;top:207px;width:1304px;height:100px'>";
+    // pointer-events:none — this wrapper spans the whole pay-period card and was sitting on top of
+    // the period control, so the control could not be clicked. Only its buttons take the pointer.
+    h += "<div class='pr-a' style='left:68px;top:207px;width:1304px;height:100px;pointer-events:none'>";
     h += "<button class='pr-btn' data-modal='export' style='left:768px;width:146px'>" + ic('download', 18, 1.8) + '<span>Export payroll</span></button>';
     h += "<button class='pr-btn' data-modal='gen' style='left:926px;width:172px'>" + ic('file', 18, 1.8) + '<span>Generate payslips</span></button>';
     h += "<button class='pr-btn pri' data-modal='proc' style='left:1110px;width:174px'>" + ic('send', 18, 1.8) + '<span>Process payments</span></button></div>';
@@ -139,7 +170,9 @@
   }
 
   function menu() {
-    if (!st.menu) return '';
+    // The period menu is its own popover and does not need the full-page dismiss layer; drawing it
+    // here put a 300-z-index sheet over the period options, so they could not be clicked.
+    if (!st.menu || st.menu === 'period') return '';
     var isD = st.menu === 'dept', opts = isD ? [ALL_D].concat(P.depts) : [ALL_S].concat(['Pending', 'Processing', 'Paid', 'Blocked']), cur = isD ? st.dept : st.status;
     var h = "<div class='pr-ml' data-close='1'></div><div class='pr-menu' style='left:" + (isD ? 512 : 672) + 'px;height:' + (16 + 36 * opts.length) + "px'>";
     opts.forEach(function (o) { h += "<button class='pr-o" + (o === cur ? ' on' : '') + "' data-opt='" + esc(o) + "'>" + esc(o) + '</button>'; });
@@ -432,6 +465,15 @@
   stage.addEventListener('click', function (e) {
     var T = e.target;
     if (T.closest('[data-close]')) { st.menu = ''; st.modal = ''; st.tsEmp = null; render(); return; }
+    if (T.closest('[data-period-menu]')) { st.menu = st.menu === 'period' ? '' : 'period'; render(); return; }
+    var po = T.closest('[data-period-opt]');
+    if (po) {
+      var pid = po.dataset.periodOpt;
+      if (pid === HIS.attendancePeriod.active().id) { st.menu = ''; render(); return; }
+      HIS.attendancePeriod.setPeriod(pid);
+      location.href = 'payroll.html?period=' + encodeURIComponent(pid);
+      return;
+    }
     var o = T.closest('.pr-o');
     if (o) { if (st.menu === 'dept') st.dept = o.dataset.opt; else st.status = o.dataset.opt; st.menu = ''; render(); return; }
     if (T.closest('#prd')) { st.menu = st.menu === 'dept' ? '' : 'dept'; render(); return; }
@@ -530,6 +572,13 @@
       st.modal = ''; st.tsEmp = null; render();
     }
   });
+  // A menu that only closes by picking something is a trap: clicking anywhere else should dismiss it.
+  document.addEventListener('click', function (e) {
+    if (st.menu !== 'period') return;
+    if (e.target.closest('.pr-pm') || e.target.closest('[data-period-menu]')) return;
+    st.menu = ''; render();
+  });
+
   stage.addEventListener('input', function (e) {
     if (e.target.id === 'prq') { st.q = e.target.value; st.caret = e.target.selectionStart; render(true); }
     if (e.target.id === 'corrReason') st.corrReason = e.target.value;

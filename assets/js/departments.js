@@ -20,7 +20,7 @@
     stage.className = 'stage dp';
     const tot = D.reduce((a, d) => ({ doc: a.doc + d.doctors, nur: a.nur + d.nurses, beds: a.beds + d.beds, occ: a.occ + d.occ }), { doc: 0, nur: 0, beds: 0, occ: 0 });
     const stats = [['Total departments', D.length, 'Departments listed'], ['Total doctors', tot.doc, 'Across ' + D.length + ' departments'], ['Nursing staff', tot.nur, 'Across ' + D.length + ' departments'], ['Total beds', tot.beds, tot.occ + ' occupied']];
-    let h = "<h1 class='dp-title'>Departments</h1><div class='dp-sub'>Monday, August 31, 2026</div>" + search(q);
+    let h = "<h1 class='dp-title'>Departments</h1><div class='dp-sub'>Occupancy, staffing and revenue by department · Monday, August 31, 2026</div>" + search(q);
     stats.forEach((s, i) => { h += "<div class='dp-stat' style='left:" + [32, 380.5, 729, 1077.5][i] + "px'><span class='l'>" + s[0] + "</span><span class='n'>" + s[1] + "</span><span class='s'>" + s[2] + '</span></div>'; });
     D.forEach(d => {
       const minis = [[d.doctors, 'Doctors'], [d.nurses, 'Nurses'], [d.opd, 'OPD today'], [d.occ + '/' + d.beds, 'Beds']];

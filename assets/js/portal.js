@@ -78,9 +78,12 @@
     if (!iso) return '\u2014';
     var d = new Date(iso);
     if (isNaN(d)) return String(iso);
-    var o = { timeZone: 'Asia/Manila', month: 'short', day: 'numeric', year: 'numeric' };
-    if (withTime) { o.hour = '2-digit'; o.minute = '2-digit'; }
-    return d.toLocaleString('en-PH', o).replace(',', ' \u00b7');
+    // Built from two formatted parts rather than one string with a comma swapped for a middot:
+    // that swap also hit the comma inside "Feb 2, 2010", which read as "Feb 2 · 2010".
+    var date = d.toLocaleDateString('en-PH', { timeZone: 'Asia/Manila', month: 'short', day: 'numeric', year: 'numeric' });
+    if (!withTime) return date;
+    var time = d.toLocaleTimeString('en-PH', { timeZone: 'Asia/Manila', hour: '2-digit', minute: '2-digit' });
+    return date + ' \u00b7 ' + time;
   }
   function badge(text, kind) { return "<span class='pt-badge " + (kind || 'off') + "'>" + esc(text) + '</span>'; }
   function statusBadge(status) {
@@ -399,7 +402,7 @@
 
     h += block('Patient details', "<div class='pt-kv'>" +
       '<div><dt>Full name</dt><dd>' + esc(p.name) + '</dd></div>' +
-      '<div><dt>Date of birth</dt><dd>' + esc(p.dob) + ' (' + esc(p.age) + ' yrs)</dd></div>' +
+      '<div><dt>Date of birth</dt><dd>' + esc(manilaDate(p.dob)) + ' (' + esc(p.age) + ' yrs)</dd></div>' +
       '<div><dt>Sex</dt><dd>' + esc(p.sex || '\u2014') + '</dd></div>' +
       '<div><dt>Civil status</dt><dd>' + esc(p.civil || '\u2014') + '</dd></div>' +
       '<div><dt>Mobile</dt><dd>' + esc(p.mobile || '\u2014') + '</dd></div>' +
@@ -441,14 +444,43 @@
       }).join(''));
     }
 
-    h += block('Request a correction', "<div style='padding:4px 18px 16px'>" +
-      "<label class='pt-label'>What needs changing?<textarea class='pt-input' id='pt-req' rows='3' placeholder='e.g. my mobile number changed to +63 917 000 0000'></textarea></label>" +
+    h += block('Request a correction', "<div class='pt-form'>" +
+      "<label class='pt-label'>What needs changing?<select class='pt-select' id='pt-req-field'>" +
+      HIS.requests.FIELDS.map(function (f) { return '<option>' + esc(f) + '</option>'; }).join('') +
+      '</select></label>' +
+      "<label class='pt-label'>Details<textarea class='pt-input' id='pt-req' rows='3' placeholder='e.g. my mobile number changed to +63 917 000 0000'></textarea></label>" +
       "<p class='pt-error' id='pt-req-err' role='alert'></p>" +
-      "<button class='pt-btn' type='button' id='pt-req-send'>Send request</button>" +
-      "<p class='pt-muted pt-small' style='margin-top:10px'>Requests are recorded for staff review and appear in the audit log. " +
-      'This environment cannot send email, so nothing is delivered — please check with registration on your next visit.</p></div>');
+      "<div class='pt-row pt-row-start'><button class='pt-btn' type='button' id='pt-req-send'>Send request</button>" +
+      "<span class='pt-muted pt-small'>Goes to <b>Registration</b> as request <b>" + esc(nextReqId()) + '</b>, and stays open until a staff member closes it.</span></div>' +
+      '</div>');
+
+    // The patient can see the request after they send it. Before this, the screen said "recorded for
+    // staff review" and gave no way to tell whether anything happened.
+    var mine = HIS.requests.forPatient(p.id);
+    h += block('Your requests', mine.length ? "<table class='pt-tbl'><thead><tr><th>Request</th><th>Sent</th><th>Status</th><th>Handled by</th></tr></thead><tbody>" +
+      mine.map(function (r) {
+        return '<tr><td><b>' + esc(r.field) + '</b><div class="pt-cell-sub">' + esc(r.text) + '</div></td>' +
+          '<td>' + esc(manilaDate(r.at)) + '</td><td>' + reqBadge(r.status) + '</td>' +
+          '<td>' + (r.handledBy ? esc(r.handledBy) + '<div class="pt-cell-sub">' + esc(manilaDate(r.handledAt)) + '</div>' : '<span class="pt-muted">&mdash;</span>') + '</td></tr>' +
+          (r.note ? '<tr class="pt-note-row"><td colspan="4"><b>Note from staff:</b> ' + esc(r.note) + '</td></tr>' : '');
+      }).join('') + '</tbody></table>'
+      : empty('No requests yet', 'Anything you send appears here with its status until it is closed.'));
     return h;
   };
+
+  function reqBadge(status) {
+    return status === 'resolved' ? badge('Resolved', 'ok')
+      : status === 'dismissed' ? badge('No change needed', 'off')
+        : badge('With registration', 'warn');
+  }
+  function nextReqId() {
+    var rows = HIS.requests.all();
+    var n = rows.reduce(function (m, r) {
+      var v = parseInt(String(r.id).replace(/\D/g, ''), 10);
+      return isNaN(v) ? m : Math.max(m, v);
+    }, 0);
+    return 'PRQ-' + ('000' + (n + 1)).slice(-4);
+  }
 
   // ---- document generation --------------------------------------------------------------------
   function buildDoc(id, ctx) {
@@ -608,26 +640,20 @@
   }
 
   function sendRequest() {
-    var ta = $('#pt-req'), err = $('#pt-req-err');
+    var ta = $('#pt-req'), err = $('#pt-req-err'), field = $('#pt-req-field');
     var text = ta ? ta.value.trim() : '';
     if (err) err.textContent = '';
     if (text.length < 8) { if (err) err.textContent = 'Describe the change in a few words first.'; return; }
     var ctx = current();
-    var rows = S.get('mh_profile_requests', []);
-    if (!Array.isArray(rows)) rows = [];
-    rows.push({
-      id: 'PR-' + String(rows.length + 1).padStart(3, '0'),
-      accountId: sessionAccount().id, patientId: ctx.patient.id,
-      text: text, at: new Date().toISOString(), status: 'open'
+    var acct = sessionAccount();
+    var r = HIS.requests.create({
+      patientId: ctx.patient.id, accountId: acct.id, accountEmail: acct.email,
+      field: field ? field.value : 'Something else', text: text
     });
-    S.set('mh_profile_requests', rows);
-    A.append({
-      who: sessionAccount().name, role: 'Patient',
-      what: 'Profile correction requested \u2014 ' + text.slice(0, 80),
-      entity: 'patient:' + ctx.patient.id, before: null, after: 'open'
-    });
+    if (!r.ok) { if (err) err.textContent = r.error; return; }
     if (ta) ta.value = '';
-    HIS.kit.toast('Request recorded for staff review.');
+    HIS.kit.toast('Request ' + r.request.id + ' sent to Registration.');
+    paint();
   }
 
   // ---- sign-in / sign-up / recovery -----------------------------------------------------------
@@ -652,80 +678,157 @@
     location.hash = '#home';
   }
 
+  // ---- sign-up ---------------------------------------------------------------------------------
+  // A duplicate is not an error the patient can fix by retyping: the record exists, and the screen
+  // used to stop there with "Enter that patient ID" — which the patient does not have, because the
+  // checkbox that would accept one is the thing they did not tick. The block below offers the two
+  // things a registration desk would offer: link this record (after checking the mobile number on
+  // it), or continue as a new patient and let registration review the possible duplicate.
+  var DUP = { patient: null, ack: false };
+
+  function say(text, kind) {
+    var el = $('#pt-signup-error');
+    if (!el) return;
+    el.hidden = !text;
+    el.className = 'pt-msg' + (text ? ' on ' + (kind || 'bad') : '');
+    el.textContent = text || '';
+  }
+  function sayHtml(html) {
+    var el = $('#pt-signup-error');
+    if (!el) return;
+    el.hidden = false;
+    el.className = 'pt-msg on act';
+    el.innerHTML = html;
+  }
+  function digits(v) { return String(v == null ? '' : v).replace(/\D/g, ''); }
+  function maskMobile(v) {
+    var d = digits(v);
+    return d.length >= 4 ? '\u2022\u2022\u2022\u2022 ' + d.slice(-4) : '\u2014';
+  }
+
+  function offerLink(p) {
+    DUP.patient = p;
+    sayHtml("<b>A hospital record already matches this name and date of birth.</b>" +
+      "<span class='pt-msg-sub'>" + esc(p.id) + ' \u00b7 ' + esc(p.name) + ' \u00b7 born ' + esc(manilaDate(p.dob)) +
+      (p.mobile ? ' \u00b7 mobile ending ' + esc(maskMobile(p.mobile)) : '') + '</span>' +
+      "<span class='pt-msg-sub'>If this is you, link it: we check the mobile number on the record before opening it. " +
+      'If it is someone else, continue and Registration will review the possible duplicate.</span>' +
+      "<span class='pt-msg-act'><button type='button' class='pt-btn sm' data-dup='link'>This is me \u2014 link " + esc(p.id) + "</button>" +
+      "<button type='button' class='pt-btn sm ghost' data-dup='new'>This is not me \u2014 continue</button></span>");
+  }
+
+  function linkDuplicate() {
+    var p = DUP.patient;
+    if (!p) return;
+    var f = new FormData($('#pt-signup'));
+    var mobile = String(f.get('mobile') || '');
+    if (digits(p.mobile) && digits(p.mobile) !== digits(mobile)) {
+      say('The mobile number you entered does not match the number on ' + p.id +
+        '. Registration has to verify you in person before this record can be linked — bring a photo ID to the front desk.', 'bad');
+      return;
+    }
+    if (HIS.registry.accountFor(p.id)) {
+      say('That patient record already has a portal account. Use "Forgot password" on the sign-in screen, or ask registration.', 'bad');
+      return;
+    }
+    finishSignUp(p, true);
+  }
+
+  function finishSignUp(patient, linked) {
+    var f = new FormData($('#pt-signup'));
+    var email = String(f.get('email') || '').trim().toLowerCase();
+    var pw = String(f.get('password') || '');
+    var acct = HIS.accounts.create({
+      email: email, name: patient.name, role: 'patient', dept: 'Patient', title: 'Patient',
+      patientId: patient.id, password: pw
+    });
+    if (!acct.ok) { say(acct.error, 'bad'); return; }
+
+    A.append({
+      who: patient.name, role: 'Patient',
+      what: 'Portal account created \u2014 ' + email + (linked ? ' linked to ' + patient.id : ' with new record ' + patient.id),
+      entity: 'patient:' + patient.id, before: null, after: 'active'
+    });
+
+    var r = HIS.auth.attempt(email, pw, true);
+    if (!r.ok) { say(r.message, 'bad'); return; }
+    setSubject(patient.id);
+    $('#pt-signup').reset();
+    DUP = { patient: null, ack: false };
+    say('');
+    location.hash = '#home';
+  }
+
   function signUp(form) {
-    var err = $('#pt-signup-error');
-    err.textContent = '';
+    say('');
     var f = new FormData(form);
     var email = String(f.get('email') || '').trim().toLowerCase();
     var pw = String(f.get('password') || '');
     var first = String(f.get('first') || '').trim();
+    var middle = String(f.get('middle') || '').trim();
     var last = String(f.get('last') || '').trim();
+    var suffix = String(f.get('suffix') || '').trim();
     var dob = String(f.get('dob') || '');
     var mobile = String(f.get('mobile') || '').trim();
 
-    if (!first || !last) { err.textContent = 'Enter your first and last name.'; return; }
-    if (!EMAIL.test(email)) { err.textContent = 'Enter a valid email address.'; return; }
-    if (!dob) { err.textContent = 'Enter your date of birth.'; return; }
-    if (!strong(pw)) { err.textContent = 'Use at least 12 characters, including letters and numbers.'; return; }
+    if (!first || !last) { say('Enter your first and last name.'); return; }
+    if (!EMAIL.test(email)) { say('Enter a valid email address.'); return; }
+    if (!dob) { say('Enter your date of birth.'); return; }
+    if (!mobile) { say('Enter a mobile number — the front desk uses it to reach you.'); return; }
+    if (!strong(pw)) { say('Use at least 12 characters, including letters and numbers.'); return; }
     if (!$('#pt-privacy').checked || !$('#pt-terms').checked) {
-      err.textContent = 'Accept the Privacy Notice and Terms of Use to continue.'; return;
+      say('Accept the Privacy Notice and Terms of Use to continue.'); return;
     }
-    if (HIS.accounts.exists(email)) { err.textContent = 'An account with that email already exists. Sign in instead.'; return; }
+    if (HIS.accounts.exists(email)) { say('An account with that email already exists. Sign in instead.'); return; }
 
     var hasId = $('#pt-hasid').checked;
     var patientId = String(f.get('pid') || '').trim().toUpperCase();
     var patient = null;
 
     if (hasId) {
-      if (!patientId) { err.textContent = 'Enter your patient ID, or untick the box to register as a new patient.'; return; }
+      if (!patientId) { say('Enter your patient ID, or untick the box to register as a new patient.'); return; }
       patient = HIS.registry.byId(patientId);
-      if (!patient) { err.textContent = 'No hospital record matches ' + patientId + '. Check the ID on your hospital card.'; return; }
+      if (!patient) { say('No hospital record matches ' + patientId + '. Check the ID on your hospital card.'); return; }
       var sameLast = String(patient.last || '').toLowerCase() === last.toLowerCase();
       var sameDob = String(patient.dob || '') === dob;
       if (!sameLast || !sameDob) {
-        err.textContent = 'The name and date of birth you entered do not match ' + patientId +
-          '. Registration must verify you in person before this record can be linked.';
+        say('The name and date of birth you entered do not match ' + patientId +
+          '. Registration must verify you in person before this record can be linked.');
         return;
       }
       if (HIS.registry.accountFor(patient.id)) {
-        err.textContent = 'That patient record already has a portal account. Use "Forgot password" or ask registration.';
+        say('That patient record already has a portal account. Use "Forgot password" or ask registration.');
         return;
       }
-    } else {
-      var dup = HIS.registry.duplicates({ last: last, dob: dob, mobile: mobile });
-      if (dup.probable.length) {
-        err.textContent = 'A patient record already exists for that name and date of birth (' +
-          dup.probable[0].id + '). Enter that patient ID, or ask registration to check for a duplicate.';
-        return;
-      }
-      var made = HIS.registry.create({
-        first: first, middle: String(f.get('middle') || '').trim(), last: last,
-        name: [first, String(f.get('middle') || '').trim(), last, String(f.get('suffix') || '').trim()]
-          .filter(Boolean).join(' '),
-        dob: dob, mobile: mobile, email: email, type: 'Outpatient', status: 'Waiting',
-        createdBy: 'Patient self-registration'
-      });
-      if (!made.ok) { err.textContent = made.error; return; }
-      patient = made.patient;
+      finishSignUp(patient, true);
+      return;
     }
 
-    var acct = HIS.accounts.create({
-      email: email, name: patient.name, role: 'patient', dept: 'Patient', title: 'Patient',
-      patientId: patient.id, password: pw
-    });
-    if (!acct.ok) { err.textContent = acct.error; return; }
+    var dup = HIS.registry.duplicates({ last: last, dob: dob, mobile: mobile, name: [first, middle, last, suffix].filter(Boolean).join(' ') });
+    if (dup.probable.length && !DUP.ack) { offerLink(dup.probable[0]); return; }
 
-    A.append({
-      who: patient.name, role: 'Patient',
-      what: 'Portal account created \u2014 ' + email + (hasId ? ' linked to ' + patient.id : ' with new record ' + patient.id),
-      entity: 'patient:' + patient.id, before: null, after: 'active'
+    var made = HIS.registry.create({
+      first: first, middle: middle, last: last,
+      name: [first, middle, last, suffix].filter(Boolean).join(' '),
+      dob: dob, mobile: mobile, email: email, type: 'Outpatient', status: 'Waiting',
+      // A record created while a near-duplicate exists is flagged, not blocked: Registration sees
+      // "needs attention" in the registry and decides. Blocking would strand a real patient whose
+      // namesake is already on file.
+      attention: !!dup.probable.length,
+      createdBy: 'Patient self-registration'
     });
+    if (!made.ok) { say(made.error); return; }
+    patient = made.patient;
 
-    var r = HIS.auth.attempt(email, pw, true);
-    if (!r.ok) { err.textContent = r.message; return; }
-    setSubject(patient.id);
-    form.reset();
-    location.hash = '#home';
+    if (dup.probable.length) {
+      A.append({
+        who: patient.name, role: 'Patient',
+        what: 'Self-registered while a possible duplicate exists \u2014 ' + dup.probable[0].id + ' (' +
+          dup.probable[0].name + ', born ' + dup.probable[0].dob + '); registration to review',
+        entity: 'patient:' + patient.id, before: null, after: 'needs review'
+      });
+    }
+    finishSignUp(patient, false);
   }
 
   // ---- recovery -------------------------------------------------------------------------------
@@ -771,6 +874,19 @@
       try { sessionStorage.removeItem(k); } catch (e) { /* blocked */ }
     });
 
+    // 2026-11-22: the correction box used to write `mh_profile_requests`, which no screen read.
+    // Carry any request a visitor already sent into HIS.requests so it is not silently dropped.
+    try {
+      var legacy = HIS.store.get('mh_profile_requests', []);
+      if (Array.isArray(legacy) && legacy.length) {
+        legacy.forEach(function (r) {
+          if (!r || !r.patientId) return;
+          HIS.requests.create({ patientId: r.patientId, accountId: r.accountId, text: (r.text || '') + ' (migrated request)' });
+        });
+        HIS.store.remove('mh_profile_requests');
+      }
+    } catch (e) { /* nothing to migrate */ }
+
     var form = $('#pt-signin');
     if (form) form.onsubmit = function (e) { e.preventDefault(); signIn(form); };
 
@@ -778,8 +894,26 @@
     if (su) {
       su.onsubmit = function (e) { e.preventDefault(); signUp(su); };
       var hasid = $('#pt-hasid'), fields = $('#pt-idfields');
-      var sync = function () { fields.style.display = hasid.checked ? '' : 'none'; };
+      var sync = function () {
+        fields.hidden = !hasid.checked;
+        $('#pt-link-help').textContent = hasid.checked
+          ? 'We check the name and date of birth you entered against that record before linking it.'
+          : 'We check your name and date of birth against the hospital record. New patient? Leave the box unticked and a record is created for you.';
+      };
       hasid.onchange = sync; sync();
+      // A message about the PREVIOUS submission must not sit under a form the patient has since
+      // edited: it read as a live error about the new values.
+      su.addEventListener('input', function () {
+        if (!DUP.patient) say('');
+        DUP.ack = false;
+      });
+      su.addEventListener('click', function (e) {
+        var b = e.target.closest('[data-dup]');
+        if (!b) return;
+        e.preventDefault();
+        if (b.dataset.dup === 'link') linkDuplicate();
+        else { DUP.ack = true; signUp(su); }
+      });
       var pw = $('#pt-pw');
       if (pw) pw.oninput = function () {
         var hint = $('#pt-pw-hint');

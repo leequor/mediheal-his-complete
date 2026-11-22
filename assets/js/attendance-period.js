@@ -29,20 +29,37 @@
 //   Q regular holiday worked + 2 h overtime
 //   X special non-working day worked Y special non-working day, not worked
 (function () {
-  var PERIOD = {
-    id: '2026-08-16/31',
-    label: 'Aug 16\u201331, 2026',
-    start: '2026-08-16',
-    end: '2026-08-31',
-    payDate: '2026-08-31',
-    frequency: 'semi-monthly'
-  };
+  // Two cut-offs, because payroll has two. Until 2026-11-22 only Aug 16–31 existed, which is why
+  // the pay-period control on the Payroll screen could not do anything: there was one period to
+  // pick. The earlier cut-off is a normal, closed period: its timesheets are approved and its
+  // records differ from the current one, so switching periods changes the numbers.
+  var PERIODS = [
+    {
+      id: '2026-08-01/15',
+      label: 'Aug 1\u201315, 2026',
+      start: '2026-08-01',
+      end: '2026-08-15',
+      payDate: '2026-08-15',
+      frequency: 'semi-monthly'
+    },
+    {
+      id: '2026-08-16/31',
+      label: 'Aug 16\u201331, 2026',
+      start: '2026-08-16',
+      end: '2026-08-31',
+      payDate: '2026-08-31',
+      frequency: 'semi-monthly'
+    }
+  ];
+  // The period the demo opens on. Kept as `PERIOD` because payroll-runs and the harnesses read it.
+  var PERIOD = PERIODS[PERIODS.length - 1];
 
   var HOLIDAYS = {
     '2026-08-21': { type: 'special', name: 'Ninoy Aquino Day' },
     '2026-08-31': { type: 'regular', name: 'National Heroes Day' }
   };
 
+  // One character per calendar day of the period, in order.
   var PATTERNS = {
     'EMP-001': 'RPPPPXRRPPPPPRRJ',
     'EMP-002': 'RPPPPYRRPPPPPRRH',
@@ -53,6 +70,18 @@
     'EMP-007': 'RPPPPPRRPKPPPRRH',
     'EMP-008': 'RPAPPPRRPPPUPRRH'
   };
+  // Aug 1–15 (15 days). Deliberately different from the second cut-off: fewer holiday premiums,
+  // one more absence, and a rest-day shift that the first half did not have.
+  var PATTERNS_PREV = {
+    'EMP-001': 'RPPPPRRPPPPRRPH',
+    'EMP-002': 'RPPPPRRPPPPPRRP',
+    'EMP-003': 'RPPPLRRPPPPWRRP',
+    'EMP-004': 'RPPPPRRPAPPPRRP',
+    'EMP-005': 'RPPPPRRPPNPPRRP',
+    'EMP-006': 'RPPPPRRPPOPPRRP',
+    'EMP-007': 'RPPPPRRPKPPPRRP',
+    'EMP-008': 'RPAPPRRPPUPPRRP'
+  };
 
   var KEY = HIS.store.KEY.attendancePeriod;
   var MIN = 60 * 1000;
@@ -62,8 +91,9 @@
   function parseDay(s) { var p = s.split('-'); return new Date(+p[0], +p[1] - 1, +p[2]); }
   function addDays(d, n) { var x = new Date(d.getTime()); x.setDate(x.getDate() + n); return x; }
 
-  function periodDays() {
-    var out = [], d = parseDay(PERIOD.start), end = parseDay(PERIOD.end);
+  function periodDays(p) {
+    p = p || active();
+    var out = [], d = parseDay(p.start), end = parseDay(p.end);
     while (d <= end) { out.push(iso(d)); d = addDays(d, 1); }
     return out;
   }
@@ -196,25 +226,27 @@
   }
 
   function seed() {
-    var days = periodDays();
-    var records = [];
-    HIS.employees.all().forEach(function (emp) {
-      var pattern = PATTERNS[emp.id] || '';
-      days.forEach(function (date, i) {
-        var code = pattern.charAt(i) || 'R';
-        records.push(buildRecord(emp, date, code));
+    var records = [], timesheets = {};
+    PERIODS.forEach(function (p) {
+      var days = periodDays(p);
+      var bank = p.id === PERIOD.id ? PATTERNS : PATTERNS_PREV;
+      HIS.employees.all().forEach(function (emp) {
+        var pattern = bank[emp.id] || '';
+        days.forEach(function (date, i) {
+          records.push(buildRecord(emp, date, pattern.charAt(i) || 'R'));
+        });
+      });
+      var approvedAt = p.payDate + 'T18:20:00+08:00';
+      timesheets[p.id] = {};
+      HIS.employees.all().forEach(function (emp) {
+        timesheets[p.id][emp.id] = {
+          status: 'approved', approvedBy: 'Carmela Dizon', approvedAt: approvedAt,
+          submittedBy: 'Carmela Dizon', submittedAt: p.payDate + 'T17:05:00+08:00',
+          history: [{ at: approvedAt, by: 'Carmela Dizon', action: 'approved', note: 'Period timesheet reviewed against the daily register.' }]
+        };
       });
     });
-    var approvedAt = '2026-08-31T18:20:00+08:00';
-    var timesheets = {};
-    HIS.employees.all().forEach(function (emp) {
-      timesheets[emp.id] = {
-        status: 'approved', approvedBy: 'Carmela Dizon', approvedAt: approvedAt,
-        submittedBy: 'Carmela Dizon', submittedAt: '2026-08-31T17:05:00+08:00',
-        history: [{ at: approvedAt, by: 'Carmela Dizon', action: 'approved', note: 'Period timesheet reviewed against the daily register.' }]
-      };
-    });
-    var state = { period: PERIOD, records: records, timesheets: timesheets, version: 1 };
+    var state = { period: PERIOD, activePeriodId: PERIOD.id, periods: PERIODS, records: records, timesheets: timesheets, version: 2 };
     HIS.store.set(KEY, state);
     return state;
   }
@@ -222,19 +254,49 @@
   function state() {
     var s = HIS.store.get(KEY, null);
     if (!s || !Array.isArray(s.records)) s = seed();
+    // A store written before the second cut-off existed has `timesheets` keyed by employee and no
+    // active period. Re-key it under the period it belonged to instead of dropping it.
+    if (!s.activePeriodId || !s.periods) {
+      var oldId = (s.period && s.period.id) || PERIOD.id;
+      var wrapped = {};
+      wrapped[oldId] = s.timesheets || {};
+      s = { period: s.period || PERIOD, activePeriodId: oldId, periods: PERIODS, records: s.records, timesheets: wrapped, version: 2 };
+      HIS.store.set(KEY, s);
+    }
     return s;
+  }
+  function active() {
+    var s = state();
+    return s.periods.filter(function (p) { return p.id === s.activePeriodId; })[0] || PERIOD;
+  }
+  function periods() { return state().periods.slice(); }
+  // Switch the cut-off every attendance and payroll read resolves against. Returns the period.
+  function setPeriod(id) {
+    var s = state();
+    if (!s.periods.some(function (p) { return p.id === id; })) return active();
+    s.activePeriodId = id;
+    s.period = s.periods.filter(function (p) { return p.id === id; })[0];
+    HIS.store.set(KEY, s);
+    return s.period;
   }
   function save(s) { HIS.store.set(KEY, s); return s; }
 
   // ---- reads ---------------------------------------------------------------------------------
   function all() { return state().records; }
+  // Records of the ACTIVE cut-off only. Both periods are stored in one list keyed by date, so a
+  // read that forgot this filter would pay a half-month twice.
+  function inPeriod(r, p) { p = p || active(); return r.date >= p.start && r.date <= p.end; }
   function recordsFor(empId) {
-    return all().filter(function (r) { return r.empId === empId; })
+    return all().filter(function (r) { return r.empId === empId && inPeriod(r); })
       .sort(function (a, b) { return a.date < b.date ? -1 : 1; });
   }
-  function timesheet(empId) {
-    return state().timesheets[empId] || { status: 'submitted', history: [] };
+  function sheet(empId, p) {
+    var s = state();
+    p = p || active();
+    var bank = s.timesheets[p.id] || (s.timesheets[p.id] = {});
+    return bank[empId] || { status: 'submitted', history: [] };
   }
+  function timesheet(empId) { return sheet(empId); }
   function approved(empId) { return timesheet(empId).status === 'approved'; }
   function unapproved() {
     return HIS.employees.all().filter(function (e) { return !approved(e.id); });
@@ -296,24 +358,28 @@
   // ---- writes --------------------------------------------------------------------------------
   function log(empId, action, note) {
     var s = state();
-    var ts = s.timesheets[empId] || { status: 'submitted', history: [] };
+    var p = active();
+    var bank = s.timesheets[p.id] || (s.timesheets[p.id] = {});
+    var ts = bank[empId] || { status: 'submitted', history: [] };
     ts.history = ts.history || [];
     var a = HIS.auth && HIS.auth.account ? HIS.auth.account() : null;
     ts.history.push({ at: new Date().toISOString(), by: a ? a.name : 'system', action: action, note: note || '' });
-    s.timesheets[empId] = ts;
+    bank[empId] = ts;
     save(s);
     return ts;
   }
 
   function approve(empId, note) {
     var s = state();
-    var ts = s.timesheets[empId] || { status: 'submitted', history: [] };
+    var p = active();
+    var bank = s.timesheets[p.id] || (s.timesheets[p.id] = {});
+    var ts = bank[empId] || { status: 'submitted', history: [] };
     if (ts.status === 'approved') return { ok: false, error: 'That timesheet is already approved.' };
     var a = HIS.auth && HIS.auth.account ? HIS.auth.account() : null;
     ts.status = 'approved';
     ts.approvedBy = a ? a.name : 'system';
     ts.approvedAt = new Date().toISOString();
-    s.timesheets[empId] = ts;
+    bank[empId] = ts;
     save(s);
     log(empId, 'approved', note);
     if (window.HIS.audit) {
@@ -335,11 +401,13 @@
 
   function reopen(empId, reason) {
     var s = state();
-    var ts = s.timesheets[empId] || { status: 'submitted', history: [] };
+    var p = active();
+    var bank = s.timesheets[p.id] || (s.timesheets[p.id] = {});
+    var ts = bank[empId] || { status: 'submitted', history: [] };
     if (ts.status !== 'approved') return { ok: false, error: 'That timesheet is not approved.' };
     ts.status = 'submitted';
     ts.reopenedAt = new Date().toISOString();
-    s.timesheets[empId] = ts;
+    bank[empId] = ts;
     save(s);
     log(empId, 'reopened', reason || '');
     return { ok: true, timesheet: ts };
@@ -372,12 +440,14 @@
       before: before, after: { timeIn: rec.timeIn, timeOut: rec.timeOut, status: rec.status, otHours: rec.otHours, ndHours: rec.ndHours, dayType: rec.dayType },
       reason: reason || ''
     });
-    var ts = s.timesheets[empId] || { status: 'submitted', history: [] };
+    var p = active();
+    var bank = s.timesheets[p.id] || (s.timesheets[p.id] = {});
+    var ts = bank[empId] || { status: 'submitted', history: [] };
     var wasApproved = ts.status === 'approved';
     ts.status = 'submitted';
     ts.history = ts.history || [];
     ts.history.push({ at: new Date().toISOString(), by: a ? a.name : 'system', action: 'corrected', note: reason || '' });
-    s.timesheets[empId] = ts;
+    bank[empId] = ts;
     save(s);
     if (wasApproved && window.HIS.audit) {
       HIS.audit.append({
@@ -396,7 +466,7 @@
   }
 
   function totals() {
-    var recs = all();
+    var recs = all().filter(function (r) { return inPeriod(r); });
     return {
       records: recs.length,
       scheduledDays: recs.filter(function (r) { return r.dayType !== 'rest'; }).length,
@@ -413,7 +483,8 @@
   function reset() { HIS.store.remove(KEY); return state(); }
 
   HIS.attendancePeriod = {
-    PERIOD: PERIOD, HOLIDAYS: HOLIDAYS, KEY: KEY,
+    PERIOD: PERIOD, PERIODS: PERIODS, HOLIDAYS: HOLIDAYS, KEY: KEY,
+    active: active, periods: periods, setPeriod: setPeriod,
     all: all, days: days, recordsFor: recordsFor, classify: classify,
     timesheet: timesheet, approved: approved, unapproved: unapproved, summary: summary,
     approve: approve, approveAll: approveAll, reopen: reopen, correct: correct,
