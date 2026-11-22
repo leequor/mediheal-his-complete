@@ -39,6 +39,8 @@
     payrollCorrections: 'mh_payroll_corrections',
     claims: 'mh_claims',
     thirteenth: 'mh_thirteenth',
+    // Personnel roster (2026-11-22): added / edited / deactivated employees survive a refresh.
+    personnel: 'mh_personnel',
     // M12: the invoice table became writable (an invoice can now be opened for an episode), the
     // charge master, the encounter episodes, and the admission/bed records.
     invoices: 'mh_invoices',

@@ -1,8 +1,10 @@
 // Personnel Details: ONE template (Figma 623:1805) + state frames as JS states: Department filter open (4001:3264),
 // Add personnel modal (2030:4480), Edit personnel modal (2030:4777).
 // Prototype links read: Add personnel 623:1854 -> 2030:4480; Edit personnel 623:1970 -> 2030:4777; Department filter 623:1871 -> 4001:3264; employee rows have NO reaction in Figma.
-// Additions (not in Figma): clicking a row selects that employee (profiles other than EMP-002 are derived), live search, department filter really filters,
-// Add personnel saves in memory (EMP-009...), Edit saves in memory, Deactivate marks the employee Inactive (in memory).
+// Additions (not in Figma): clicking a row selects that employee (profiles other than EMP-002 are derived), live search, department filter really filters.
+// Add / Edit / Deactivate persist to `mh_personnel` (sessionStorage, reset on sign-out like every other demo record), so a refresh keeps the roster.
+// The directory rows live in a scrolling viewport: the eighth row ends exactly where the footer begins, and the ninth scrolls instead of
+// painting over the footer and past the card (the defect reported on 2026-11-22).
 (function () {
   var P = HIS.personnel, stage = document.getElementById('stage');
   var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
@@ -28,6 +30,19 @@
   var longDate = function (iso) { if (!iso) return '\u2014'; var p = iso.split('-'); return MONTHS[+p[1] - 1] + ' ' + (+p[2]) + ', ' + p[0]; };
   var age = function (iso) { var a = iso.split('-').map(Number), t = P.today.split('-').map(Number), y = t[0] - a[0]; if (t[1] < a[1] || (t[1] === a[1] && t[2] < a[2])) y--; return y; };
   var byId = function (id) { return P.emps.filter(function (e) { return e.id === id; })[0]; };
+
+  // The roster is data, not layout: whatever was added or edited is read back on the next visit.
+  // Only the demo seed lives in data-personnel.js.
+  var KEY = 'mh_personnel';
+  var saved = HIS.store ? HIS.store.get(KEY, null) : null;
+  if (Array.isArray(saved) && saved.length) P.emps = saved;
+  function persist() { if (HIS.store) HIS.store.set(KEY, P.emps); }
+  // Next free EMP-nnn from the highest number present, so a removed tail cannot reuse an id.
+  function nextId() {
+    var max = 0;
+    P.emps.forEach(function (e) { var n = parseInt(String(e.id).replace(/\D/g, ''), 10); if (n > max) max = n; });
+    return 'EMP-' + ('00' + (max + 1)).slice(-3);
+  }
 
   var wrap = document.createElement('div'); wrap.id = 'pec'; stage.appendChild(wrap);
 
@@ -60,14 +75,16 @@
     h += "<div class='pe-a pe-search'>" + ic('search', 18, 1.8) + "<input id='peq' placeholder='Search employee name or ID' aria-label='Search employee' value='" + esc(st.q) + "'></div>";
     h += "<button class='pe-a pe-flt" + (st.menu ? ' open' : '') + "' id='ped'><span class='v'>" + esc(st.dept) + '</span>' + ic('down', 16, 2) + '</button>';
     h += "<div class='pe-a pe-th'><span style='left:24px'>EMPLOYEE / DEPARTMENT</span><span style='left:391px'>ACTIVE</span></div>";
+    h += "<div class='pe-rows' id='perows'>";
     v.forEach(function (e, i) {
       var on = e.id === st.sel;
-      h += "<button class='pe-a pe-r" + (on ? ' on' : '') + "' data-emp='" + e.id + "' style='top:" + (547 + 76 * i) + "px'>";
+      h += "<button class='pe-r" + (on ? ' on' : '') + "' data-emp='" + e.id + "' style='top:" + (76 * i) + "px'>";
       h += "<span class='av'>" + initials(e.name) + "</span><span class='nm'>" + esc(e.name) + "</span><span class='rl'>" + esc(e.role) + ' \u00b7 ' + esc(e.dept) + "</span><span class='id'>" + e.id + '</span>';
       h += "<span class='dot" + (e.status === 'Active' ? '' : ' off') + "'></span>";
       h += '</button>';
     });
-    if (!v.length) h += at('pe-none', 68, 547, 'No employees match');
+    if (!v.length) h += "<div class='pe-none'>No employees match</div>";
+    h += '</div>';
     h += "<div class='pe-a pe-ft'>" + at('pe-s12', 24, 18, 'Showing ' + (v.length ? '1\u2013' + v.length : '0') + ' of ' + P.emps.length + ' employees', 'font-size:11px;line-height:13.31px');
     h += at('pe-l', 375, 18, 'Page 1 of 1', 'color:#15405a') + '</div>';
     return h;
@@ -116,8 +133,7 @@
   function modal() {
     if (!st.modal) return '';
     var add = st.modal === 'add', e = add ? null : byId(st.sel), d = add ? P.addDraft : { full: e.full, role: e.role, dept: e.dept, type: e.type, addr: e.addr, ec: e.ec.name + ' \u00b7 ' + e.ec.rel + ' \u00b7 ' + e.ec.phone };
-    var nextId = 'EMP-' + ('00' + (P.emps.length + 1)).slice(-3);
-    var sub = add ? 'New record \u00b7 Employee ID ' + nextId + ' \u00b7 Date joined Aug 31, 2026' : e.name + ' \u00b7 ' + e.id + ' \u00b7 Joined ' + longDate(e.joined);
+    var sub = add ? 'New record \u00b7 Employee ID ' + nextId() + ' \u00b7 Date joined Aug 31, 2026' : e.name + ' \u00b7 ' + e.id + ' \u00b7 Joined ' + longDate(e.joined);
     var sel = function (list, cur, f, l, t) { return "<select class='pe-m-i' data-f='" + f + "' style='left:" + l + 'px;top:' + t + "px;width:300px'>" + list.map(function (o) { return '<option' + (o === cur ? ' selected' : '') + '>' + esc(o) + '</option>'; }).join('') + '</select>'; };
     var h = "<div class='pe-scrim' data-close='1'></div><div class='pe-modal' role='dialog' aria-modal='true'>";
     h += "<button class='pe-m-x' data-close='1' aria-label='Close'>\u00d7</button><div class='pe-m-t'>" + (add ? 'Add personnel' : 'Edit personnel') + "</div><div class='pe-m-s'>" + esc(sub) + "</div><div class='pe-m-d'></div>";
@@ -137,9 +153,18 @@
   var tipT;
   function tip(t) { var o = document.querySelector('.pe-tip'); if (o) o.remove(); var d = document.createElement('div'); d.className = 'pe-tip'; d.textContent = t; document.body.appendChild(d); clearTimeout(tipT); tipT = setTimeout(function () { d.remove(); }, 2400); }
 
+  function revealSel() {
+    var box = document.getElementById('perows'); if (!box) return;
+    var row = box.querySelector('.pe-r.on'); if (!row) return;
+    var top = row.offsetTop, h = row.offsetHeight;
+    if (top < box.scrollTop) box.scrollTop = top;
+    else if (top + h > box.scrollTop + box.clientHeight) box.scrollTop = top + h - box.clientHeight;
+  }
   function render(keepFocus) {
     wrap.innerHTML = top() + directory() + profile() + "<div id='pemenu'>" + menu() + "</div><div id='pemodal'>" + modal() + '</div>';
     if (keepFocus) { var q = document.getElementById('peq'); q.focus(); var c = st.caret == null ? q.value.length : st.caret; q.setSelectionRange(c, c); }
+    // A new record appended below the fold would look exactly like a record that was not added.
+    if (st.reveal) { revealSel(); st.reveal = false; }
   }
   render();
 
@@ -155,18 +180,20 @@
     var r = T.closest('[data-emp]');
     if (r) { st.sel = r.dataset.emp; render(); return; }
     var m = T.closest('[data-modal]'); if (m) { st.modal = m.dataset.modal; render(); return; }
-    if (T.closest('[data-off]')) { var x = byId(st.sel); x.status = 'Inactive'; st.modal = ''; render(); tip(x.name + ' marked Inactive'); return; }
+    if (T.closest('[data-off]')) { var x = byId(st.sel); x.status = 'Inactive'; persist(); st.modal = ''; render(); tip(x.name + ' marked Inactive'); return; }
     if (T.closest('[data-ok]')) {
       var f = readForm(), bad = false;
       [].forEach.call(document.querySelectorAll('#pemodal [data-f]'), function (n) { var miss = (n.dataset.f === 'full' || n.dataset.f === 'role') && !n.value.trim(); n.classList.toggle('bad', miss); if (miss) bad = true; });
       if (bad) { tip('Full name and role are required'); return; }
       if (st.modal === 'add') {
-        var id = 'EMP-' + ('00' + (P.emps.length + 1)).slice(-3);
+        var id = nextId();
         P.emps.push({ id: id, name: f.full, role: f.role, dept: f.dept, status: 'Active', full: f.full, dob: '', sex: '\u2014', civil: '\u2014', email: '\u2014', mobile: '\u2014', addr: f.addr || '\u2014', office: '\u2014', type: f.type, joined: P.today, reports: P.chief, ec: parseEc(f.ec) });
-        st.sel = id; st.q = ''; st.dept = ALL; st.modal = ''; render(); tip(f.full + ' added as ' + id);
+        persist();
+        st.sel = id; st.q = ''; st.dept = ALL; st.modal = ''; st.reveal = true; render(); tip(f.full + ' added as ' + id);
       } else {
         var e = byId(st.sel);
         e.full = f.full; e.role = f.role; e.dept = f.dept; e.type = f.type; e.addr = f.addr || '\u2014'; e.ec = parseEc(f.ec, e.ec);
+        persist();
         st.modal = ''; render(); tip('Changes saved for ' + e.name);
       }
     }
