@@ -117,10 +117,12 @@
     // A correction request is a message addressed to staff, not session state: if signing out
     // erased it, the patient's request would vanish exactly when the front desk came to read it.
     // It survives the reset for the same reason the audit trail does.
-    var reqs = window.HIS.requests ? HIS.store.get(HIS.requests.KEY, null) : null;
+    // Read by key, not through HIS.requests: sign-out happens on pages that do not load the module.
+    var reqKey = (window.HIS.requests && HIS.requests.KEY) || 'mh_patient_requests';
+    var reqs = HIS.store.get(reqKey, null);
     clear();
     if (window.HIS.store) HIS.store.reset({ includeOwner: true });
-    if (window.HIS.requests && Array.isArray(reqs) && reqs.length) HIS.store.set(HIS.requests.KEY, reqs);
+    if (Array.isArray(reqs) && reqs.length) HIS.store.set(reqKey, reqs);
     if (window.HIS.audit) {
       if (trail) HIS.store.set(HIS.audit.KEY, trail);
       if (a) {
