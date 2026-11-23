@@ -80,7 +80,17 @@
         var stem = String(next).split('?')[0].replace(/\.html$/, '');
         if (HIS.rbac.allows(stem)) dest = next;
       }
-      setTimeout(function () { location.href = dest; }, 420);
+      // Pull this visitor's records before the workspace opens. The demonstration must never wait
+      // on the network: if the database is unconfigured, slow or blocked, the redirect happens anyway.
+      var go = function () { location.href = dest; };
+      if (window.HIS && HIS.db && HIS.db.configured) {
+        var went = false;
+        var leave = function () { if (!went) { went = true; go(); } };
+        HIS.db.bootstrap().then(leave, leave);
+        setTimeout(leave, 2500);
+      } else {
+        setTimeout(go, 420);
+      }
     }, 260);
   });
 

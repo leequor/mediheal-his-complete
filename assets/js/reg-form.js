@@ -167,9 +167,29 @@
         emergency: { first: val('efirst'), last: val('elast'), relationship: val('erel'), phone: val('ephone') },
         insurance: { philhealth: val('phid'), memberType: val('mtype'), hmo: val('hmo'), policy: val('policy') } }
     };
-    extra.push(rec);
-    HIS.store.set('mh_regs_extra', extra);
-    location.href = 'registration.html'; // Figma 420:1427 -> 23:2285
+    // A second chart for the same person is the classic registration defect: two MRNs, two bills and a
+    // history split in half. The patient portal already asks before creating one (portal.js); this form
+    // saved straight to storage. Registration is asked, never blocked — a namesake born on the same day
+    // is rare but real, and stranding a patient is worse than a flagged duplicate.
+    const save = (attention) => {
+      rec.attention = attention;
+      extra.push(rec);
+      HIS.store.set('mh_regs_extra', extra);
+      location.href = 'registration.html'; // Figma 420:1427 -> 23:2285
+    };
+    const dup = HIS.registry.duplicatesAcross({ last: val('last'), dob: val('dob'), name: rec.name, mobile: val('phone') });
+    if (dup.probable.length) { askDuplicate(dup.probable[0], () => save(true)); return; }
+    save(rec.attention || dup.possible.length > 0);
+  };
+
+  const askDuplicate = (existing, proceed) => {
+    HIS.kit.modal({
+      title: 'That patient is already registered',
+      sub: HIS.kit.esc(existing.name) + ' \u00b7 ' + HIS.kit.esc(existing.id) + ' has the same last name and date of birth.',
+      body: '<p class="dup-note">Registering again creates a second chart, a second MRN and a second bill for the same person. Open the existing record instead, unless this is a different patient who happens to share the name and birth date.</p>',
+      saveLabel: 'Register anyway',
+      onSave: () => { proceed(); return true; }
+    });
   };
 
   $('back').innerHTML = ico('back', 15, '#4d6a80', 1.8) + 'Back to Registry';

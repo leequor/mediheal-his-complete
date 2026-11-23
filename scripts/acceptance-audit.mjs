@@ -401,20 +401,26 @@ await page.waitForTimeout(400);
       });
     });
 
-    // Role gating: a cashier cannot record a payer decision; an auditor cannot transition at all.
+    // Role gating: Billing & Finance records the payer decision (it absorbed the cashier role); a
+    // nurse may not, and an auditor may not transition at all. The old assertion expected finance to
+    // be refused, which contradicted claims-check.mjs and the transition table in claims.js.
     const underId = makeAt('under-review');
     HIS.auth.clear(); HIS.auth.attempt('finance@mediheal.test', 'MediHeal2026!', true);
-    const cashierApprove = HIS.claims.transition(underId, 'approve', { approvedAmount: 1000 });
-    const cashierSubmitOk = HIS.claims.available(HIS.claims.get(underId)).map(t => t.action);
+    const financeApprove = HIS.claims.transition(underId, 'approve', { approvedAmount: 1000 });
+    const financeOffered = HIS.claims.available(HIS.claims.get(underId)).map(t => t.action);
+    const underId2 = makeAt('under-review');
+    HIS.auth.clear(); HIS.auth.attempt('nurse@mediheal.test', 'MediHeal2026!', true);
+    const nurseApprove = HIS.claims.transition(underId2, 'approve', { approvedAmount: 1000 });
     HIS.auth.clear(); HIS.auth.attempt('auditor@mediheal.test', 'MediHeal2026!', true);
-    const auditorDeny = HIS.claims.transition(underId, 'deny', { reason: 'x' });
-    const auditorOffered = HIS.claims.available(HIS.claims.get(underId)).length;
+    const auditorDeny = HIS.claims.transition(underId2, 'deny', { reason: 'x' });
+    const auditorOffered = HIS.claims.available(HIS.claims.get(underId2)).length;
     HIS.auth.clear(); HIS.auth.attempt('finance@mediheal.test', 'MediHeal2026!', true);
 
     return {
       grid, statuses: statuses.length, actions: actions.length,
-      cashierApprove: cashierApprove.ok, cashierErr: cashierApprove.error,
-      cashierOffered: cashierSubmitOk, auditorDeny: auditorDeny.ok, auditorOffered
+      financeApprove: financeApprove.ok, financeErr: financeApprove.error, financeOffered,
+      nurseApprove: nurseApprove.ok, nurseErr: nurseApprove.error,
+      auditorDeny: auditorDeny.ok, auditorOffered
     };
   });
 
@@ -426,7 +432,8 @@ await page.waitForTimeout(400);
   ok('every transition that does apply is offered to the role',
     matrix.grid.filter(g => g.legal).every(g => g.offered !== false),
     JSON.stringify(matrix.grid.filter(g => g.legal && g.offered === false)));
-  ok('a cashier cannot record a payer decision', matrix.cashierApprove === false, matrix.cashierErr);
+  ok('billing & finance can record a payer decision', matrix.financeApprove === true, matrix.financeErr);
+  ok('a nurse cannot record a payer decision', matrix.nurseApprove === false, matrix.nurseErr);
   ok('an auditor is offered no transition at all', matrix.auditorOffered === 0, matrix.auditorOffered);
   ok('an auditor cannot record a denial', matrix.auditorDeny === false);
 }
