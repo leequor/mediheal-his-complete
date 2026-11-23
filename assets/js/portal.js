@@ -666,9 +666,6 @@
       return;
     }
     if (!r.account.patientId) { location.hash = '#home'; return; }
-    // Same one-time pull as the staff sign-in, so a portal opened in a fresh tab shows the records
-    // this identity already has on the server. It never blocks the screen: paint happens regardless.
-    if (window.HIS && HIS.db && HIS.db.configured) HIS.db.bootstrap().then(paint, function () {});
     setSubject(r.account.patientId);
     location.hash = '#home';
   }
