@@ -93,3 +93,15 @@ body.menu-open .drawer{transform:none}
 .dl-hit{animation:dl-flash 2.4s ease-out 1;outline:2px solid #1c6d9c;outline-offset:-2px;border-radius:8px}
 @keyframes dl-flash{0%{background:#dff0f8}55%{background:#dff0f8}100%{background:transparent}}
 .dl-tip{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);z-index:5000;background:#15405a;color:#fff;font:600 13px/16px var(--font-inter);padding:10px 16px;border-radius:10px}
+
+/* Print. Only four pages had print rules (billing, payroll, personnel, treatment), so every other
+   page printed the app chrome: a fixed dark drawer over the left edge, the menu scrim and the
+   notification bell. Screen geometry is untouched here; this only removes navigation from paper and
+   lets the stage fill the sheet. Page-specific print rules still win where they exist. */
+@media print{
+  .header,.scrim,.drawer,.bell,.dl-tip,.kit-toast,.toast{display:none!important}
+  [class$='-scrim'],[class$='-modal'],.modal-bg,.ac-bg,.cl-bg,.dm-bg{display:none!important}
+  body{min-width:0;background:#fff!important}
+  body::before{display:none!important}
+  .stage{margin:0}
+}

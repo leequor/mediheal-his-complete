@@ -126,10 +126,32 @@
     var selfReg = window.HIS.registry
       ? HIS.registry.all().filter(function (p) { return p.createdBy === 'Patient self-registration'; })
       : null;
+    // The portal account that goes with those rows is just as real. Without this it was destroyed
+    // with the sample data, so a patient who signed up, signed out and came back was told "No
+    // account uses that email address" and had no way back in (only the front desk could help).
+    // Narrow on purpose: patient role, created in this tab, never a seeded or staff account.
+    var selfAccts = null;
+    try {
+      var Acct = window.HIS.accounts;
+      if (Acct && Acct.all) {
+        selfAccts = Acct.all().filter(function (x) {
+          return x && x.seeded === false && x.role === 'patient';
+        });
+      }
+    } catch (e) { /* accounts module unavailable on this page */ }
     clear();
     if (window.HIS.store) HIS.store.reset({ includeOwner: true });
     if (selfReg && selfReg.length) {
       try { HIS.registry.save(HIS.registry.all().concat(selfReg)); } catch (e) { /* registry unavailable */ }
+    }
+    if (selfAccts && selfAccts.length) {
+      try {
+        var Acct2 = window.HIS.accounts;
+        var have = Acct2.all().map(function (x) { return Acct2.norm(x.email); });
+        Acct2.save(Acct2.all().concat(selfAccts.filter(function (x) {
+          return have.indexOf(Acct2.norm(x.email)) < 0;
+        })));
+      } catch (e) { /* accounts unavailable */ }
     }
     if (Array.isArray(reqs) && reqs.length) HIS.store.set(reqKey, reqs);
     if (window.HIS.audit) {

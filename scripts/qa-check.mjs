@@ -205,7 +205,13 @@ console.log('\n--- 3. every account has its own initials avatar ---');
   ok('four different accounts show four different initials', new Set(inis).size === 4, inis.join(','));
   const tints = seen.map(s => s.tint);
   ok('the tint is not identical for every account', new Set(tints).size > 1, tints.join(','));
-  ok('initials derive from the name', seen[0].ini === 'EC' && seen[1].ini === 'JA', inis.join(','));
+  // Assert the derivation, not two hardcoded pairs: the seeded names have been renamed before and
+  // the old expectation only proved that the seed file had not changed.
+  const initialsOf = (name) => String(name || '').replace(/^(Dr|Mr|Ms|Mrs|Prof)\.?\s+/i, '').split(/\s+/)
+    .filter(Boolean).map(w => w[0].toUpperCase()).slice(0, 2).join('');
+  const derived = seen.map(s => s.ini === initialsOf(s.name));
+  ok('initials derive from the name', derived.every(Boolean),
+    seen.map(s => s.name + '→' + s.ini).join(' | '));
 }
 {
   // The same account must keep the same avatar on every page.
@@ -230,7 +236,7 @@ console.log('\n--- 4. notifications follow the account, not a fixed list ---');
 {
   const byRole = {};
   for (const [email, role] of [['laboratory@mediheal.test', 'lab'], ['pharmacy@mediheal.test', 'pharmacist'],
-    ['finance@mediheal.test', 'cashier'], ['hr@mediheal.test', 'hr'], ['reception@mediheal.test', 'registration'],
+    ['finance@mediheal.test', 'finance'], ['hr@mediheal.test', 'hr'], ['reception@mediheal.test', 'registration'],
     ['auditor@mediheal.test', 'auditor']]) {
     const { ctx, page } = await fresh(email);
     await page.goto(BASE + '/appointments.html', { waitUntil: 'load' });
@@ -256,14 +262,17 @@ console.log('\n--- 4. notifications follow the account, not a fixed list ---');
   ok('the medical technologist is not shown payroll or leave', !byRole.lab.titles.some(t => /payroll|leave|absence/i.test(t)), byRole.lab.titles.join(','));
   ok('the pharmacist sees pharmacy work', /Pharmacy/.test(byRole.pharmacist.sub) &&
     byRole.pharmacist.titles.some(t => /prescription|stock|batch/i.test(t)), byRole.pharmacist.sub);
-  ok('the cashier sees billing work', /Billing/.test(byRole.cashier.sub) &&
-    byRole.cashier.titles.some(t => /invoice|charge/i.test(t)), byRole.cashier.sub);
-  ok('the cashier is not shown leave requests', !byRole.cashier.titles.some(t => /leave/i.test(t)), byRole.cashier.titles.join(','));
+  // The role was renamed cashier -> finance and its notifications were rewritten as money issues
+  // ("Unbilled revenue", "Outstanding balance", "Claims denied"), so the assertion follows the
+  // labels the app actually uses instead of the wording it used to use.
+  ok('the finance desk sees billing work', /Billing/.test(byRole.finance.sub) &&
+    byRole.finance.titles.some(t => /unbilled|balance|claim|invoice|charge/i.test(t)), byRole.finance.sub + ' :: ' + byRole.finance.titles.join(','));
+  ok('the finance desk is not shown leave requests', !byRole.finance.titles.some(t => /leave/i.test(t)), byRole.finance.titles.join(','));
   ok('HR sees attendance work', /Human resources/.test(byRole.hr.sub) &&
     byRole.hr.titles.some(t => /leave|absence|late/i.test(t)), byRole.hr.sub);
   ok('HR is not shown laboratory specimens', !byRole.hr.titles.some(t => /specimen|validation/i.test(t)), byRole.hr.titles.join(','));
-  ok('the admissions officer sees scheduling and beds', /Admissions/.test(byRole.registration.sub) &&
-    byRole.registration.titles.some(t => /appointment|bed/i.test(t)), byRole.registration.sub);
+  ok('the front desk sees scheduling and beds', /Front desk|Admissions/.test(byRole.registration.sub) &&
+    byRole.registration.titles.some(t => /appointment|bed|inpatient/i.test(t)), byRole.registration.sub + ' :: ' + byRole.registration.titles.join(','));
   ok('the auditor sees compliance activity', /Compliance/.test(byRole.auditor.sub), byRole.auditor.sub);
   ok('no two roles share the same first notification', new Set(Object.values(byRole).map(r => r.titles[0])).size >= 5,
     Object.values(byRole).map(r => r.titles[0]).join(' | '));
