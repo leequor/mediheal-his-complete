@@ -44,20 +44,17 @@ the two harnesses that had gone stale, and a Supabase data layer.
 `claims-modal-stack-check`, `personnel-add-check`, `m10-1..4-audit`, `qa-final-check` — all green
 after the changes. `deployed-check` green against `mediheal-his-complete`.
 
-**Not verified:** the Supabase path (no project credentials yet). Nothing visual was checked against
-Figma for the two CSS fixes beyond the 1440 regression measurement.
+## Supabase — built, then removed (owner decision, same session)
 
-## Supabase (new)
+A migration, a client adapter on `HIS.store`, a config file, a check script and `docs/SUPABASE.md`
+were written and committed in `77223c6`, then removed again. The owner's intent is a **session-scoped**
+store: records live in the tab, die with the tab, and a new visitor always starts from the seed. That
+is what `store.js` already documents as "temporary by design" and what the README lists under
+Demonstration behaviour — the layer was solving a problem the project does not have.
 
-`supabase/migrations/0001_init.sql`, `assets/js/db.js`, `assets/js/supabase-config.js` (empty by
-default), `scripts/supabase-check.mjs`, `docs/SUPABASE.md`.
-
-The adapter sits on `HIS.store`, the single boundary the modules already share: row arrays mirror to
-typed tables (`patients`, `invoices`, `ledger_transactions`, `claims`, …) with the whole record in
-`data jsonb`, documents mirror to `module_state`, history inserts into append-only `audit_log`.
-Identity is Supabase anonymous sign-in; RLS (`owner_id = auth.uid()`) is forced on every table, and
-`audit_log` refuses UPDATE and DELETE by trigger. Credentials (`mh_accounts`, session) are in
-`LOCAL_ONLY` and never leave the browser. With the config empty the site behaves exactly as before.
+Nothing to do here. If persistence is ever wanted, `77223c6` contains the schema (RLS forced per
+`owner_id`, append-only `audit_log`, unique idempotency index) and the adapter is a single file that
+attaches to `HIS.store`, so it can be restored without touching a module.
 
 ## Deployment note
 
@@ -67,7 +64,7 @@ retire the old repository or add a redirect; a link to the old one shows a broke
 
 ## Next steps
 
-1. Create the Supabase project, run the migration, paste URL + anon key into
-   `assets/js/supabase-config.js`, enable anonymous sign-in, run `scripts/supabase-check.mjs`.
+1. Push this revision after review (the duplicate-chart guard is the user-visible change).
 2. Decide the fate of the stale `mediheal-his` deployment.
-3. Optional: normalise `module_state` (payroll, attendance) into tables once reporting needs it.
+3. Remaining audit gaps, all at 1440: print/PDF output, export buttons, a second browser,
+   long-content stress. Below 1440 is out of scope by owner decision.
