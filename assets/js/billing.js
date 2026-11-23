@@ -86,8 +86,9 @@
     var charges = (window.HIS.charges ? HIS.charges.forInvoice(b.id) : []).filter(function (c) { return c.status !== 'void'; });
     var chargeTotal = charges.reduce(function (t, c) { return t + c.amount; }, 0);
     // M7: paid and balance come from the transaction ledger (HIS.ledger), never from a stored
-    // field on the invoice. `b.paid` is still written by the payment modal for backwards
-    // compatibility but is no longer read for display.
+    // field on the invoice. (An earlier note claimed the payment modal still wrote `b.paid` for
+    // backwards compatibility; nothing writes it any more, so the only reader left is the seeded
+    // opening balance in ledger.js. Do not add a writer back.)
     var paid = HIS.ledger.paidOf(b), bal = HIS.ledger.balanceOf(b), status = HIS.ledger.statusOf(b);
     var covered = HIS.ledger.coveredOf(b);
     if (items) { sub = b.subtotal; vat = b.vat; } else { sub = Math.round(total / 1.12); vat = total - sub; }
