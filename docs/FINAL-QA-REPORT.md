@@ -64,6 +64,15 @@ no overlap, no console error.
 
 **1,138 assertions across 17 rule-asserting harnesses, plus 144 role checks — 1,282 in all. 0 failures, 0 skips.**
 
+### Sequence and edge sweeps (later pass)
+
+| Suite | What it proves | Result |
+|---|---|---|
+| `sequences-check.mjs` | payment → duplicate submit → overpayment → refund → void refund; assign → void charge; timesheet change → payroll re-run; claim draft → docs → verify → submit → deny → appeal → approve → settle; discharge → reopen → transfer; lab order → collect → process → result → validate → cancel refused; prescription → verify → partial dispense → over-dispense refused → return. The ledger, charge, bed and stock invariants are re-derived after **every** step. | **101 / 101** |
+| `edge-check.mjs` | payroll arithmetic at the extremes (zero hours, one hour, half shift, full period, max overtime, every-day lateness, 31-day month), determinism, statutory monotonicity, centavo round-trip, twenty one-cent payments totalling exactly n × 0.01, and a write while `sessionStorage` is nearly full. | **67 / 67** |
+
+Both run the same way as the other suites: `PW=<playwright-core> node scripts/sequences-check.mjs`.
+
 `qa-check.mjs` is new and covers only what this pass changed: the two sign-in routes, patient
 sign-out, appointment counts and pagination, per-account avatars, per-role notifications, dashboard
 metrics against their module, the bed dialog's controlled fields and dependent list, the payslip
