@@ -17,7 +17,10 @@ button{font-family:inherit;cursor:pointer}
 .hd .logo{left:61px;top:9px;width:111px;height:77px;object-fit:contain}
 .hd .brand{left:156px;top:34px;font:600 19px/23.75px var(--font-lexend);color:#194182}
 .hd-date{left:983px;top:33px;display:flex;gap:8px;align-items:center;color:#eef2f7;font:600 14px/17px var(--font-inter)}
-.bell{left:1142px;top:21px;width:40px;height:40px;border-radius:20px;background:#15405a;border:0;color:#fff;display:grid;place-items:center}
+/* the count badge is absolutely positioned inside the button, so the button itself has to be the
+   containing block: without `position:relative` the badge anchored to the header, which put it on
+   the screen edge and clipped its top edge at every width below 1440. */
+.bell{position:relative;left:1142px;top:21px;width:40px;height:40px;border-radius:20px;background:#15405a;border:0;color:#fff;display:grid;place-items:center}
 .bell b{position:absolute;top:-2px;right:-2px;width:16px;height:16px;border-radius:50%;background:#e0322c;font:600 10px/16px var(--font-inter);text-align:center}
 .hd .sep{left:1206px;top:25px;width:1px;height:32px;background:#2a6487}
 .profile{left:1230px;top:20px;height:42px;display:flex;align-items:center;gap:10px;color:#fff}

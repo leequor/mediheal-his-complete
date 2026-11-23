@@ -176,6 +176,38 @@
     return { probable: probable, possible: possible };
   }
 
+  // The staff registration forms file their new charts in the legacy `mh_regs_extra` list, while the
+  // registry owns the seeded patients, so a duplicate has to be looked for in both stores. They also
+  // disagree about the date: the registry keeps an ISO day, the forms keep whatever was typed
+  // (dd/mm/yyyy). Compare on a normalised day, and on digits only for the mobile number.
+  function isoDay(value) {
+    var s = String(value || '').trim();
+    var m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(s);
+    if (m) return m[3] + '-' + String(+m[2]).padStart(2, '0') + '-' + String(+m[1]).padStart(2, '0');
+    return s.slice(0, 10);
+  }
+  function duplicatesAcross(input) {
+    input = input || {};
+    var last = String(input.last || '').trim().toLowerCase();
+    var day = isoDay(input.dob);
+    var mobile = String(input.mobile || '').replace(/\D/g, '');
+    var full = String(input.name || '').trim().toLowerCase();
+    var probable = [], possible = [];
+    var extra = window.HIS && HIS.store && HIS.store.get ? HIS.store.get('mh_regs_extra', []) : [];
+    all().concat(Array.isArray(extra) ? extra : []).forEach(function (p) {
+      if (!p || !p.id) return;
+      var d = p.details || {};
+      var pName = String(p.name || '').trim().toLowerCase();
+      var pLast = String(p.last || pName.split(/\s+/).slice(-1)[0] || '').trim().toLowerCase();
+      var pDay = isoDay(p.dob || d.dob);
+      var pMobile = String(p.mobile || d.phone || '').replace(/\D/g, '');
+      if (last && day && pLast === last && pDay === day) probable.push(p);
+      else if (full && pName === full) possible.push(p);
+      else if (mobile && pMobile && pMobile === mobile) possible.push(p);
+    });
+    return { probable: probable, possible: possible };
+  }
+
   function create(input) {
     input = input || {};
     var name = String(input.name || [input.first, input.middle, input.last].filter(Boolean).join(' ') || '').trim();
@@ -401,7 +433,7 @@
   HIS.registry = {
     KEY: PKEY, GUARDIAN_KEY: GKEY,
     all: all, save: save, byId: byId, search: search, create: create, update: update,
-    nextMrn: nextMrn, duplicates: duplicates, ageFrom: ageFrom,
+    nextMrn: nextMrn, duplicates: duplicates, duplicatesAcross: duplicatesAcross, isoDay: isoDay, ageFrom: ageFrom,
     accountFor: accountFor, linkAccount: linkAccount,
     guardians: guardians, dependentsOf: dependentsOf, guardianRowsFor: guardianRowsFor,
     addGuardian: addGuardian, revokeGuardian: revokeGuardian,

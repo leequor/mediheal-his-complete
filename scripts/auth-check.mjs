@@ -135,7 +135,11 @@ const api = await page.evaluate(PW => {
   const before = HIS.accounts.all().length;
   out.dupLower = HIS.accounts.create({ email: 'NURSE@mediheal.test', name: 'Dup', role: 'nurse' }).ok;
   out.badRole = HIS.accounts.create({ email: 'x1@mediheal.test', name: 'X', role: 'wizard' }).ok;
-  const made = HIS.accounts.create({ email: 'flow.test@mediheal.test', name: 'Flow Test', role: 'cashier', password: 'FirstPass123' });
+  // Billing & Finance is the role that held the cashier's work after the cashier account was merged
+  // into it (README, "Eleven accounts, not fourteen"). The harness still asked for a `cashier` role,
+  // so `create` refused it and every assertion after this line crashed on `made.account.id`.
+  const made = HIS.accounts.create({ email: 'flow.test@mediheal.test', name: 'Flow Test', role: 'finance', password: 'FirstPass123' });
+  if (!made.ok) { console.log('FAIL creating an account for the auth flow: ' + made.error); process.exit(1); }
   out.created = made.ok;
   out.countDelta = HIS.accounts.all().length - before;
   out.loginNew = HIS.auth.attempt('flow.test@mediheal.test', 'FirstPass123', false).ok;
@@ -153,9 +157,12 @@ const api = await page.evaluate(PW => {
   out.deactivate = HIS.accounts.update(made.account.id, { status: 'disabled' }).ok;
   out.loginWhenDisabled = HIS.auth.attempt('flow.test@mediheal.test', 'SecondPass456', false).ok;
   HIS.auth.clear();
-  // clean up the flow account so the seed stays 14
+  // clean up the flow account so the seeded roster is restored. The count is read from the seed
+  // rather than hardcoded: the roster moved from 14 accounts to 11 when Cashier, Receptionist and
+  // Hospital Administrator were merged, and a hardcoded 14 failed on every run after that.
   HIS.accounts.save(HIS.accounts.all().filter(a => a.email !== 'flow.test@mediheal.test'));
   out.finalCount = HIS.accounts.all().length;
+  out.seedCount = JSON.parse(sessionStorage.getItem('mh_accounts') || '[]').length;
   return out;
 }, PW_DEMO);
 ok('duplicate email is refused (case-insensitive)', api.dupLower === false);
@@ -167,7 +174,7 @@ ok('old password stops working after reset', api.oldPassAfterReset === false);
 ok('new password works after reset', api.newPassAfterReset === true);
 ok('role change takes effect on the next session', api.loginAfterRoleChange && api.roleIsAuditor === 'auditor', JSON.stringify({ ok: api.loginAfterRoleChange, role: api.roleIsAuditor }));
 ok('deactivated account cannot sign in', api.loginWhenDisabled === false);
-ok('seed count restored to 14', api.finalCount === 14, String(api.finalCount));
+ok('the seeded roster is restored after the flow account is removed', api.finalCount === api.seedCount && api.finalCount === 11, String(api.finalCount));
 
 // ---- 12. audit log captured the auth events ------------------------------
 // Produced right here rather than relied on from earlier steps: freshIndex() clears localStorage

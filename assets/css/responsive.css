@@ -48,11 +48,13 @@
     box-sizing: border-box;
   }
   .hd > * { position: static !important; }
+  /* …including the bell, whose count badge then anchors to the header instead of the button. */
+  .bell { position: relative !important; }
   .hd .logo { width: 46px !important; height: 46px !important; flex: none; }
   .hd .brand { font-size: 17px !important; line-height: 1 !important; flex: none; }
   .hd-date { display: none !important; }
   .hd .sep { display: none !important; }
-  .bell { margin-left: auto !important; width: 40px !important; height: 40px !important; flex: none; }
+  .bell { position: relative !important; left: auto !important; top: auto !important; margin-left: auto !important; width: 40px !important; height: 40px !important; flex: none; }
   .profile { margin-left: 4px !important; flex: none; }
   .profile .nm { font-size: 12.5px !important; }
   /* was 9.5px — below the 12px secondary floor. Tightened tracking keeps it inside the header. */
@@ -202,8 +204,14 @@
 
 /* ---- sign in ----------------------------------------------------------- */
 @media (max-width: 1439px) {
-  .si { width: 100% !important; height: auto !important; overflow: visible !important; }
+  .si { width: 100% !important; height: auto !important; overflow: visible !important; padding: 0 20px !important; box-sizing: border-box; }
   .si-bleed { display: none !important; }
+  /* The white plate behind the form is a positioned decoration sized for the 1440 frame
+     (502x540). Once the form becomes a normal flow, the plate keeps its 540px box and pushes the
+     email field, the password field and the Sign in button 300px below the fold on every laptop
+     narrower than 1440 — the page looked like it had no inputs. The form sits on the page itself
+     at these widths, so the plate has nothing left to do. */
+  .si-card { display: none !important; }
   .si-panel { position: relative !important; width: 100% !important; height: auto !important; padding: 28px 24px 40px !important; box-sizing: border-box; }
   .si > * { position: static !important; }
   .si-logo { width: 92px !important; height: 64px !important; }
