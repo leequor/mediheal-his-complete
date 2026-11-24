@@ -107,7 +107,7 @@
     // the period control, so the control could not be clicked. Only its buttons take the pointer.
     h += "<div class='pr-a' style='left:68px;top:207px;width:1304px;height:100px;pointer-events:none'>";
     h += "<button class='pr-btn' data-modal='export' style='left:768px;width:146px'>" + ic('download', 18, 1.8) + '<span>Export payroll</span></button>';
-    h += "<button class='pr-btn' data-modal='gen' style='left:926px;width:172px'>" + ic('file', 18, 1.8) + '<span>Generate payslips</span></button>';
+    h += "<button class='pr-btn' data-modal='gen' style='left:926px;width:172px'>" + ic('file', 18, 1.8) + '<span>Compute &amp; Release Payslips</span></button>';
     h += "<button class='pr-btn pri' data-modal='proc' style='left:1110px;width:174px'>" + ic('send', 18, 1.8) + '<span>Process payments</span></button></div>';
     var M = [['users', 'Employees in payroll', String(T.headcount) + ' of ' + E.length, paid.length + ' paid \u00b7 ' + (T.headcount - paid.length) + ' awaiting settlement'],
       ['wallet', 'Total earnings', fmt(T.gross), 'Basic + overtime + premiums + allowances'],
@@ -374,7 +374,7 @@
     if (st.modal === 'export') return { y: 453, h: 438, t: 'Export payroll', s: per + ' \u00b7 All employees', ok: 'Export file', c: 'Cancel',
       f: [['File format', 'CSV (opens in Excel)'], ['Records', run.lines.length + ' employees'], ['Pay period', run.periodLabel],
         ['Total net pay', fmt(T.net)], ['Columns', 'Basic, absence, late, overtime, night, premiums, allowances, gross, SSS, PhilHealth, Pag-IBIG, tax, net, employer shares']] };
-    if (st.modal === 'gen') return { y: 453, h: 438, t: 'Generate payslips', s: per + ' \u00b7 One payslip per employee', ok: 'Generate payslips', c: 'Cancel',
+    if (st.modal === 'gen') return { y: 453, h: 438, t: 'Compute & Release Payslips', s: per + ' \u00b7 Requires the cut-off verified by HR', ok: 'Compute & Release', c: 'Cancel',
       f: [['Employees', run.lines.length + ' payslips'], ['Total net pay', fmt(T.net)], ['Pay period', run.periodLabel],
         ['Delivery', 'Download — one PDF per employee, in a ZIP'], ['Includes', 'Every earning and deduction line, plus the employer contribution block']] };
     if (st.modal === 'corr-new') {
@@ -547,11 +547,34 @@
         if (!res.ok) { tip(res.error); return; }
         tip(step.next === 'released' ? 'Payments released \u00b7 ' + fmt(res.run.totals.net) : 'Payroll ' + step.next);
       } else if (k === 'gen') {
+        // Step 3 of the hand-off. Accounting may only compute a cut-off that HR has verified, and one
+        // click takes the run from computed to released so the employees can open their own payslip.
+        if (!HIS.attendancePeriod.isVerified(run.periodId)) {
+          tip('HR has not verified this cut-off yet. Attendance must be verified before payroll can compute it.');
+          return;
+        }
+        var stepRes = null;
+        // One click walks the run to released: computed -> reviewed -> approved -> released. Each step is
+        // re-read so a refusal (a blocked employee, a stale line) stops the chain instead of being skipped.
+        var recomputed = false;
+        for (var guard = 0; guard < 6; guard++) {
+          run = HIS.payrollRuns.get(run.id) || run;
+          if (run.status === 'released') break;
+          if (run.status === 'draft') {
+            if (!recomputed) { stepRes = HIS.payrollRuns.recompute(run.id); recomputed = true; }
+            else stepRes = HIS.payrollRuns.review(run.id, 'Computed from the verified cut-off');
+          }
+          else if (run.status === 'reviewed') stepRes = HIS.payrollRuns.approve(run.id, 'Verified cut-off from HR');
+          else if (run.status === 'approved') stepRes = HIS.payrollRuns.release(run.id, 'Released by Accounting');
+          else break;
+          if (stepRes && !stepRes.ok) { tip(stepRes.error); return; }
+        }
+        run = HIS.payrollRuns.get(run.id) || run;
         // One archive, so the count in the message is the number of files the browser actually saved.
         // Eight separate downloads are throttled by Chrome and the tail is dropped silently.
         var batch = HIS.payrollRuns.payslipBatch();
         tip(batch.ok
-          ? batch.count + ' payslip' + (batch.count === 1 ? '' : 's') + ' downloaded as PDF in one ZIP'
+          ? 'Payslips computed and released to ' + batch.count + ' employee(s) \u00b7 ' + fmt(run.totals.net) + ' net'
           : batch.error);
       } else if (k === 'export') {
         download('payroll-' + run.periodId.replace(/\//g, '-') + '-v' + run.version + '.csv', HIS.payrollRuns.csv(run.id));

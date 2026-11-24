@@ -82,11 +82,19 @@
       home: 'billing'
     },
     hr: {
-      label: 'HR / Payroll Officer', short: 'HR',
+      label: 'HR Officer', short: 'HR',
       person: { name: 'Carmela Dizon', title: 'HR Officer' },
-      scope: 'Personnel, attendance, shifts, leave, payroll, deductions and payslips.',
-      pages: ['dashboard', 'personnel', 'attendance', 'payroll'],
-      nav: ['dashboard', 'personnel', 'attendance', 'payroll'],
+      scope: 'Personnel, attendance, shifts and leave. Verifies the cut-off and hands the hours to Accounting. No salary, deduction or payslip data.',
+      pages: ['dashboard', 'personnel', 'attendance'],
+      nav: ['dashboard', 'personnel', 'attendance'],
+      home: 'attendance'
+    },
+    accounting: {
+      label: 'Accounting / Payroll', short: 'Accounting',
+      person: { name: 'Ana Villanueva', title: 'Payroll Accountant' },
+      scope: 'Takes the verified cut-off from HR, computes and releases payslips, and administers deductions and statutory tables.',
+      pages: ['dashboard', 'payroll', 'attendance'],
+      nav: ['dashboard', 'payroll', 'attendance'],
       home: 'payroll'
     },
     depthead: {

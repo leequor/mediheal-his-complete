@@ -139,6 +139,55 @@
   panel.setAttribute('aria-label', 'Account menu');
   hd.appendChild(panel);
 
+  // Step 4 of the HR/Accounting hand-off. An employee sees a payslip only when a run has been
+  // RELEASED and only for their own personnelId — the id comes from the signed-in account, never from
+  // a parameter, so there is no way to ask for somebody else's slip.
+  function mySlip(a) {
+    if (!a || !a.personnelId) return null;
+    try {
+      if (window.HIS.payrollRuns && HIS.payrollRuns.payslip) {
+        var s = HIS.payrollRuns.payslip(a.personnelId);
+        return s && s.status === 'released' ? s : null;
+      }
+      // Dashboard pages do not load the payroll module: read the released run from the store.
+      var st = HIS.store.get(HIS.store.KEY.payrollRuns, null);
+      var runs = st && Array.isArray(st.runs) ? st.runs : [];
+      var rel = runs.filter(function (r) { return r.status === 'released'; }).pop();
+      if (!rel) return null;
+      var line = (rel.lines || []).filter(function (l) { return l.employeeId === a.personnelId; })[0];
+      if (!line) return null;
+      var emp = window.HIS.employees && HIS.employees.byId ? HIS.employees.byId(a.personnelId) : null;
+      return { status: 'released', periodLabel: rel.periodLabel, payDate: rel.payDate, line: line, employee: emp || { name: a.name } };
+    } catch (e) { return null; }
+  }
+
+  function openSlip(a) {
+    var s = mySlip(a);
+    if (!s) return;
+    var money = function (n) { return '\u20b1' + Number(n || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); };
+    var L = s.line || {};
+    var row = function (k, v) { return "<div class='am-r'><span>" + HIS.kit.esc(k) + '</span><b>' + HIS.kit.esc(v) + '</b></div>'; };
+    var bg = document.createElement('div');
+    bg.className = 'modal-bg';
+    bg.innerHTML = "<div class='modal' role='dialog' aria-modal='true'><h3>My payslip</h3>" +
+      '<p>' + HIS.kit.esc(s.periodLabel || '') + ' \u00b7 released' + (s.payDate ? ' \u00b7 pay date ' + HIS.kit.esc(s.payDate) : '') + '</p>' +
+      "<div class='am-rows'>" +
+      row('Employee', (s.employee && s.employee.name) || a.name) +
+      row('Employee no.', a.personnelId) +
+      row('Gross pay', money(L.gross)) +
+      row('Deductions', money(L.deductions)) +
+      row('Net pay', money(L.net)) +
+      '</div>' +
+      "<div class='am-f'>Your own payslip only. Released by Accounting after HR verified the cut-off.</div>" +
+      "<div class='actions'><button type='button' class='mbtn' data-x>Close</button></div></div>";
+    document.body.appendChild(bg);
+    var close = function () { bg.remove(); document.removeEventListener('keydown', esc); };
+    var esc = function (e) { if (e.key === 'Escape') close(); };
+    bg.querySelector('[data-x]').onclick = close;
+    bg.addEventListener('mousedown', function (e) { if (e.target === bg) close(); });
+    document.addEventListener('keydown', esc);
+  }
+
   function render() {
     const a = HIS.auth.account();
     if (!a) return;
@@ -153,6 +202,7 @@
       (a.dept ? "<div class='am-r'><span>Department</span><b>" + HIS.kit.esc(a.dept) + '</b></div>' : '') +
       '</div>' +
       (a.role === 'superadmin' ? "<a class='am-a' href='accounts.html'>Manage accounts</a>" : '') +
+      (mySlip(a) ? "<button class='am-a' data-act='slip'>View my payslip</button>" : '') +
       "<button class='am-a' data-act='reset'>Reset sample data</button>" +
       "<button class='am-a out' data-act='signout'>Sign out</button>" +
       "<div class='am-f'>Sample data \u00b7 all records fictitious</div>";
@@ -165,6 +215,8 @@
   prof.addEventListener('click', () => setOpen(!panel.classList.contains('on')));
   prof.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setOpen(!panel.classList.contains('on')); } });
   panel.addEventListener('click', e => {
+    const slipBtn = e.target.closest('[data-act="slip"]');
+    if (slipBtn) { setOpen(false); openSlip(HIS.auth.account()); return; }
     const b = e.target.closest('[data-act="signout"]');
     if (b) {
       HIS.auth.signOut();

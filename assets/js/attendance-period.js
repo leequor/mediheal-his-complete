@@ -482,12 +482,33 @@
 
   function reset() { HIS.store.remove(KEY); return state(); }
 
+  // Step 1 -> 2 of the HR/Accounting hand-off. Verifying the cut-off is what locks the attendance
+  // records and publishes the hours to payroll. Accounting cannot compute a period that has not been
+  // verified, so nobody can pay hours that HR has not signed off.
+  function verify(periodId, who) {
+    var s = state();
+    var p = s.periods.filter(function (x) { return x.id === (periodId || s.activePeriodId); })[0];
+    if (!p) return { ok: false, error: 'Pay period not found.' };
+    if (p.verified) return { ok: true, already: true, period: p };
+    p.verified = true;
+    p.verifiedAt = new Date().toISOString();
+    p.verifiedBy = who || 'HR Officer';
+    HIS.store.set(KEY, s);
+    return { ok: true, period: p };
+  }
+  function isVerified(periodId) {
+    var s = state();
+    var p = s.periods.filter(function (x) { return x.id === periodId; })[0];
+    return !!(p && p.verified);
+  }
+
   HIS.attendancePeriod = {
     PERIOD: PERIOD, PERIODS: PERIODS, HOLIDAYS: HOLIDAYS, KEY: KEY,
     active: active, periods: periods, setPeriod: setPeriod,
     all: all, days: days, recordsFor: recordsFor, classify: classify,
     timesheet: timesheet, approved: approved, unapproved: unapproved, summary: summary,
     approve: approve, approveAll: approveAll, reopen: reopen, correct: correct,
+    verify: verify, isVerified: isVerified,
     totals: totals, seed: seed, reset: reset
   };
 })();

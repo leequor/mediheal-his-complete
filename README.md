@@ -82,12 +82,13 @@ into the source; they are not secure authentication.
 | `pharmacy@mediheal.test` | Pharmacist |
 | `laboratory@mediheal.test` | Medical Technologist |
 | `finance@mediheal.test` | Billing & Finance |
-| `hr@mediheal.test` | HR / Payroll Officer |
+| `hr@mediheal.test` | HR Officer (attendance, personnel; no pay data) |
+| `accounting@mediheal.test` | Accounting / Payroll (computes and releases payslips) |
 | `department.head@mediheal.test` | Department Head |
 | `auditor@mediheal.test` | Auditor |
 | `patient@mediheal.test` | Patient (portal only) |
 
-Eleven accounts, not fourteen. Hospital Administrator, Receptionist and Cashier were merged into
+Twelve accounts, not fourteen. Hospital Administrator, Receptionist and Cashier were merged into
 roles that already did the same work — the account list had become a wall, and two of its rows
 opened almost exactly the same pages.
 

@@ -80,7 +80,7 @@
     h += at('at-div', 271, 233, '');
     h += at('at-lbl', 292, 228.5, 'PAYROLL PERIOD') + at('at-pd', 292, 248.5, A.period) + at('at-meth', 292, 272.5, 'Feeds Payroll \u00b7 Semi-monthly');
     h += "<button class='at-btn' data-act='export' style='left:817px;width:175px'>" + ic('download', 18, 1.8) + '<span>Export attendance</span></button>';
-    h += "<button class='at-btn' data-act='approve' style='left:1004px;width:185px'>" + ic('file', 18, 1.8) + '<span>Approve timesheets</span></button>';
+    h += "<button class='at-btn' data-act='approve' style='left:1004px;width:185px'>" + ic('file', 18, 1.8) + '<span>Verify &amp; Submit Attendance</span></button>';
     h += "<button class='at-btn pri' data-act='sync' style='left:1201px;width:151px'>" + ic('send', 18, 1.8) + '<span>Sync to payroll</span></button>';
     var M = [['users', 'Total personnel', String(N), inn + ' clocked in \u00b7 ' + (N - inn) + ' not in'], ['usercheck', 'Present', String(cnt('Present')), 'On time, within 15-minute grace'],
       ['clock', 'Late', String(cnt('Late')), 'Clocked in after grace period'], ['calendarx', 'On leave / absent', String(lv + ab), lv + ' approved leave \u00b7 ' + ab + ' absent']];
@@ -310,10 +310,17 @@
     var a = b.dataset.act, N = A.emps.length, ready = A.emps.filter(function (x) { return x.status !== 'Absent'; }).length, rev = A.emps.filter(function (x) { return x.status === 'Absent' && !x.reviewed; });
     if (a === 'export') { csv(); st.ok = { t: 'Attendance exported', m: 'The ' + A.date + ' daily register for ' + N + ' employees was exported as a spreadsheet.' }; st.modal = 'ok'; render(); }
     else if (a === 'approve') {
-      // M10: this button used to show a message and change nothing. It now approves the pay-period
-      // timesheets in HIS.attendancePeriod, which is what Payroll reads.
-      var ap = HIS.attendancePeriod.approveAll('Approved from the daily register');
-      st.ok = { t: 'Timesheets approved', m: ap.approved + ' of ' + HIS.employees.all().length + ' pay-period timesheets approved for ' + A.period + '.' + (ap.remaining ? ' ' + ap.remaining + ' still need review.' : ' Payroll can now be calculated.') };
+      // Step 1 of the hand-off. Approve the pay-period timesheets, then verify and lock the cut-off so
+      // the hours are published to Accounting. Accounting refuses to compute anything unverified.
+      var ap = HIS.attendancePeriod.approveAll('Verified by HR at cut-off');
+      var vf = HIS.attendancePeriod.verify(A.activePeriodId, 'HR Officer');
+      st.ok = {
+        t: 'Attendance verified and submitted',
+        m: ap.approved + ' of ' + HIS.employees.all().length + ' pay-period timesheets verified for ' + A.period + '. '
+          + (vf.ok ? 'The cut-off is now locked and the hours are visible to Accounting. ' : '')
+          + (ap.remaining ? ap.remaining + ' still need review.' : 'No timesheet is left open.')
+          + ' HR has no access to salary or payslip data.'
+      };
       st.modal = 'ok'; render();
     }
     else if (a === 'sync') {

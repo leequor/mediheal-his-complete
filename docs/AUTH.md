@@ -38,7 +38,8 @@ Emails use the reserved `.test` TLD — they are login identities only, not real
 superadmin@mediheal.test      admin@mediheal.test           reception@mediheal.test
 admissions@mediheal.test      doctor@mediheal.test          nurse@mediheal.test
 pharmacy@mediheal.test        laboratory@mediheal.test      cashier@mediheal.test
-finance@mediheal.test         hr@mediheal.test              department.head@mediheal.test
+finance@mediheal.test         hr@mediheal.test              accounting@mediheal.test
+department.head@mediheal.test
 auditor@mediheal.test         patient@mediheal.test
 ```
 

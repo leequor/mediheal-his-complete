@@ -41,12 +41,13 @@
   var SEED = [
     ['superadmin@mediheal.test', 'Dr. Elsie Chen', 'superadmin', 'Administration', 'Chief Physician', null],
     ['reception@mediheal.test', 'Maricel Bautista', 'registration', 'Front Desk', 'Front Desk Officer', null],
-    ['doctor@mediheal.test', 'Dr. Laurice Laureta', 'doctor', 'Cardiology', 'Consultant', null],
+    ['doctor@mediheal.test', 'Dr. Laurice Laureta', 'doctor', 'Cardiology', 'Consultant', null, 'EMP-002'],
     ['nurse@mediheal.test', 'Sofia Mendoza', 'nurse', 'Nursing', 'Staff Nurse', null],
     ['pharmacy@mediheal.test', 'Miguel Reyes', 'pharmacist', 'Pharmacy', 'Pharmacist', null],
     ['laboratory@mediheal.test', 'Daniel Cruz', 'lab', 'Laboratory', 'Medical Technologist', null],
     ['finance@mediheal.test', 'Rowena Lim', 'finance', 'Billing', 'Billing & Finance Officer', null],
     ['hr@mediheal.test', 'Carmela Dizon', 'hr', 'Human Resources', 'HR Officer', null],
+    ['accounting@mediheal.test', 'Ana Villanueva', 'accounting', 'Accounting', 'Payroll Accountant', null],
     ['department.head@mediheal.test', 'Dr. Marc Laureta', 'depthead', 'Orthopedics', 'Department Head', null],
     ['auditor@mediheal.test', 'Ferdinand Yap', 'auditor', 'Compliance', 'Compliance Auditor', null],
     ['patient@mediheal.test', 'Isabel Geliz V. Ramos', 'patient', 'Patient', 'Patient', 'PT-99213']
@@ -63,6 +64,7 @@
         dept: s[3],
         title: s[4],
         patientId: s[5],
+        personnelId: s[6] || null,
         status: 'active',
         verifier: digest(DEMO_PASSWORD),
         createdAt: now,
@@ -111,7 +113,8 @@
     var acct = {
       id: nextId(rows), email: email, name: String(input.name || '').trim() || email.split('@')[0],
       role: input.role, dept: String(input.dept || '').trim(), title: String(input.title || '').trim(),
-      patientId: input.patientId || null, status: 'active',
+      patientId: input.patientId || null,
+      personnelId: input.personnelId || null, status: 'active',
       verifier: digest(input.password || DEMO_PASSWORD), createdAt: new Date().toISOString(),
       lastLogin: null, resetRequired: false, seeded: false
     };

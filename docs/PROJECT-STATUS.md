@@ -27,10 +27,12 @@ The following were exercised end to end by the test harnesses in this repository
 inspection of rendered screenshots.
 
 ### Identity and access
-- 11 roles, one seeded demo account each, email + password sign-in, session persistence (30-day
+- 12 roles, one seeded demo account each, email + password sign-in, session persistence (30-day
   "keep me signed in", 12-hour tab session otherwise), sign-out, audit of sign-in and failure.
   (Session 43 merged Hospital Administrator into Super Administrator, Receptionist into Front Desk &
   Registration, and Cashier into Billing & Finance. See `GITHUBPROGRESS-session43-addendum.md`.)
+  HR and Payroll were split again into **HR Officer** (verify & submit attendance) and
+  **Accounting / Payroll** (compute & release payslips), following the instructor's hand-off process.
 - Page-level and navigation-level role scope. A role that is not allowed a page is redirected to its
   home before render.
 - Account administration: create, edit, deactivate, reset password. The last active Super
