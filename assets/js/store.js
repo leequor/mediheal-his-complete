@@ -75,13 +75,38 @@
     delete MEM[key];
   }
 
-  // Missing key, unparseable JSON or a stored `null` all return the fallback.
+  // A stored value is only usable if it has the shape the caller asked for. sessionStorage can hold
+  // anything a previous version of this app, a half-finished write, or a person with devtools put
+  // there; returning it unchecked made pages throw (`HIS.store.get(...).forEach is not a function`
+  // on profile.html with a string in a key that expects an array). A mismatch is treated exactly
+  // like a missing key: the bad value is dropped so the page re-seeds, and the caller gets its
+  // fallback instead of a crash.
+  function sameShape(v, fallback) {
+    if (Array.isArray(fallback)) return Array.isArray(v);
+    if (fallback && typeof fallback === 'object') return !!v && typeof v === 'object' && !Array.isArray(v);
+    return true; // primitive (or undefined) fallback: any JSON value is acceptable
+  }
+  // A null inside an array of records is never legitimate and every caller would throw on it. This
+  // runs whether or not the caller passed an array fallback, because some readers call get(KEY) and
+  // then iterate the result themselves (ledger all(), charges all()).
+  function dropNulls(value) {
+    if (!Array.isArray(value)) return value;
+    var cleaned = value.filter(function (x) { return x !== null && x !== undefined; });
+    return cleaned.length === value.length ? value : cleaned;
+  }
+
+  // Missing key, unparseable JSON, a stored `null`, or a value of the wrong shape all return the
+  // fallback. A repaired array is written back so the page does not clean it on every read.
   function get(key, fallback) {
     try {
       var raw = rawGet(key);
       if (raw == null) return fallback;
       var v = JSON.parse(raw);
-      return v == null ? fallback : v;
+      if (v == null) return fallback;
+      if (!sameShape(v, fallback)) { rawRemove(key); return fallback; }
+      var cleaned = dropNulls(v);
+      if (cleaned !== v) rawSet(key, JSON.stringify(cleaned));
+      return cleaned;
     } catch (e) { return fallback; }
   }
   function set(key, value) {
