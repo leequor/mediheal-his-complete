@@ -525,3 +525,64 @@ Two false positives were eliminated rather than "fixed" in the app: stacked labe
 a few pixels of line-height, and a bed-board element from a closed panel sharing coordinates with the
 "Admission records" heading. The detector now requires most of both boxes to be shared and hit-tests
 the element for real visibility.
+
+---
+
+## Pass 8 — every account on every page, and the surfaces around the workflows
+
+Asked for another site-wide sweep across all accounts and all pages. Four new harnesses.
+
+### `scripts/matrix-check.mjs` — 97 role/page pairs, 0 problems
+
+Eleven accounts × twenty-eight pages: uncaught errors, console errors, guard redirects (checked
+against each role's own allowlist), visible `undefined`/`NaN`/`[object Object]`, horizontal overflow at
+1440, and a blank main region. For every page a role may open it then drives the interactions the
+earlier passes never touched together: every tab, every sortable header, every filter select and every
+search box (whitespace, then a junk string), re-checking the same invariants after each, then a reload.
+
+`staff.html` redirecting to `personnel.html` is intentional (the file is a redirect stub).
+
+### `scripts/surface-check.mjs` — 52 assertions, 0 failures
+
+| Group | What is proven |
+|---|---|
+| Dialogs (90 across 20 pages) | Escape closes, a backdrop click closes, focus returns to the control that opened it, no overlay or scroll lock survives, and rows that are not focusable are not claimed to have lost focus |
+| Print (23 pages) | no header, drawer or scrim; nothing clipped; real content on the sheet |
+| Exports (3) | a file arrives, it parses, column counts are consistent, no `NaN`/`undefined`/`[object Object]`, no cell a spreadsheet would execute |
+| Double submit (4 flows) | two clicks in one tick write one record |
+| Session scope | a second tab signing in leaves the first tab in a valid role and page; reloading mid-modal writes nothing |
+
+### `scripts/walk-fuzz.mjs` — 1,000+ random steps, 0 problems
+
+Random page, random control, random junk, and after every step the money/stock/bed invariants are
+re-derived from the modules rather than from stored sums. Scripted journeys are covered by
+`sequences-check`; this covers the states a person reaches by accident. Run with `STEPS=n SEED=k` to
+replay a failure.
+
+### Defects found and fixed
+
+**1. The booking confirmation screen confirmed nothing.** `appointment-confirmed.html` was a Figma stub:
+an empty card, a tick and "Go back". After booking, nothing on the page said *whose* appointment it
+was, with *which doctor*, or *when*, and printing it produced those two words plus a button. The form
+already writes the booking to `mh_appts_extra`, so the card now shows it —
+`ANA B. CRUZ · Inpatient Admission` over `Sep 2, 2026 • 10:30 AM · Dr. Laurice Laureta` — inside the
+existing card, and the button is hidden in print so the sheet is usable as proof.
+
+**2. Focus was lost on Escape in 29 dialogs.** Pages that rebuild their whole view when a dialog closes
+destroy the trigger element, so `document.activeElement` fell to `<body>` and a keyboard user lost
+their place. Seven page modules (treatment, nursing, consultation, personnel, payroll, attendance,
+claims) were affected while the `.ac-bg` dialogs already restored focus, so the behaviour was
+inconsistent. Fixed once, generically, in `kit.js`: it remembers the trigger by description (the node
+itself is usually gone), re-finds the matching control after the re-render, retries for about a second,
+and only acts when focus really was lost and no dialog is open.
+
+### Verification after this pass
+
+Every suite: `qa-check` 91 · `acceptance-audit` 181 · `auth-check` 25 · `portal-check` 40 ·
+`roles-check` 106 · `ledger-check` 46 · `charges-check` 44 · `claims-check` 43 · `payroll-check` 89 ·
+`finance-check` 31 · `clinical-check` 53 · `revenue-check` 81 · `sequences-check` 101 ·
+`edge-check` 67 · `function-check` 1,519 calls · `exhaustive-controls-check` 36 ·
+`personnel-add-check` 28 · `adt-boundary-check` 65 · `claims-modal-stack-check` 76 ·
+`qa-final-check` 73 · `qa-nav-check` 109 · `m10-1..4` 284 · `forms-check` 34 · `matrix-check` 97 ·
+`surface-check` 52 · `walk-fuzz` (variable) · `design-lint` 26 pages 0 findings · smoke 28 pages ·
+a11y 0 violations · responsive 140 · buttons 0 anomalies · visual 0.000% — **0 failures**.

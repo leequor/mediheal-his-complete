@@ -164,6 +164,85 @@
     toast.t = setTimeout(function () { el.classList.remove('on'); }, 3200);
   }
 
+
+  // ---- focus return -----------------------------------------------------------------------------
+  // Several pages rebuild the whole view when a dialog closes, which destroys the button that opened
+  // it; focus then falls to <body> and a keyboard user loses their place. Remember the trigger by
+  // description (the element itself is often gone), and after a dialog disappears put focus back on
+  // the matching control in the freshly rendered page.
+  var lastTrigger = null, hadDialog = false;
+  var DIALOG_SEL = '.ac-bg, .bl-modal, .pe-modal, .tp-modal, .at-modal, .cl-bg, .dm-bg, [class$=-modal], [role=dialog]';
+
+  function describe(el) {
+    return { tag: el.tagName, text: (el.textContent || '').trim().replace(/\s+/g, ' ').slice(0, 48), cls: el.className || '' };
+  }
+
+  // A hidden template container is not an open dialog: only a painted one blocks focus return.
+  function dialogOpen() {
+    var list = document.querySelectorAll(DIALOG_SEL);
+    for (var i = 0; i < list.length; i++) { if (list[i].offsetWidth || list[i].offsetHeight) return true; }
+    return false;
+  }
+
+  var TRIGGER_SEL = 'button, a, [role=button], [data-open], [data-modal], [data-act]';
+  var FOCUSABLE_SEL = 'button, a[href], input, select, textarea, [tabindex]';
+
+  document.addEventListener('click', function (e) {
+    var t = e.target && e.target.closest ? e.target.closest(TRIGGER_SEL) : null;
+    if (!t || !t.offsetWidth) return;
+    if (t.closest(DIALOG_SEL)) return;          // a control inside the dialog is not the trigger
+    // A table row can open a dialog without being focusable; there is then nowhere to return focus,
+    // so remember the nearest focusable ancestor instead (or nothing at all).
+    var focusable = t.matches && t.matches(FOCUSABLE_SEL) ? t : (t.closest ? t.closest(FOCUSABLE_SEL) : null);
+    lastTrigger = focusable ? describe(focusable) : null;
+  }, true);
+
+  function restoreFocus() {
+    // only when focus was actually lost, and never while another dialog is on screen
+    if (document.activeElement && document.activeElement !== document.body) return;
+    if (dialogOpen() || !lastTrigger) return;
+    var same = function (el) {
+      return el.offsetWidth && el.tagName === lastTrigger.tag &&
+        (el.textContent || '').trim().replace(/\s+/g, ' ').slice(0, 48) === lastTrigger.text;
+    };
+    var cands = [].slice.call(document.querySelectorAll(lastTrigger.tag)).filter(same);
+    var hit = cands[0];
+    if (hit && typeof hit.focus === 'function') hit.focus({ preventScroll: true });
+  }
+
+  // A dialog that closes re-renders the page, sometimes over several frames and sometimes after a
+  // second render of its own; keep trying for about a second, and stop as soon as focus is somewhere
+  // real (restoreFocus itself does nothing when focus is already on a control).
+  function scheduleRestore() {
+    var tries = 0;
+    var timer = setInterval(function () {
+      restoreFocus();
+      if (++tries > 16) clearInterval(timer);
+    }, 60);
+    restoreFocus();
+  }
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') scheduleRestore();
+  }, true);
+
+  if (window.MutationObserver) {
+    var mo = new MutationObserver(function (records) {
+      var removedDialog = false;
+      if (dialogOpen()) { hadDialog = true; return; }
+      for (var i = 0; i < records.length && !removedDialog; i++) {
+        var rm = records[i].removedNodes;
+        for (var j = 0; j < rm.length; j++) {
+          var n = rm[j];
+          if (n.nodeType === 1 && (n.matches && n.matches(DIALOG_SEL) || (n.querySelector && n.querySelector(DIALOG_SEL)))) { removedDialog = true; break; }
+        }
+      }
+      if (removedDialog || hadDialog) { scheduleRestore(); }
+      hadDialog = false;
+    });
+    mo.observe(document.body, { childList: true, subtree: true });
+  }
+
   HIS.kit = { esc: esc, GEOM: GEOM, modal: modal, dropdown: dropdown, pill: pill, row: row, toast: toast,
     modalStack: { open: stackOpen, close: stackClose, top: function () { return stack[stack.length - 1] || null; },
       depth: function () { return stack.length; }, all: function () { return stack.slice(); } } };

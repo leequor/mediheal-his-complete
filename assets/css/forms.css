@@ -37,3 +37,11 @@ textarea.f-in{padding:12px 10px 0;resize:none;overflow:auto}
 .c-ok{position:absolute;left:684.5px;top:419px;width:94px;height:95px}
 .c-title{position:absolute;left:425.75px;top:528px;width:611.5px;margin:0;text-align:center;font:700 37px/46.62px var(--font-title);color:#15405a}
 .c-btn{position:absolute;left:627.5px;top:754px;width:208px;height:47px;border:0;border-radius:30px;background:linear-gradient(to left,#1b4e6b 0%,#3598d1 97.6%);color:#d6f4fc;font:700 24px/30.24px var(--font-title);box-shadow:0 4px 4px rgba(0,0,0,.25)} /* est: shadow */
+
+/* Booking confirmation: the card holds the appointment just registered, and prints without the button
+   so the printed sheet is usable as proof. Positions sit inside the Figma card (415,375 633x307). */
+.c-det{position:absolute;left:425.75px;top:626px;width:611.5px;text-align:center;font:400 13.5px/20px var(--font-inter,Inter),sans-serif;color:#5d7686}
+.c-det b{display:block;font-weight:600;color:#15405a}
+.c-det span{display:block}
+.c-det:empty{display:none}
+@media print{ .c-btn{display:none !important} }
