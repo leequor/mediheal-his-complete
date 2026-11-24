@@ -347,7 +347,11 @@
     else if (a === 'newreq') { st.menu = ''; st.pick = ''; st.modal = 'new'; render(); }
     else if (a === 'viewall') { st.modal = 'list'; render(); }
     else if (a === 'submitnew') {
-      var g = function (i) { return document.getElementById('atn' + i); }, sd = Date.parse(g(3).value.split('\u00b7')[0].trim()), ed = Date.parse(g(4).value.split('\u00b7')[0].trim());
+      // The modal is re-rendered on every keystroke in the search box, so a field can be gone by the
+      // time submit lands. Missing fields read as empty and trip the validation below instead of
+      // throwing "Cannot read properties of null".
+      var stub = { value: '', classList: { toggle: function () {} } };
+      var g = function (i) { return document.getElementById('atn' + i) || stub; }, sd = Date.parse(g(3).value.split('\u00b7')[0].trim()), ed = Date.parse(g(4).value.split('\u00b7')[0].trim());
       var okS = !isNaN(sd), okE = !isNaN(ed) && ed >= sd;
       g(3).classList.toggle('bad', !okS); g(4).classList.toggle('bad', !okE); g(5).classList.toggle('bad', !g(5).value.trim());
       if (!okS || !okE || !g(5).value.trim()) { tip(!okS ? 'Start date must look like Sep 9, 2026' : (!okE ? 'End date must be on or after the start date' : 'Add a reason')); return; }

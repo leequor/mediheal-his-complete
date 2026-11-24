@@ -165,3 +165,8 @@
 .pr-fld span{display:block;margin-bottom:5px;font:600 12px Inter,sans-serif;color:#1b4e6b}
 .pr-fld textarea{width:100%;box-sizing:border-box;border:1px solid #c8dcea;border-radius:8px;padding:10px 12px;background:#f6fafd;font:400 13px/18px Inter,sans-serif;color:#1c2b30;resize:vertical}
 .pr-fld textarea:focus{outline:2px solid #1c6d9c;outline-offset:-1px;background:#fff}
+
+/* WCAG 2.5.8 asks for a 24px target. The payslip link and the row checkbox are Figma-sized at 15px
+   and 16px, so grow the clickable area with an invisible expander instead of moving pixels. */
+.pr-ps::before, .pr-cb::before { content: ''; position: absolute; inset: -5px -6px; }
+.pr-cb::before { inset: -5px; border-radius: 6px; }

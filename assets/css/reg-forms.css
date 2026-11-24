@@ -74,3 +74,6 @@ textarea.rf-ctl{height:120px;padding:12px 13.8px;resize:none;line-height:20.25px
 .rf-btn{width:290.4px;height:48px;box-sizing:border-box;border-radius:11px;font:700 14.5px/15.95px var(--font-inter,Inter),sans-serif;cursor:pointer;display:grid;place-items:center;text-decoration:none}
 .rf-btn.ok{top:399.4px;border:0;background:#1d4179;color:#fff;box-shadow:0 6px 16px rgba(31,157,107,.28)} /* est: green glow */
 .rf-btn.no{top:457.4px;border:1px solid #e3edf3;background:#fff;color:#1c2b30;font-weight:600}
+
+/* "Back to Registration" is an 18px text link; the expander gives it a 24px target without moving it. */
+.rf-back::after { content: ''; position: absolute; inset: -4px 0; }
