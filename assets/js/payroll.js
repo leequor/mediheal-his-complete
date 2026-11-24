@@ -79,9 +79,14 @@
     var items = HIS.attendancePeriod.periods().map(function (p) {
       var r = HIS.payrollRuns.forPeriod(p.id);
       var on = p.id === cur.id;
+      // Step 3 of the hand-off: Accounting picks the cut-off here, so the list has to say which
+      // cut-offs HR has actually verified. An unverified one can be opened but never computed.
+      var v = HIS.attendancePeriod.isVerified(p.id);
+      var state = !v ? 'Attendance not verified · HR must submit first'
+        : (r ? esc(r.id) + ' · ' + (LAB[r.status] || r.status) + ' · v' + r.version : 'Verified · no payroll run yet');
       return "<button type='button' class='pr-pm-i" + (on ? ' on' : '') + "' data-period-opt='" + p.id + "' role='option' aria-selected='" + on + "'>" +
-        '<b>' + esc(p.label) + '</b>' +
-        '<span>' + (r ? esc(r.id) + ' \u00b7 ' + (LAB[r.status] || r.status) + ' \u00b7 v' + r.version : 'No payroll run yet') + '</span>' +
+        '<b>' + esc(p.label) + (v ? '' : ' · unverified') + '</b>' +
+        '<span>' + state + '</span>' +
         (on ? '<i>Showing</i>' : '') + '</button>';
     }).join('');
     return "<div class='pr-pm' role='listbox' aria-label='Pay period'>" +

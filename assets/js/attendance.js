@@ -81,7 +81,8 @@
     h += at('at-lbl', 292, 228.5, 'PAYROLL PERIOD') + at('at-pd', 292, 248.5, A.period) + at('at-meth', 292, 272.5, 'Feeds Payroll \u00b7 Semi-monthly');
     h += "<button class='at-btn' data-act='export' style='left:817px;width:175px'>" + ic('download', 18, 1.8) + '<span>Export attendance</span></button>';
     h += "<button class='at-btn' data-act='approve' style='left:1004px;width:185px'>" + ic('file', 18, 1.8) + '<span>Verify &amp; Submit Attendance</span></button>';
-    h += "<button class='at-btn pri' data-act='sync' style='left:1201px;width:151px'>" + ic('send', 18, 1.8) + '<span>Sync to payroll</span></button>';
+    // No separate "Sync to payroll" button: verifying the cut-off is what publishes the hours to
+    // Accounting. Two buttons for one hand-off is how a demo contradicts itself.
     var M = [['users', 'Total personnel', String(N), inn + ' clocked in \u00b7 ' + (N - inn) + ' not in'], ['usercheck', 'Present', String(cnt('Present')), 'On time, within 15-minute grace'],
       ['clock', 'Late', String(cnt('Late')), 'Clocked in after grace period'], ['calendarx', 'On leave / absent', String(lv + ab), lv + ' approved leave \u00b7 ' + ab + ' absent']];
     M.forEach(function (m, i) { h += "<div class='at-a at-card at-m' style='left:" + (68 + 331 * i) + "px;top:331px'><span class='ic'>" + ic(m[0], 24, 1.8) + "</span><span class='l'>" + m[1] + "</span><span class='n'>" + m[2] + "</span><span class='s'>" + m[3] + '</span></div>'; });
@@ -163,7 +164,7 @@
     }
     h += syncedClean
       ? "<button class='at-cbtn' disabled style='left:24px;top:214px;width:150px'>Synced</button>"
-      : "<button class='at-cbtn pri' data-act='sync' style='left:24px;top:214px;width:150px'>Sync " + ready + ' records</button>';
+      : '';
     h += "<div class='at-ex at-el' style='left:190px;top:223px;width:218px'>Last synced " + A.synced + '</div></div>';
     return h.replace(/class='ex'/g, "class='at-ex'").replace(/class='ln'/g, "class='at-ln'").replace(/class='ld'/g, "class='at-ld'");
   }

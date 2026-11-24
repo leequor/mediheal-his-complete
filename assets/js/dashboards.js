@@ -312,31 +312,38 @@
         };
       }
 
-      case 'hr':
+      case 'hr': {
+        // HR sees attendance and personnel only. Salary, deductions and payslips belong to Accounting,
+        // so nothing on this screen reads the payroll module.
+        var hrAP = window.HIS.attendancePeriod;
+        var hrUnapproved = hrAP && hrAP.unapproved ? hrAP.unapproved() : [];
+        var hrVerified = hrAP && hrAP.isVerified ? hrAP.isVerified(hrAP.active().id) : false;
+        var hrActive = count(S, function (s) { return s.status === 'Active'; });
         return {
           greet: 'Welcome back, ' + first(person.name) + '!',
           kpis: [
-            { label: 'Headcount', value: String(S.length), delta: count(S, function (s) { return s.status === 'Active'; }) + ' active staff', icon: 'users' },
-            { label: 'Payroll records', value: String(E.length), delta: ((HIS.payroll || {}).period) || 'Current period', icon: 'peso' },
-            { label: 'Paid', value: String(count(E, function (e) { return e.status === 'Paid'; })), delta: count(E, function (e) { return e.status !== 'Paid'; }) + ' still processing', icon: 'check-circle' },
+            { label: 'Headcount', value: String(S.length), delta: hrActive + ' active staff', icon: 'users' },
+            { label: 'Cut-off', value: hrVerified ? 'Verified' : 'Open', delta: hrVerified ? 'Submitted to Accounting' : 'Waiting for your verification', icon: 'check-circle' },
+            { label: 'Timesheets to review', value: String(hrUnapproved.length), delta: hrUnapproved.length ? 'Blocking payroll' : 'Nothing blocking payroll', icon: 'file' },
             { label: 'Departments', value: String(new Set(S.map(function (s) { return s.dept; })).size), delta: 'With staff on file', icon: 'branches' }
           ],
           table: {
-            title: 'Employees', sub: 'Personnel records and payroll status',
-            cols: [{ t: 'EMPLOYEE', left: 20, w: 170 }, { t: 'ROLE', left: 200, w: 170 }, { t: 'DEPARTMENT', left: 380, w: 130 }, { t: 'DAYS', left: 520, w: 80 }, { t: 'STATUS', left: 712, w: 85 }],
-            rows: E.map(function (e) {
-              return { cells: [[e.name, e.id], e.role, e.dept, String(e.days), [e.status, e.status === 'Paid' ? 'ok' : (e.status === 'Processing' ? 'in' : 'off')]] };
+            title: 'Staff', sub: 'Personnel and attendance. Salary and payslips are not shown to HR.',
+            cols: [{ t: 'EMPLOYEE', left: 20, w: 210 }, { t: 'ROLE', left: 240, w: 190 }, { t: 'DEPARTMENT', left: 440, w: 150 }, { t: 'STATUS', left: 600, w: 110 }],
+            rows: S.map(function (e) {
+              return { cells: [[e.name, e.id], e.role, e.dept, [e.status || 'Active', e.status === 'Inactive' ? 'off' : 'ok']] };
             }),
-            empty: 'No employees on file'
+            empty: 'No staff on file'
           },
           feed: {
-            title: 'Payroll actions', sub: 'Period ' + (((HIS.payroll || {}).period) || '\u2014'), icon: 'peso',
-            items: E.filter(function (e) { return e.status !== 'Paid'; }).slice(0, 4).map(function (e) {
-              return { time: e.id.replace('EMP-', ''), title: e.name, line1: e.dept + ' \u00b7 ' + e.role, line2: e.days + ' days \u00b7 ' + e.hours + ' hours', status: e.status, kind: 'in' };
+            title: 'Attendance to verify', sub: 'Timesheets still open for this cut-off', icon: 'file',
+            items: hrUnapproved.slice(0, 4).map(function (e) {
+              return { time: (e.id || '').replace('EMP-', ''), title: e.name || e.id, line1: (e.dept || '') + ' · ' + (e.role || ''), line2: 'Timesheet not yet verified', status: 'Open', kind: 'in' };
             }),
-            empty: 'All payroll records are paid'
+            empty: 'Every timesheet for this cut-off is verified'
           }
         };
+      }
 
       case 'depthead': {
         var myDept = person.dept;
