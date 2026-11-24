@@ -27,8 +27,12 @@ export async function startServer(port) {
 
 export async function openBrowser(channel = 'chrome') {
   const mod = await import(pathToFileURL(process.env.PW || 'C:/Users/nekoc/node_modules/playwright-core/index.js').href);
-  const chromium = mod.chromium || (mod.default && mod.default.chromium);
-  const browser = await chromium.launch({ channel });
+  const m = mod.default || mod;
+  const name = String(channel).toLowerCase();
+  // chrome/firefox/webkit: only Chromium takes a channel; the others launch their own build.
+  const browser = name === 'firefox' ? await m.firefox.launch()
+    : name === 'webkit' ? await m.webkit.launch()
+    : await m.chromium.launch({ channel: name === 'chrome' ? 'chrome' : undefined });
   return { browser };
 }
 

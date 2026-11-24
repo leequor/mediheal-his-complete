@@ -678,3 +678,51 @@ the first round never took, plus two new strategies the earlier rounds did not h
 - `payrollCalc` exists only on the payroll page
 - iteration 9: pressing Enter can navigate, which destroys the execution context under an `evaluate`;
   it now waits for the load and treats a destroyed context as "the page moved" (3/3 stable after)
+
+---
+
+## Pass 11 — the brutal run
+
+Five phases, deliberately harsher than the ten-strategy gauntlet, plus the same phases in Firefox and
+WebKit.
+
+| Phase | What it does | Result |
+|---|---|---|
+| A — marathon | 900 steps of random navigation, clicks, typing, Escape and reloads; ledger/stock/bed invariants re-derived after **every** step | 883–891 checks per run, 0 problems (5 runs) |
+| B — corruption | 18 store keys × 12 wrong JSON shapes × 6 pages that read them | 216 checks, 0 problems |
+| C — storm | every visible control clicked three times in one tick, then Escape twice, on 23 pages | 23 checks, 0 problems |
+| D — starved assets | 8 core assets blocked (404) one at a time; the page must fail visibly and recover afterwards | 20 checks, 0 problems |
+| E — bulk | 2,500 extra ledger rows, then billing/reports/dashboard/admissions must render, keep invariants, and stay under 6 s | 8 checks, 0 problems |
+
+Cross-browser: phase C clean in **Firefox 157** and **WebKit 27.2**; phase B clean in both
+(216 and 216); phase A clean in Firefox.
+
+### Defects found and fixed
+
+**1. The Departments filter listed `[object Object]` over and over.** `HIS.departments` holds department
+objects, and the filter did `['All Departments', ...HIS.departments]`, so every option rendered as
+`[object Object]` and choosing one compared an object against a string, which could never match.
+It now maps to names: choosing Cardiology takes the registry from 7 rows to 1.
+
+**2. Two uncaught exceptions in the claims detail panel.** A claim record that is missing (another tab
+cleared it) or has `documents: null` made the panel throw
+`Cannot read properties of null (reading 'documents')` — once while rendering the list, once when
+toggling a supporting document. Both now degrade: nulls are dropped before filtering, a missing
+document list renders empty, and a dialog whose claim has vanished closes itself.
+
+### Harness faults fixed
+
+- the marathon died on `Protocol error: Not attached to an active page` when a reload replaced the tab;
+  it now opens a fresh page and signs in again instead of ending the run
+- the junk list contained the literal `NaN`, so a field echoing what was typed was reported as a
+  computed-value bug
+- `openBrowser` only handled Chromium channels; it now launches Firefox and WebKit builds directly
+
+### Totals
+
+30 suites · `qa-check` 91 · `acceptance-audit` 181 · `auth-check` 25 · `portal-check` 40 ·
+`roles-check` 106 · `ledger-check` 46 · `charges-check` 44 · `claims-check` 43 · `payroll-check` 89 ·
+`finance-check` 31 · `clinical-check` 53 · `revenue-check` 81 · `sequences-check` 101 ·
+`edge-check` 67 · `function-check` 330 callables · `forms-check` 34 · `acm-check` 25 ·
+`surface-check` 52 · `matrix-check` 97 · `m10-1..4` 284 · `design-lint` 26 pages 0 findings ·
+smoke 28 · a11y 0 violations · responsive 140 · buttons 0 anomalies · visual 0.000%.

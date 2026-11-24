@@ -31,7 +31,9 @@
 
   function rows() {
     var needle = q.trim().toLowerCase();
-    return HIS.claims.all().filter(function (c) {
+    // A damaged or partially written record must not take the whole list down: every reader here
+    // assumes an object, so nulls are dropped before they are filtered or rendered.
+    return HIS.claims.all().filter(Boolean).filter(function (c) {
       if (status !== 'all' && c.status !== status) return false;
       if (!needle) return true;
       return [c.id, c.patientName, c.payer, c.invoiceId, c.memberRef, c.officer].join(' ').toLowerCase().indexOf(needle) > -1;
@@ -166,7 +168,7 @@
         '<span class="cl-sep">Coverage is not a collection.</span></div>' : '') +
 
       "<div class='cl-sect'><h4>Supporting documents</h4>" +
-      "<div class='cl-docs'>" + c.documents.map(function (d, i) {
+      "<div class='cl-docs'>" + (c.documents || []).map(function (d, i) {
         return "<button class='cl-doc" + (d.received ? ' on' : '') + "' data-doc='" + i + "' aria-pressed='" + d.received + "'>" +
           "<span class='bx'>" + (d.received ? '\u2713' : '') + '</span>' +
           '<span>' + esc(d.name) + '</span></button>';
@@ -215,7 +217,10 @@
       var d = T.closest('[data-doc]');
       if (d) {
         var i = +d.dataset.doc;
-        var cur = HIS.claims.get(open).documents[i].received;
+        // The dialog can outlive the record it was opened for (another tab, a refresh in between).
+        var claim = HIS.claims.get(open);
+        if (!claim) { close(); return; }
+        var cur = (claim.documents && claim.documents[i] ? claim.documents[i].received : false);
         HIS.claims.setDocument(open, i, !cur);
         close(); detail(open); return;
       }

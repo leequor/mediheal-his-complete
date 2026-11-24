@@ -70,7 +70,7 @@ function renderTabs() {
   document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.t === state.tab));
 }
 renderTabs();
-makeDropdown($('dd-dept'), { options: ['All Departments', ...HIS.departments], onChange: v => { state.dept = v; render(); } });
+makeDropdown($('dd-dept'), { options: ['All Departments', ...HIS.departments.map(d => d.name)], onChange: v => { state.dept = v; render(); } });
 makeDropdown($('dd-stat'), { options: ['All Statuses', ...HIS.patientStatuses], onChange: v => { state.stat = v; render(); } });
 
 function renderKpis() {
