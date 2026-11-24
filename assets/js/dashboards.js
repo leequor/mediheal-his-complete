@@ -345,6 +345,57 @@
         };
       }
 
+      case 'accounting': {
+        // Accounting had no case, and the switch returns null for an unknown role, so this account
+        // landed on a blank dashboard. It reads the cut-off and the run straight from the store,
+        // because dashboard.html does not load the payroll modules.
+        var accAp = window.HIS.store ? HIS.store.get(HIS.store.KEY.attendancePeriod, null) : null;
+        var accRuns = window.HIS.store ? HIS.store.get(HIS.store.KEY.payrollRuns, null) : null;
+        var accList = accRuns && Array.isArray(accRuns.runs) ? accRuns.runs : [];
+        var accPid = accAp && accAp.activePeriodId ? accAp.activePeriodId : null;
+        var accPeriod = accAp && Array.isArray(accAp.periods) ? (accAp.periods.filter(function (p) { return p.id === accPid; })[0] || null) : null;
+        var accRun = accList.filter(function (r) { return r.periodId === accPid; })[0] || accList[accList.length - 1] || null;
+        var verified = !!(accPeriod && accPeriod.verified);
+        var lines = accRun && Array.isArray(accRun.lines) ? accRun.lines : [];
+        var num = function (v) { return Number(v) || 0; };
+        var sumOf = function (k) { return lines.reduce(function (t, l) { return t + num(l[k]); }, 0); };
+        var net = accRun && accRun.totals ? num(accRun.totals.net) : sumOf('net');
+        var gross = accRun && accRun.totals ? num(accRun.totals.gross || accRun.totals.earnings) : sumOf('gross');
+        var ded = accRun && accRun.totals ? num(accRun.totals.deductions) : sumOf('deductions');
+        var LAB = { draft: 'Draft', reviewed: 'For approval', approved: 'Approved', released: 'Released' };
+        var runStatus = accRun ? (LAB[accRun.status] || accRun.status) : 'No run yet';
+        var empOf = function (id) { return E.filter(function (e) { return e.id === id; })[0] || null; };
+        var pendingPay = lines.filter(function (l) { return l.status !== 'Paid'; }).length;
+        return {
+          greet: 'Welcome back, ' + first(person.name) + '!',
+          kpis: [
+            { label: 'Cut-off', value: verified ? 'Verified' : 'Not verified', delta: verified ? 'Submitted by HR' : 'Waiting on HR', icon: 'check-circle' },
+            { label: 'Payroll run', value: runStatus, delta: accRun ? accRun.id + ' \u00b7 v' + accRun.version : 'Nothing computed yet', icon: 'peso' },
+            { label: 'Net payroll', value: money(net), delta: lines.length + ' payslip line' + (lines.length === 1 ? '' : 's'), icon: 'banknote' },
+            { label: 'Deductions', value: money(ded), delta: 'Tax + employee contributions', icon: 'file' }
+          ],
+          table: {
+            title: 'Payslips', sub: 'What each employee is paid for this cut-off',
+            cols: [{ t: 'EMPLOYEE', left: 20, w: 210 }, { t: 'DEPARTMENT', left: 240, w: 160 }, { t: 'NET PAY', left: 410, w: 120 }, { t: 'STATUS', left: 545, w: 110 }],
+            rows: lines.map(function (l) {
+              var e = empOf(l.employeeId) || {};
+              return { cells: [[e.name || l.name || l.employeeId, l.employeeId], e.dept || '\u2014', money(l.net), [l.status || 'Pending', (l.status === 'Paid' ? 'ok' : 'in')]] };
+            }),
+            empty: verified ? 'Nothing computed for this cut-off yet' : 'HR has not verified this cut-off'
+          },
+          feed: {
+            title: 'Before release', sub: verified ? 'What still stands between this run and payslips' : 'HR must verify the cut-off first', icon: 'shield',
+            items: verified
+              ? lines.filter(function (l) { return l.status !== 'Paid'; }).slice(0, 4).map(function (l) {
+                  var e = empOf(l.employeeId) || {};
+                  return { time: (l.employeeId || '').replace('EMP-', ''), title: e.name || l.employeeId, line1: e.dept || '', line2: money(l.net) + ' net', status: l.status || 'Pending', kind: 'in' };
+                })
+              : [{ time: 'HR', title: 'Attendance not verified', line1: 'The cut-off is open', line2: 'Accounting cannot compute it', status: 'Blocked', kind: 'off' }],
+            empty: 'Nothing outstanding \u00b7 ' + pendingPay + ' payment(s) still to process'
+          }
+        };
+      }
+
       case 'depthead': {
         var myDept = person.dept;
         var d = depts().filter(function (x) { return x.name === myDept; })[0] || depts()[0] || {};
