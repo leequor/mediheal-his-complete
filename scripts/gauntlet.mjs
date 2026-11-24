@@ -10,6 +10,8 @@ import fs from 'node:fs';
 import { startServer, openBrowser, signIn } from './_harness.mjs';
 
 const ITER = Number(process.env.ITER || 1);
+// SEED shifts the random streams, so a second round of the same ten strategies explores new paths.
+const SEED = Number(process.env.SEED || 0);
 const { server, base } = await startServer(8901 + (ITER % 8));
 const { browser } = await openBrowser();
 const ctx = await browser.newContext({ viewport: { width: 1440, height: 1024 }, acceptDownloads: true });
@@ -85,7 +87,7 @@ const rnd = (seed) => { let s = seed; return () => (s = (s * 1103515245 + 12345)
 // ------------------------------------------------------------------ strategies
 const strategies = {
   async 1() {                                     // random walk with invariants
-    const r = rnd(ITER * 7919 + 13);
+    const r = rnd(SEED + ITER * 7919 + 13);
     await reseed();
     for (let i = 0; i < 120; i++) {
       const pg = PAGES[Math.floor(r() * PAGES.length)];
@@ -264,7 +266,7 @@ const strategies = {
   },
 
   async 5() {                                     // forms, both directions, randomised values
-    const r = rnd(ITER * 104729 + 7);
+    const r = rnd(SEED + ITER * 104729 + 7);
     await reseed();
     for (const pg of ['registration-form.html', 'outpatient-form.html', 'appointment-form.html']) {
       for (let attempt = 0; attempt < 3; attempt++) {
@@ -310,7 +312,7 @@ const api = {
 try {
   if (strategies[ITER]) await strategies[ITER]();
   else {
-    const mod = await import('./gauntlet-2.mjs');
+    const mod = ITER <= 10 ? await import('./gauntlet-2.mjs') : await import('./gauntlet-3.mjs');
     await mod.run(ITER, api);
     pass = api.pass;
   }

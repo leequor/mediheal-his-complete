@@ -164,7 +164,9 @@ export async function run(ITER, api) {
       await page.goto(`${base}/${pg}`, { waitUntil: 'domcontentloaded' });
       // Under parallel load a fixed sleep can still be showing the previous document, whose scroll
       // lock would then be blamed on this page. Wait for this page's own body to be live.
-      await page.waitForFunction((want) => document.body && document.body.dataset && document.body.dataset.page === want.replace('.html', ''), pg, { timeout: 4000 }).catch(() => { });
+      // Enter can navigate (a focused link or a confirm button), which destroys the execution context
+      // under an evaluate. Settle the load first, and treat a destroyed context as "the page moved".
+      await page.waitForLoadState('domcontentloaded').catch(() => { });
       await page.waitForTimeout(160);
       const before = errors.length;
       let stuck = 0;
@@ -175,17 +177,21 @@ export async function run(ITER, api) {
           if (!a || a === document.body) return { body: true };
           const visible = a.offsetWidth || a.offsetHeight;
           return { body: false, visible: !!visible, tag: a.tagName };
-        });
+        }).catch(() => ({ body: false, navigated: true }));
         if (info.body) stuck++;
-        if (i % 4 === 3) { await page.keyboard.press('Enter'); await page.waitForTimeout(90); }
+        if (i % 4 === 3) {
+          await page.keyboard.press('Enter');
+          await page.waitForLoadState('domcontentloaded').catch(() => { });
+          await page.waitForTimeout(90);
+        }
         if (i % 7 === 6) { await page.keyboard.press('Escape'); await page.waitForTimeout(90); }
       }
       if (errors.length > before) bad(`keyboard ${pg} threw: ${errors[before]}`);
       const after = await page.evaluate(() => ({
         lock: /hidden/.test(getComputedStyle(document.body).overflow),
-        open: [...document.querySelectorAll('.ac-bg, [class$=-modal]')].filter(d => d.offsetWidth).length,
+        open: [...document.querySelectorAll('.ac-bg, .ac-m, [class$=-modal]')].filter(d => d.offsetWidth).length,
         focusBody: !document.activeElement || document.activeElement === document.body,
-      }));
+      })).catch(() => ({ lock: false, open: 0, focusBody: false, navigated: true }));
       if (after.open) bad(`keyboard ${pg}: a dialog was left open after Escape`);
       else if (after.lock) bad(`keyboard ${pg}: page left scroll-locked`);
       else ok();

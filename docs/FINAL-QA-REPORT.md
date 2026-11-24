@@ -645,3 +645,36 @@ Ten iterations clean · `qa-check` 91 · `acceptance-audit` 181 · `auth-check` 
 `qa-final-check` 73 · `qa-nav-check` 109 · `m10-1..4` 284 · `forms-check` 34 · `acm-check` 25 ·
 `surface-check` 52 · `matrix-check` 97 · `design-lint` 26 pages 0 findings · smoke 28 pages ·
 a11y 0 violations · responsive 140 · buttons 0 anomalies · visual 0.000% — **0 failures**.
+
+---
+
+## Pass 10 — second gauntlet round, calendar and money boundaries
+
+The same ten strategies re-run with a shifted random stream (`SEED=777001`), so the walks explore paths
+the first round never took, plus two new strategies the earlier rounds did not have:
+
+| # | Attack | Result |
+|---|---|---|
+| 11 | Calendar boundaries: month ends, 28-day February, 29 February, year end, Manila midnight, overnight shift, payroll annualising | 9 checks, clean |
+| 12 | Money extremes: `pesos → centavos → pesos` for 12 values, and payments of ₱999,999,999,999.99 / `1e15` / `-1` / `0.004` | 17 checks, clean |
+
+### What was confirmed correct rather than fixed
+
+- `stayDays` counts the arrival day **and** the last day on the ward (1 night = 2 days), and reads the
+  discharge instant from `a.discharge.at`. A stay from 31 January to 1 February is 2; 28 February 2028
+  (a leap day) to 1 March is 3; a stay beyond the 400-step guard stops at the guard.
+- `ledger.toCentavos` returns whole centavos for every tested value, including `0.005`, `1.005` and
+  `1234.565`, and the round trip drifts by zero.
+- A payment larger than the balance is **refused with a written reason** (`.bl-tip`:
+  `Enter an amount between ₱0.01 and ₱7,360.00`), not clamped. The amount field is `[data-i="2"]`; an
+  earlier probe wrote into the invoice label field and appeared to show a clamp — that was the probe.
+- `payrollCalc.annualize` returns a breakdown object, not a scalar; every figure in it is finite.
+
+### Harness faults fixed this round
+
+- the amount field index (`[data-i="2"]`, not the first input)
+- refusals on the billing modal arrive through `bl:tip` (`.bl-tip`), not `#kit-toast`
+- `stayDays` takes `discharge.at` and is inclusive of both ends
+- `payrollCalc` exists only on the payroll page
+- iteration 9: pressing Enter can navigate, which destroys the execution context under an `evaluate`;
+  it now waits for the load and treats a destroyed context as "the page moved" (3/3 stable after)
