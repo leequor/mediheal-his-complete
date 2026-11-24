@@ -474,3 +474,54 @@ where `onSave` can return `false` to keep the form open. Details in `DESIGN-LOCK
 **1,370 assertions across 20 harnesses + 144 role checks = 1,514. 0 failures.**
 smoke 28 pages · a11y 27 pages 0 violations · responsive 140 · buttons 0 anomalies (388 clicks) ·
 visual 0.000% at 1440 and 1366.
+
+---
+
+## Pass 7 — form boundaries, error signalling and target sizes
+
+Two new harnesses, plus fixes for what they found.
+
+### `scripts/forms-check.mjs` — 34 assertions
+
+Every entry form in the app, in both directions. **Three page forms** (registration, outpatient,
+appointment — driven with explicit values because they use custom listboxes) and **ten modals**
+(charges assign, claims create, laboratory order, pharmacy prescription, billing payment, admissions
+admit, personnel add, settings price, attendance request, treatment prescribe).
+
+For each form the suite asserts:
+
+| Rule | Why |
+|---|---|
+| An empty or hostile submit never writes to the store | junk must not become a record |
+| A refusal always states a reason in text (`role=alert`, toast, or the browser's own constraint message) | a red border alone is a colour-only error: invisible to a screen reader and to a colour-blind user |
+| A successful submit leaves no `NaN`, `undefined`, `[object Object]`, whitespace-only value or junk email | typed data has to survive the trip |
+| No uncaught page error at any point | the form path must not throw |
+
+### Defects found and fixed
+
+**1. `attendance.js` threw on submit** — `Cannot read properties of null (reading 'value')`:
+`submitnew` read `#atn3/4/5` directly, but the modal re-renders on every keystroke in the search box,
+so a field can be gone by the time submit lands. Missing fields now read as empty and fall through to
+the existing validation instead of throwing.
+
+**2. Registration and outpatient forms signalled invalid input by colour alone** — the only feedback
+was `.err` (a red border) plus focus. No text, no `aria-invalid`. Both forms now mark every invalid
+field with `aria-invalid="true"`, clear it on the next attempt, and announce the first problem through
+the app's own toast (a `role=status` live region): *Check "First Name" — it is highlighted in red.*
+
+**3. Target sizes under 24px** (WCAG 2.5.8) — the payslip link and row checkbox on payroll, the
+Details link on attendance, and the back links on the two registration forms and the profile page.
+Each keeps its exact Figma pixels and gains an invisible `::before`/`::after` expander: measured hit
+area 15px → 24px, 16px → 26px, 18px → 25px, with zero layout movement (visual baseline still 0.000%).
+
+### `scripts/design-lint.mjs` — 26 pages, 0 findings
+
+Objective design defects, measured rather than judged: duplicate visible ids, controls with no
+accessible name, images without alt text, targets under 24×24 (measuring the area that really
+receives the pointer, so an expander counts, and scrolling off-screen rows into view first), same-row
+control misalignment, text painted over text, mixed date formats, inconsistent money decimals.
+
+Two false positives were eliminated rather than "fixed" in the app: stacked label lines overlapping by
+a few pixels of line-height, and a bed-board element from a closed panel sharing coordinates with the
+"Admission records" heading. The detector now requires most of both boxes to be shared and hit-tests
+the element for real visibility.

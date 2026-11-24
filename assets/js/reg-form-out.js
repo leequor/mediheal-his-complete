@@ -127,9 +127,22 @@
   const today = HIS.today instanceof Date ? HIS.today : new Date(2026, 7, 31);
   $('chip').textContent = 'Today \u00b7 ' + HIS.fmtShort(today);
 
+  // Validation used to be signalled by a red border and nothing else: a colour-only error, which a
+  // screen reader never announces and a colour-blind user cannot see. Every attempt now marks the
+  // field with aria-invalid and states the problem in text through the app's own toast (also a
+  // role=status live region), then focuses and scrolls to the first bad field as before.
   $('confirm').onclick = () => {
-    let first = null;
-    const bad = el => { el.classList.add('err'); if (!first) first = el; };
+    let first = null, firstLabel = '';
+    document.querySelectorAll('.rf-ctl').forEach(el => { el.classList.remove('err'); el.removeAttribute('aria-invalid'); });
+    const bad = el => {
+      if (!el) return;
+      el.classList.add('err');
+      el.setAttribute('aria-invalid', 'true');
+      if (!first) {
+        first = el;
+        firstLabel = el.getAttribute('aria-label') || el.id.replace(/^f-/, '').replace(/-/g, ' ');
+      }
+    };
     ALL.forEach(f => {
       if (!f.r) return;
       const el = $('f-' + f.k), v = val(f.k);
@@ -139,7 +152,14 @@
       else if (f.k === 'atime' && !TIME.test(v)) bad(el); // added rule: h:mm AM/PM
     });
     if (val('email') && !/^\S+@\S+\.\S+$/.test(val('email'))) bad($('f-email'));
-    if (first) { (first.querySelector ? (first.querySelector('button') || first) : first).focus(); first.scrollIntoView({ block: 'center' }); return; }
+    if (first) {
+      const target = first.querySelector ? (first.querySelector('button') || first) : first;
+      target.focus(); first.scrollIntoView({ block: 'center' });
+      if (window.HIS && HIS.kit && HIS.kit.toast) {
+        HIS.kit.toast('Check "' + firstLabel + '" — it is highlighted in red. Required fields and dates must be filled (dates as dd/mm/yyyy).');
+      }
+      return;
+    }
     const dob = parseDMY(val('dob'));
     let age = today.getFullYear() - dob.getFullYear();
     if (today < new Date(today.getFullYear(), dob.getMonth(), dob.getDate())) age--;

@@ -56,3 +56,6 @@
 .pf.has-req{height:1089px}
 .pf.has-req.has-th{height:1436px}
 .pf.has-req>.pf-back,.pf.has-req>.pf-card{transform:translateY(104px)}
+
+/* Same 24px target rule as the registration forms' back link. */
+.pf-back::after { content: ''; position: absolute; inset: -4px 0; }

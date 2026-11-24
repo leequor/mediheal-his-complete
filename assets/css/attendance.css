@@ -167,3 +167,6 @@ textarea.at-m-i{height:88px;resize:none;white-space:normal;line-height:20px}
 .at-lv-scroll::-webkit-scrollbar{width:8px}
 .at-lv-scroll::-webkit-scrollbar-thumb{background:#c8dcea;border-radius:4px}
 .at-el{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* Same target-size fix as payroll: the Details link keeps its 15px label and gains a 24px hit area. */
+.at-ps::before { content: ''; position: absolute; inset: -5px -6px; }
