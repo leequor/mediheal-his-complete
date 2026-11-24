@@ -381,6 +381,8 @@
     if (st.modal === 'export') return { y: 453, h: 438, t: 'Export payroll', s: per + ' \u00b7 All employees', ok: 'Export file', c: 'Cancel',
       f: [['File format', 'CSV (opens in Excel)'], ['Records', run.lines.length + ' employees'], ['Pay period', run.periodLabel],
         ['Total net pay', fmt(T.net)], ['Columns', 'Basic, absence, late, overtime, night, premiums, allowances, gross, SSS, PhilHealth, Pag-IBIG, tax, net, employer shares']] };
+    if (st.modal === 'gen' && run.status === 'released') return { y: 453, h: 300, t: 'Payroll already released', s: per + ' \u00b7 final for this cut-off', ok: 'Close', c: '',
+      f: [['Status', 'Released'], ['Payslips', 'Issued once, at release'], ['Next step', 'Process payments']] };
     if (st.modal === 'gen') return { y: 453, h: 438, t: 'Compute & Release Payslips', s: per + ' \u00b7 Requires the cut-off verified by HR', ok: 'Compute & Release', c: 'Cancel',
       f: [['Employees', run.lines.length + ' payslips'], ['Total net pay', fmt(T.net)], ['Pay period', run.periodLabel],
         ['Delivery', 'Download — one PDF per employee, in a ZIP'], ['Includes', 'Every earning and deduction line, plus the employer contribution block']] };
@@ -555,7 +557,15 @@
         tip(step.next === 'released' ? 'Payments released \u00b7 ' + fmt(res.run.totals.net) : 'Payroll ' + step.next);
       } else if (k === 'gen') {
         // Step 3 of the hand-off. Accounting may only compute a cut-off that HR has verified, and one
-        // click takes the run from computed to released so the employees can open their own payslip.
+        // click takes the run from computed to released so employees can open their own payslip.
+        // A released run is final: clicking again must not re-announce a release or re-issue payslips,
+        // or the page looks like it is releasing the same money over and over.
+        if (run.status === 'released') {
+          tip('Already released. Payslips for this cut-off were issued once and the run is final.');
+          st.modal = '';
+          render();
+          return;
+        }
         if (!HIS.attendancePeriod.isVerified(run.periodId)) {
           tip('HR has not verified this cut-off yet. Attendance must be verified before payroll can compute it.');
           return;
