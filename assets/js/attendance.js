@@ -138,7 +138,7 @@
     h += field('emp', 24, 98, 374, 'EMPLOYEE', 'Select employee', e ? e.name + ' \u00b7 ' + e.id : '').replace("top:80px", 'top:80px');
     h += field('tin', 24, 164, 179, 'TIME IN', '-- : -- AM', f.tin) + field('tout', 219, 164, 179, 'TIME OUT', '-- : -- PM', f.tout);
     h += "<button class='at-cbtn pri' data-act='clockin' style='left:24px;top:214px;width:150px'>Clock in</button><button class='at-cbtn' data-act='clockout' style='left:186px;top:214px;width:150px'>Clock out</button></div>";
-    h += "<div class='at-a at-card at-ac' style='left:510px;width:422px'><div class='at-st'>Leave requests</div><div class='at-ds at-ex'>Settle these before syncing to payroll.</div>";
+    h += "<div class='at-a at-card at-ac' style='left:510px;width:422px'><div class='at-st'>Leave requests</div><div class='at-ds at-ex'>Settle these before HR verifies the cut-off.</div>";
     h += "<button class='at-nr' data-act='newreq' style='left:278px;top:18px;width:120px'>+ New request</button><button class='at-va' data-act='viewall' style='left:330px;top:48px;width:68px'>View all \u2192</button>";
     [[86, 88, 0], [152, 154, 1]].forEach(function (p) {
       var l = L[p[2]]; if (!l) return;
@@ -209,12 +209,18 @@
     var xb = "<button class='at-m-x' data-close='1' aria-label='Close'>\u00d7</button><div class='at-m-d'></div>";
     if (m === 'list') {
       var L = A.leaves, n = L.length;
-      var mh = Math.min(600, 148 + 48 * n + 72);
+      var mh = Math.min(620, 152 + 64 * n + 72);
       var bt = mh - 64;
       var inner2 = xb + "<div class='at-m-t'>Leave requests</div><div class='at-m-s'>" + A.period + ' pay period \u00b7 ' + n + ' requests \u00b7 ' + pending().length + ' pending</div>';
       inner2 += "<div class='at-lv-scroll' style='left:32px;top:100px;width:616px;height:" + (mh - 220) + "px'>";
       L.forEach(function (l, i) {
-        inner2 += "<div class='at-m-i' style='top:" + (12 + 48 * i) + "px'>" + esc(l.name + ' \u00b7 ' + l.type + ' \u00b7 ' + l.range + ' \u00b7 ' + l.days + ' day' + (l.days === 1 ? '' : 's') + ' \u00b7 ' + l.status) + '</div>';
+        var head = l.name + ' \u00b7 ' + l.type + ' \u00b7 ' + l.range + ' \u00b7 ' + l.days + ' day' + (l.days === 1 ? '' : 's') + ' \u00b7 ' + l.status;
+        inner2 += "<div style='position:absolute;left:0;top:" + (12 + 64 * i) + "px;width:100%'>" +
+          "<div style='font:500 13px/18px Inter,sans-serif;color:#1c2b30'>" + esc(head) + '</div>' +
+          "<div style='font:400 12px/16px Inter,sans-serif;color:#6f8890;margin-top:3px;padding-right:10px'>" +
+            esc(l.reason || 'No reason given') + '</div>' +
+          (l.cover ? "<div style='font:400 12px/16px Inter,sans-serif;color:#8aa0a8;margin-top:1px;padding-right:10px'>Cover: " + esc(l.cover) + '</div>' : '') +
+          '</div>';
       });
       inner2 += '</div>';
       inner2 += "<button class='at-m-c' data-close='1' style='top:" + bt + "px'>Close</button><button class='at-m-ok' data-act='newreq' style='top:" + bt + "px'>New request</button>";
@@ -366,7 +372,14 @@
       g(3).classList.toggle('bad', !okS); g(4).classList.toggle('bad', !okE); g(5).classList.toggle('bad', !g(5).value.trim());
       if (!okS || !okE || !g(5).value.trim()) { tip(!okS ? 'Start date must look like Sep 9, 2026' : (!okE ? 'End date must be on or after the start date' : 'Add a reason')); return; }
       var s = new Date(sd), e2 = new Date(ed);
-      A.leaves.push({ name: g(1).value.split(' \u00b7 ')[0], type: g(2).value, range: rangeLabel(s, e2), days: Math.round((ed - sd) / 86400000) + 1, status: 'Pending' });
+      // The reason and the coverage line were collected on the form and then thrown away, so a request
+      // arrived with no explanation and nobody could review it. Store both.
+      var coverEl = document.getElementById('atn6');
+      A.leaves.push({
+        name: g(1).value.split(' \u00b7 ')[0], type: g(2).value, range: rangeLabel(s, e2),
+        days: Math.round((ed - sd) / 86400000) + 1, status: 'Pending',
+        reason: g(5).value.trim(), cover: coverEl ? coverEl.value.trim() : ''
+      });
       A.dirty = true; save();
       st.modal = ''; render(); tip('Leave request submitted for ' + g(1).value.split(' \u00b7 ')[0]);
     }
