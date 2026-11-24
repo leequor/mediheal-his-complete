@@ -102,6 +102,7 @@
 
   // Create. Returns { ok, account } or { ok:false, error }.
   function create(input) {
+    input = input || {};
     var email = norm(input.email);
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return { ok: false, error: 'Enter a valid email address.' };
     var rows = all();

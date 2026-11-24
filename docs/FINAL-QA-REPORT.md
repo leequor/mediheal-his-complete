@@ -73,6 +73,36 @@ no overlap, no console error.
 
 Both run the same way as the other suites: `PW=<playwright-core> node scripts/sequences-check.mjs`.
 
+### Function sweep — every callable (`function-check.mjs`)
+
+The page suites prove the screens work; this one walks the API itself. It discovers the surface in
+the running app (**330 callables across 27 namespaces**), then calls each with no arguments, `null`,
+`{}`, a junk record and junk primitives — **1,519 calls** — failing on any function that throws where
+the app's convention is `return {ok:false}`, and on any call that breaks the ledger, charge, stock or
+bed invariants.
+
+It found five genuine defensive gaps, now fixed with one-line guards in the codebase's own style
+(`input = input || {}`):
+
+| Function | Was | Now |
+|---|---|---|
+| `accounts.create` | `TypeError` reading `.email` of undefined | returns `{ok:false, error:'Enter a valid email address.'}` |
+| `registry.duplicates` | `TypeError` reading `.last` | returns empty duplicate sets |
+| `requests.create` | `TypeError` reading `.text` | returns `{ok:false, error:'Describe the change…'}` |
+| `admissions.bedAt` / `stayDays` / `billableDates` | `Invalid time value` on a half-built admission | `null` / `0` / `[]` |
+| `wageFloor.equivalentDaily` / `equivalentMonthly` | `TypeError` reading `.monthlyBasic` | `0` |
+
+Two groups still throw **by contract**, and the suite documents them explicitly so a new thrower
+fails the build instead of hiding: `kit.dropdown`/`kit.row` (DOM builders — call sites always pass
+options/cells), `store.update` (third argument is a callback) and `attendancePeriod.classify` (needs
+an approved period's settings). The 23 **record readers** (`ledger.pendingOf`, `lab.cancelPolicy`,
+`pharmacy.remaining`, `claims.can`, `pdf.*`, `payrollCalc.compute`, `payrollRuns.totalsOf`, …) take a
+record by contract; the suite calls every one with a real record pulled from the app and fails if it
+throws.
+
+Also verified: pages survive `payrollRuns.reset()`, `claims.reset()`, `lab.save([])`,
+`charges.reset()` and `attendancePeriod.reset()` followed by a reload — they re-seed, with no error.
+
 `qa-check.mjs` is new and covers only what this pass changed: the two sign-in routes, patient
 sign-out, appointment counts and pagination, per-account avatars, per-role notifications, dashboard
 metrics against their module, the bed dialog's controlled fields and dependent list, the payslip

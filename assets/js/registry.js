@@ -162,6 +162,7 @@
   // alone is only a *possible* duplicate, because Filipino naming repeats a great deal. Neither
   // merges automatically — the caller decides, which is what the brief asks for.
   function duplicates(input) {
+    input = input || {};
     var last = String(input.last || '').trim().toLowerCase();
     var dob = String(input.dob || '').trim();
     var full = String(input.name || '').trim().toLowerCase();
