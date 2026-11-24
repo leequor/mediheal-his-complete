@@ -80,6 +80,25 @@
     if (!Array.isArray(rows) || !rows.length) {
       rows = seed();
       HIS.store.set(KEY, rows);
+      return rows;
+    }
+    // Migration. A build that adds a seeded account (accounting@, 2026-11-25) must reach browsers that
+    // already hold the older seed, or that email fails with "No account uses that email address" until
+    // the visitor clears storage. Seeded rows only, never user-created ones, and an existing row is
+    // never overwritten, so local edits and deactivations survive.
+    var have = {};
+    rows.forEach(function (a) { if (a && a.email) have[norm(a.email)] = true; });
+    var missing = seed().filter(function (s) { return !have[norm(s.email)]; });
+    if (missing.length) {
+      rows = rows.concat(missing);
+      HIS.store.set(KEY, rows);
+      if (window.HIS.audit && HIS.audit.append) {
+        HIS.audit.append({
+          who: 'System', role: 'System',
+          what: 'Seeded account added — ' + missing.map(function (m) { return m.email; }).join(', '),
+          entity: 'accounts:seed', before: '', after: 'added'
+        });
+      }
     }
     return rows;
   }
