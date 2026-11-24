@@ -112,7 +112,9 @@
     // the period control, so the control could not be clicked. Only its buttons take the pointer.
     h += "<div class='pr-a' style='left:68px;top:207px;width:1304px;height:100px;pointer-events:none'>";
     h += "<button class='pr-btn' data-modal='export' style='left:768px;width:146px'>" + ic('download', 18, 1.8) + '<span>Export payroll</span></button>';
-    h += "<button class='pr-btn' data-modal='gen' style='left:926px;width:172px'>" + ic('file', 18, 1.8) + '<span>Compute &amp; Release Payslips</span></button>';
+    // Fixed-width Figma slot: 172px fits ~17 characters, so the visible label is shortened and the
+    // full phrase lives in the title (hover) and in the dialog heading. A clipped label looked broken.
+    h += "<button class='pr-btn' data-modal='gen' title='Compute &amp; Release Payslips' style='left:926px;width:172px'>" + ic('file', 18, 1.8) + '<span>Compute &amp; release</span></button>';
     h += "<button class='pr-btn pri' data-modal='proc' style='left:1110px;width:174px'>" + ic('send', 18, 1.8) + '<span>Process payments</span></button></div>';
     var M = [['users', 'Employees in payroll', String(T.headcount) + ' of ' + E.length, paid.length + ' paid \u00b7 ' + (T.headcount - paid.length) + ' awaiting settlement'],
       ['wallet', 'Total earnings', fmt(T.gross), 'Basic + overtime + premiums + allowances'],

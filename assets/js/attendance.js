@@ -80,7 +80,9 @@
     h += at('at-div', 271, 233, '');
     h += at('at-lbl', 292, 228.5, 'PAYROLL PERIOD') + at('at-pd', 292, 248.5, A.period) + at('at-meth', 292, 272.5, 'Feeds Payroll \u00b7 Semi-monthly');
     h += "<button class='at-btn' data-act='export' style='left:817px;width:175px'>" + ic('download', 18, 1.8) + '<span>Export attendance</span></button>';
-    h += "<button class='at-btn' data-act='approve' style='left:1004px;width:185px'>" + ic('file', 18, 1.8) + '<span>Verify &amp; Submit Attendance</span></button>';
+    // The old "Sync to payroll" slot next to this button is gone, so the verify action takes the room
+    // it needs instead of clipping a 26-character label into an 18-character box.
+    h += "<button class='at-btn' data-act='approve' title='Verify &amp; Submit Attendance' style='left:1004px;width:300px'>" + ic('file', 18, 1.8) + '<span>Verify &amp; Submit Attendance</span></button>';
     // No separate "Sync to payroll" button: verifying the cut-off is what publishes the hours to
     // Accounting. Two buttons for one hand-off is how a demo contradicts itself.
     var M = [['users', 'Total personnel', String(N), inn + ' clocked in \u00b7 ' + (N - inn) + ' not in'], ['usercheck', 'Present', String(cnt('Present')), 'On time, within 15-minute grace'],
