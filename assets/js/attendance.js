@@ -1,5 +1,5 @@
 // Attendance: ONE template (Figma 2002:369) + state frames as JS states: Department filter (2008:1077), Status filter (2010:1439), pickers (2021:700/2021:833/2021:896),
-// overlays Export (2014:2582), Approve timesheets (2014:2571), Sync to payroll (2014:2574), Leave updated (2014:2578), Recorded (2011:2563), Details (2014:2585),
+// overlays Export (2014:2582), Verify & Submit Attendance (2014:2571), Leave updated (2014:2578), Recorded (2011:2563), Details (2014:2585),
 // New leave request (2030:9301), Leave requests list (2030:9330).
 // Additions (not in Figma): live search, row selection, Clock in/out really update the register (in memory), Approve/Decline change the first pending request, New request adds one,
 // Export downloads a CSV, details of employees other than EMP-001 are derived, validation of the Record attendance form.
