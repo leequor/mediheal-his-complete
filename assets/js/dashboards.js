@@ -324,7 +324,7 @@
           kpis: [
             { label: 'Headcount', value: String(S.length), delta: hrActive + ' active staff', icon: 'users' },
             { label: 'Cut-off', value: hrVerified ? 'Verified' : 'Open', delta: hrVerified ? 'Submitted to Accounting' : 'Waiting for your verification', icon: 'check-circle' },
-            { label: 'Timesheets to review', value: String(hrUnapproved.length), delta: hrUnapproved.length ? 'Blocking payroll' : 'Nothing blocking payroll', icon: 'file' },
+            { label: 'Timesheets to review', value: String(hrUnapproved.length), delta: hrUnapproved.length ? 'Blocking payroll' : 'Nothing blocking payroll', icon: 'clipboard-plus' },
             { label: 'Departments', value: String(new Set(S.map(function (s) { return s.dept; })).size), delta: 'With staff on file', icon: 'branches' }
           ],
           table: {
@@ -336,7 +336,7 @@
             empty: 'No staff on file'
           },
           feed: {
-            title: 'Attendance to verify', sub: 'Timesheets still open for this cut-off', icon: 'file',
+            title: 'Attendance to verify', sub: 'Timesheets still open for this cut-off', icon: 'clipboard-plus',
             items: hrUnapproved.slice(0, 4).map(function (e) {
               return { time: (e.id || '').replace('EMP-', ''), title: e.name || e.id, line1: (e.dept || '') + ' · ' + (e.role || ''), line2: 'Timesheet not yet verified', status: 'Open', kind: 'in' };
             }),
@@ -371,8 +371,8 @@
           kpis: [
             { label: 'Cut-off', value: verified ? 'Verified' : 'Not verified', delta: verified ? 'Submitted by HR' : 'Waiting on HR', icon: 'check-circle' },
             { label: 'Payroll run', value: runStatus, delta: accRun ? accRun.id + ' \u00b7 v' + accRun.version : 'Nothing computed yet', icon: 'peso' },
-            { label: 'Net payroll', value: money(net), delta: lines.length + ' payslip line' + (lines.length === 1 ? '' : 's'), icon: 'banknote' },
-            { label: 'Deductions', value: money(ded), delta: 'Tax + employee contributions', icon: 'file' }
+            { label: 'Net payroll', value: money(net), delta: lines.length + ' payslip line' + (lines.length === 1 ? '' : 's'), icon: 'peso' },
+            { label: 'Deductions', value: money(ded), delta: 'Tax + employee contributions', icon: 'receipt' }
           ],
           table: {
             title: 'Payslips', sub: 'What each employee is paid for this cut-off',
