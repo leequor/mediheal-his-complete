@@ -193,8 +193,13 @@ thrown.forEach(t => { byFn[t.fn] = byFn[t.fn] || []; byFn[t.fn].push(t); });
 const documented = f => INTENTIONAL.test(f) || Object.prototype.hasOwnProperty.call(RECORD_READERS, f);
 const unexpected = Object.keys(byFn).filter(f => !documented(f));
 
-// Every documented reader must work on the data the app actually holds.
+// Every documented reader must work on the data the app actually holds. The function sweep before
+// this point may have signed out (requireAuth, signOut and deeplink all do), and a guarded page then
+// redirects to the sign-in screen, where the reader does not exist. Re-establish the session first.
 const readerFailures = [];
+await page.goto(B + '/index.html', { waitUntil: 'load' }).catch(() => null);
+await page.waitForTimeout(150);
+await page.evaluate(() => { try { HIS.auth.attempt('superadmin@mediheal.test', 'MediHeal2026!', true); } catch (e) {} }).catch(() => null);
 for (const fn of Object.keys(RECORD_READERS)) {
   const ns = fn.split('.')[0];
   const page4 = ['ledger', 'pdf'].includes(ns) ? 'billing.html'
@@ -204,7 +209,13 @@ for (const fn of Object.keys(RECORD_READERS)) {
     : ['payrollCalc', 'payrollRuns', 'wageFloor'].includes(ns) ? 'payroll.html'
     : 'dashboard.html';
   await page.goto(B + '/' + page4, { waitUntil: 'load' }).catch(() => null);
-  await page.waitForTimeout(180);
+  await page.waitForTimeout(150);
+  const landed = await page.evaluate(() => location.pathname.split('/').pop()).catch(() => '');
+  if (landed !== page4) {
+    await page.evaluate(() => { try { HIS.auth.attempt('superadmin@mediheal.test', 'MediHeal2026!', true); } catch (e) {} }).catch(() => null);
+    await page.goto(B + '/' + page4, { waitUntil: 'load' }).catch(() => null);
+    await page.waitForTimeout(150);
+  }
   const r = await page.evaluate(expr => {
     try { const v = eval(expr); return { ok: true, type: typeof v }; }
     catch (e) { return { ok: false, error: String(e.message).slice(0, 80) }; }

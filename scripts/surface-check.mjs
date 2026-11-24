@@ -33,7 +33,7 @@ const PAGES = ['dashboard.html', 'registration.html', 'appointments.html', 'prof
   'nursing.html', 'consultation.html', 'admissions.html', 'personnel.html', 'payroll.html', 'attendance.html',
   'reports.html', 'accounts.html', 'settings.html', 'audit.html', 'appointment-confirmed.html', 'portal.html'];
 
-const DIALOG = '.ac-bg, .bl-modal, .pe-modal, .tp-modal, .at-modal, .cl-bg, .dm-bg, [class$=-modal], [role=dialog]';
+const DIALOG = '.ac-bg, .ac-m, .bl-modal, .pm-modal, .pe-modal, .tp-modal, .at-modal, .cl-bg, .dm-bg, [class$=-modal], [role=dialog]';
 const openDialogs = () => page.evaluate((sel) => [...document.querySelectorAll(sel)].filter(d => d.offsetWidth).length, DIALOG);
 const reattach = async () => { await page.close(); page = await ctx.newPage(); attach(); await page.goto(`${base}/index.html`); await signIn(page); };
 
@@ -101,7 +101,7 @@ for (const pg of dialogPages) {
         if (!d) return null;
         const r = d.getBoundingClientRect();
         return { x: Math.max(4, r.left - 12), y: Math.max(4, Math.min(innerHeight - 4, r.top + 8)) };
-      }, '.ac-bg, .bl-bg, .pe-bg, .tp-bg, .at-bg, .scrim');
+      }, '.ac-bg, .bl-bg, .pe-bg, .tp-bg, .at-bg, .scrim, .ac-m');
       if (spot) {
         await page.mouse.click(spot.x, spot.y);
         await page.waitForTimeout(200);
@@ -231,7 +231,7 @@ for (const f of FLOWS) {
   await page.evaluate(() => {
     const dialogs = [...document.querySelectorAll('.ac-bg, .bl-modal, .pe-modal, .tp-modal, .at-modal')].filter(d => d.offsetWidth);
     const scope = dialogs[dialogs.length - 1] || document.body;
-    const btns = [...scope.querySelectorAll('button')].filter(b => b.offsetWidth && !b.disabled && !/cancel|close|×/i.test(b.textContent || ''));
+    const btns = [...scope.querySelectorAll('button')].filter(b => b.offsetWidth && !b.disabled && !/^(cancel|close|dismiss|×)$/i.test(b.textContent || ''));
     const hit = btns.find(b => /pay|record|create|save|assign|submit/i.test(b.textContent || '')) || btns[btns.length - 1];
     if (hit) { hit.click(); hit.click(); }
   });

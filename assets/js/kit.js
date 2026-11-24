@@ -243,7 +243,22 @@
     mo.observe(document.body, { childList: true, subtree: true });
   }
 
-  HIS.kit = { esc: esc, GEOM: GEOM, modal: modal, dropdown: dropdown, pill: pill, row: row, toast: toast,
+  // The three input pages are Figma stacks, not <form> elements, so pressing Enter in a field did
+// nothing at all. Every one of them submits through a #confirm button, so Enter anywhere in a text
+// field now confirms - except in a textarea, where Enter is a newline.
+document.addEventListener('keydown', function (e) {
+  if (e.key !== 'Enter' || e.defaultPrevented || e.isComposing) return;
+  var t = e.target;
+  if (!t || !t.matches || !t.matches('input, select')) return;
+  if (t.tagName === 'SELECT') return;
+  if (t.type === 'checkbox' || t.type === 'radio' || t.type === 'submit' || t.type === 'file') return;
+  var btn = document.getElementById('confirm');
+  if (!btn || !btn.offsetWidth) return;
+  e.preventDefault();
+  btn.click();
+});
+
+HIS.kit = { esc: esc, GEOM: GEOM, modal: modal, dropdown: dropdown, pill: pill, row: row, toast: toast,
     modalStack: { open: stackOpen, close: stackClose, top: function () { return stack[stack.length - 1] || null; },
       depth: function () { return stack.length; }, all: function () { return stack.slice(); } } };
 

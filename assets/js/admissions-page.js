@@ -6,6 +6,14 @@
 // refuse: an active admission can be charged, transferred or discharged; a discharged one can only be
 // reopened if the bed is still free.
 (function () {
+  // Dates arrive from a form, a seeded record or a damaged one; an unreadable value becomes undefined
+  // instead of a RangeError that would abort the whole render.
+  function safeIso(v) {
+    if (!v) return undefined;
+    var t = new Date(v).getTime();
+    return isFinite(t) ? new Date(t).toISOString() : undefined;
+  }
+
   var stage = document.getElementById('stage');
   var esc = HIS.kit.esc;
   var q = '', statusFilter = 'active';
@@ -258,7 +266,7 @@
         var r = HIS.admissions.admit({
           patientId: v.patientId, bedId: v.bedId, attending: v.attending,
           diagnosis: v.diagnosis, payer: { type: v.payerType, reference: v.payerRef },
-          admittedAt: v.admittedAt ? new Date(v.admittedAt).toISOString() : undefined
+          admittedAt: safeIso(v.admittedAt)
         });
         if (!r.ok) { err.textContent = r.error; return true; }
         // Day one is posted immediately so the admission is never financially invisible.
@@ -362,7 +370,7 @@
         (bill ? ' Invoice ' + bill.id + ' balance ' + peso(HIS.ledger.balanceOf(bill)) + '.' : ' No invoice is linked to this episode.') +
         '</div>',
       onSubmit: function (v, err) {
-        var at = v.at ? new Date(v.at).toISOString() : undefined;
+        var at = safeIso(v.at);
         var r = HIS.admissions.discharge(a.id, { disposition: v.disposition, summary: v.summary, note: v.note, at: at });
         if (!r.ok) { err.textContent = r.error; return true; }
         toast(a.id + ' discharged \u00b7 bed ' + a.bedLabel + ' released' +

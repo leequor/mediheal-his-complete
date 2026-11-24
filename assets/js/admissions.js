@@ -332,8 +332,11 @@
   }
 
   function dateKey(d) {
-    // Manila-local calendar date for an instant.
-    var x = new Date(new Date(d).getTime() + 8 * 3600 * 1000);
+    // Manila-local calendar date for an instant. Unreadable input (a legacy or damaged record) is
+    // reported as no date rather than thrown: one bad row must not blank the page around it.
+    var t = new Date(d).getTime();
+    if (!isFinite(t)) return '';
+    var x = new Date(t + 8 * 3600 * 1000);
     return x.toISOString().slice(0, 10);
   }
 

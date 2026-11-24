@@ -157,7 +157,10 @@
     })[0];
     return {
       status: 'unknown', dailyRate: null, region: region, sector: opts.sector, locality: opts.locality,
-      nextOrder: pending ? { id: pending.id, effectiveFrom: pending.effectiveFrom } : null,
+      nextOrder: pending ? {
+        id: pending.id, effectiveFrom: pending.effectiveFrom,
+        dailyRate: pending.rates ? pending.rates[(pending.split === 'sector' ? (opts.sector || 'non-agriculture') : opts.locality)] : null
+      } : null,
       suspendedOrder: suspended ? { id: suspended.id, effectiveFrom: suspended.effectiveFrom, note: suspended.note } : null
     };
   }
@@ -262,7 +265,9 @@
       if (f.status === 'needs-category') { base.explanation = f.explanation; return base; }
       base.status = 'unknown';
       base.explanation = 'No wage order in force for ' + base.region + ' / ' + base.sector + ' on ' + iso(asOf) +
-        (f.nextOrder ? '. ' + f.nextOrder.id + ' sets ' + f.nextOrder.dailyRate + ' from ' + f.nextOrder.effectiveFrom + '.' : '.') +
+        (f.nextOrder ? '. ' + f.nextOrder.id + ' sets ' +
+          (f.nextOrder.dailyRate == null ? 'a new floor' : '₱' + Number(f.nextOrder.dailyRate).toFixed(2)) +
+          ' from ' + f.nextOrder.effectiveFrom + '.' : '.') +
         (f.suspendedOrder ? ' ' + f.suspendedOrder.id + ' is suspended: ' + f.suspendedOrder.note : '');
       return base;
     }

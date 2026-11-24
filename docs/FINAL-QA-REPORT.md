@@ -586,3 +586,62 @@ Every suite: `qa-check` 91 · `acceptance-audit` 181 · `auth-check` 25 · `port
 `qa-final-check` 73 · `qa-nav-check` 109 · `m10-1..4` 284 · `forms-check` 34 · `matrix-check` 97 ·
 `surface-check` 52 · `walk-fuzz` (variable) · `design-lint` 26 pages 0 findings · smoke 28 pages ·
 a11y 0 violations · responsive 140 · buttons 0 anomalies · visual 0.000% — **0 failures**.
+
+---
+
+## Pass 9 — the ten-run gauntlet
+
+Ten iterations, each attacking a different surface rather than repeating the last one: repeating a
+single check ten times proves only that one check.
+
+| # | Attack | Result |
+|---|---|---|
+| 1 | Random walk, random control, random junk, invariants after every step | 120 checks, clean |
+| 2 | Hostile value into every visible field of every page, then a reload | 21 checks, clean |
+| 3 | 11 accounts × 28 pages with tabs, sorts, filters and searches | 231 checks, clean |
+| 4 | Every dialog: hostile submit, then Escape | 116 checks, clean |
+| 5 | The three input pages, both directions, randomised values | 9 checks, clean |
+| 6 | Money sequences: rounding-hostile amounts, centavos drift check | 30 checks, clean |
+| 7 | State machines: row actions in shuffled order, double clicks, bed consistency | 30 checks, clean |
+| 8 | 14 store keys corrupted with 5 wrong shapes each, plus junk URLs | 76 checks, clean |
+| 9 | Keyboard-only journey, 26 tabs per page with Enter/Escape | 19 checks, clean |
+| 10 | Two tabs writing in the same tick, reload mid-flight | 6 checks, clean |
+
+Each iteration is a script (`scripts/gauntlet.mjs` + `gauntlet-2.mjs`) and is replayable on its own.
+
+### Defects found and fixed
+
+**1. Enter did nothing on all three input pages.** None of `registration-form.html`,
+`outpatient-form.html` or `appointment-form.html` is a `<form>`: they are Figma stacks whose submit is a
+`<button type="button" id="confirm">`. Pressing Enter in a field — the universal convention — produced
+no submit, no error and no message. `kit.js` now confirms on Enter in any text field on a page that has
+a `#confirm`, while a textarea still takes Enter as a newline.
+
+**2. A damaged store value crashed two pages.** A record with an unreadable date made
+`admissions.html` throw `RangeError: Invalid time value` from `dateKey`, and a record with no name made
+`registration.html` throw `TypeError … reading 'split'` from `initialsOf`. Both are now total
+functions: an unreadable date reports no date, an unreadable name degrades to `?`. Corruption of 14
+store keys in 5 wrong shapes each — 76 combinations — now renders normally.
+
+**3. A payroll sentence always said "sets undefined".** For any region/sector with a wage order not yet
+in force, the explanation read `NCR-28 sets undefined from 2026-09-26` because `nextOrder` was built
+with only an id and a date. It now carries the rate and reads `NCR-28 sets ₱755.00 from 2026-09-26.`
+
+### A coverage gap this pass closed
+
+`.ac-m` is a `<form role="dialog">` shell used by 25 dialogs on 20 pages. It was invisible to the
+earlier dialog passes, because every selector there matched `[class$=-modal]` and this one ends in
+`-m`. `scripts/acm-check.mjs` now covers it, and it behaves differently from the others: it refuses
+with the browser's own `required` validation rather than with `#mdErr`, so a refusal is spoken by the
+browser and shown against the field.
+
+### Verification
+
+Ten iterations clean · `qa-check` 91 · `acceptance-audit` 181 · `auth-check` 25 · `portal-check` 40 ·
+`roles-check` 106 · `ledger-check` 46 · `charges-check` 44 · `claims-check` 43 · `payroll-check` 89 ·
+`finance-check` 31 · `clinical-check` 53 · `revenue-check` 81 · `sequences-check` 101 ·
+`edge-check` 67 · `function-check` 330 callables · `exhaustive-controls-check` 36 ·
+`personnel-add-check` 28 · `adt-boundary-check` 65 · `claims-modal-stack-check` 76 ·
+`qa-final-check` 73 · `qa-nav-check` 109 · `m10-1..4` 284 · `forms-check` 34 · `acm-check` 25 ·
+`surface-check` 52 · `matrix-check` 97 · `design-lint` 26 pages 0 findings · smoke 28 pages ·
+a11y 0 violations · responsive 140 · buttons 0 anomalies · visual 0.000% — **0 failures**.
