@@ -269,6 +269,7 @@
   // later re-accrual price the earlier days at the destination rate. The admitting bed is
   // `transfers[0].from` once a transfer exists.
   function bedAt(admission, when) {
+    if (!admission) return null;
     var t = new Date(when).getTime();
     var tr = admission.transfers || [];
     var base = tr.length
@@ -340,7 +341,7 @@
   // not the number of days that were charged — a legacy admission's nights are already inside its
   // invoice's opening amount and are deliberately not re-posted.
   function stayDays(a) {
-    if (!a) return 0;
+    if (!a || !a.admittedAt) return 0;
     var start = dateKey(a.admittedAt);
     var end = a.discharge && a.discharge.at ? dateKey(a.discharge.at) : dateKey(clock());
     var n = 0, d = start, guard = 0;
@@ -368,7 +369,7 @@
   // later day follows the noon cutoff: billable if the patient was still in the bed at 12:00, and
   // the discharge day counts only when the patient left after noon.
   function billableDates(admission, asOf) {
-    if (!admission) return [];
+    if (!admission || !admission.admittedAt) return [];
     var now = asOf ? new Date(asOf) : clock();
     var start = dateKey(admission.admittedAt);
     var end = admission.discharge && admission.discharge.at ? dateKey(admission.discharge.at) : dateKey(now);

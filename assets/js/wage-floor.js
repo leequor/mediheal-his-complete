@@ -214,6 +214,7 @@
 
   // What the employee is paid for one normal day.
   function equivalentDaily(employee) {
+    employee = employee || {};
     var c = classification(employee);
     if (c.basis === 'daily') return Number(employee.dailyRate) || 0;
     if (c.basis === 'hourly') return (Number(employee.hourlyRate) || 0) * c.hoursPerDay;
@@ -223,6 +224,7 @@
 
   // Equivalent monthly rate, per the NWPC formula for the employee's own classification.
   function equivalentMonthly(employee) {
+    employee = employee || {};
     var c = classification(employee);
     if (c.basis === 'monthly') return Number(employee.monthlyBasic != null ? employee.monthlyBasic : employee.basic) || 0;
     return equivalentDaily(employee) * factorFor(employee) / 12;

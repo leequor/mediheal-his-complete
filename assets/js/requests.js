@@ -41,6 +41,7 @@
   }
 
   function create(input) {
+    input = input || {};
     var text = String(input.text || '').trim();
     if (text.length < 8) return { ok: false, error: 'Describe the change in a few words first.' };
     var rows = all();
