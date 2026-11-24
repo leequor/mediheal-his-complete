@@ -179,11 +179,13 @@
   function resetDemo() {
     HIS.kit.modal({
       title: 'Reset sample data?',
-      sub: 'Restores every record to its original state and discards anything changed in this session.',
+      sub: 'Puts the sample patients, invoices and staff back as they were. Registrations and appointments entered at the front desk are kept.',
       body: "<p style='margin:12px 0 0;color:#6f8890;font-size:13px'>You stay signed in. This cannot be undone.</p>",
       saveLabel: 'Reset data',
       onSave: function () {
-        HIS.store.reset({ includeOwner: true });
+        // No includeOwner: the demo's own records go back to the seed, but intake written by a person
+        // (registrations, appointments) is not thrown away by pressing a reset button.
+        HIS.store.reset();
         location.reload();
       }
     });
@@ -479,4 +481,18 @@
   });
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && panel.classList.contains('on')) { setOpen(false); bell.focus(); } });
   render();
+
+  // The role guard bounced this load to the role's home because the page was out of scope. Say so:
+  // "the button is broken" is what a silent redirect feels like.
+  try {
+    var note = window.sessionStorage.getItem('mh_guard_note');
+    if (note) {
+      window.sessionStorage.removeItem('mh_guard_note');
+      var n = JSON.parse(note);
+      if (n && n.page && window.HIS.kit && HIS.kit.toast) {
+        HIS.kit.toast('"' + n.page + '" is not part of ' + (n.role || 'your role') +
+          (n.allowed && n.allowed.length ? ' — it belongs to ' + n.allowed.join(', ') + '.' : '.'));
+      }
+    }
+  } catch (e) { /* storage blocked or malformed note: silence is acceptable here */ }
 })();

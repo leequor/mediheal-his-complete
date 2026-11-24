@@ -162,7 +162,7 @@ const api = await page.evaluate(PW => {
   // Hospital Administrator were merged, and a hardcoded 14 failed on every run after that.
   HIS.accounts.save(HIS.accounts.all().filter(a => a.email !== 'flow.test@mediheal.test'));
   out.finalCount = HIS.accounts.all().length;
-  out.seedCount = JSON.parse(sessionStorage.getItem('mh_accounts') || '[]').length;
+  out.seedCount = JSON.parse(localStorage.getItem('mh_accounts') || '[]').length;
   return out;
 }, PW_DEMO);
 ok('duplicate email is refused (case-insensitive)', api.dupLower === false);

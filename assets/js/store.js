@@ -2,10 +2,11 @@
 // `mh_*` storage key: a safe typed read with a fallback, a write that never throws, a tiny
 // pub/sub, a whole-store snapshot and a reset.
 //
-// TEMPORARY BY DESIGN. Every demonstration record lives in `sessionStorage`, not `localStorage`:
-// it survives navigation and refresh within the tab and disappears when the tab closes, so a new
-// visitor always starts from the seeded dataset and no hospital record is left on the device.
-// `reset()` is called on sign-out for the same reason.
+// Records live in `localStorage`, so work survives a reload, a second tab, signing out and signing
+// back in as another role, and closing the browser. That is what a hospital screen has to do: a
+// doctor's note cannot evaporate because the registrar signed out. The trade is that a demonstration
+// record now stays on the device until it is cleared — Settings offers "Reset demonstration data"
+// for that, and signing out no longer wipes anything.
 //
 // `mh_regs_extra` and `mh_appts_extra` belong to the OWNER: reset() leaves them alone unless
 // called with { includeOwner: true }.
@@ -53,11 +54,18 @@
   var VERSION = 1;
   var subs = {};
 
-  // sessionStorage, with an in-memory fallback for a browser that blocks it (private mode, a
-  // storage policy). The fallback keeps a single page working; it simply does not survive navigation.
+  // localStorage, with an in-memory fallback for a browser that blocks it (private mode, a storage
+  // policy). The fallback keeps a single page working; it simply does not survive a reload.
   var MEM = {};
+  var PROBE = null;
   function bucket() {
-    try { return window.sessionStorage || null; } catch (e) { return null; }
+    try {
+      var l = window.localStorage;
+      if (!l) return null;
+      // A storage that is present but refuses writes is worse than none: probe once, then fall back.
+      if (PROBE === null) { PROBE = true; try { l.setItem('mh_probe', '1'); l.removeItem('mh_probe'); } catch (e) { PROBE = false; } }
+      return PROBE ? l : null;
+    } catch (e) { return null; }
   }
   function rawGet(key) {
     var s = bucket();

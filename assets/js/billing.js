@@ -91,7 +91,11 @@
     // opening balance in ledger.js. Do not add a writer back.)
     var paid = HIS.ledger.paidOf(b), bal = HIS.ledger.balanceOf(b), status = HIS.ledger.statusOf(b);
     var covered = HIS.ledger.coveredOf(b);
-    if (items) { sub = b.subtotal; vat = b.vat; } else { sub = Math.round(total / 1.12); vat = total - sub; }
+    // Subtotal and VAT describe the INVOICE, so they are derived from the invoice's own amount, never
+    // from the total (which already includes charges raised afterwards). Deriving from the total made
+    // the screen show base + charges twice: 580 + 70 + 650 over a grand total of 650.
+    var base = HIS.ledger.toPesos(HIS.ledger.toCentavos(b.amount)) || 0;
+    if (items) { sub = b.subtotal; vat = b.vat; } else { sub = Math.round(base / 1.12); vat = Math.round((base - sub) * 100) / 100; }
     var h = "<section class='bl-inv'><div class='bl-ih'><span class='t'>Invoice " + b.id + "</span><span class='m'>" + esc(b.full) + ' \u00b7 ' + b.pt + ' \u00b7 ' + esc(b.dept) + "</span><span class='d'>" + b.date + "</span><span class='bp'>" + pill(status) + '</span></div>';
     h += "<div class='bl-tb'><div class='bl-tr h'><span class='c1'>Description \u00b7 charge source</span><span class='c2'>Qty</span><span class='c3'>Rate (\u20b1)</span><span class='c4'>Amount</span></div>";
     if (items) items.forEach(function (r) { h += "<div class='bl-tr'><span class='c1'>" + esc(r[0]) + "</span><span class='c2'>" + r[1] + "</span><span class='c3'>" + num(r[2]) + "</span><span class='c4'>" + num(r[3]) + '</span></div>'; });

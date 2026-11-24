@@ -108,7 +108,7 @@ await reload();
 g = await geo();
 ok('a reload keeps all 9 records', g.rows === 9, g.rows);
 ok('a reload keeps the added record', g.ids.includes('EMP-009'), g.ids);
-ok('the added record is in storage', await page.evaluate(() => (JSON.parse(sessionStorage.getItem('mh_personnel')) || []).some(e => e.id === 'EMP-009')));
+ok('the added record is in storage', await page.evaluate(() => (JSON.parse(localStorage.getItem('mh_personnel')) || []).some(e => e.id === 'EMP-009')));
 
 await add('Second Nurse', 'Staff Nurse');
 g = await geo();
@@ -140,7 +140,7 @@ ok('edit updates the profile role', (await page.evaluate(() => document.querySel
 await reload();
 g = await geo();
 ok('the edit survives a reload', (await page.evaluate(() => {
-  const rows = JSON.parse(sessionStorage.getItem('mh_personnel')) || [];
+  const rows = JSON.parse(localStorage.getItem('mh_personnel')) || [];
   const e = rows.find(x => x.id === 'EMP-010');
   return !!e && e.role === 'Head Nurse';
 })));
@@ -154,7 +154,7 @@ await page.click('.pe-m-off');
 await page.waitForTimeout(200);
 await reload();
 ok('a deactivation survives a reload', await page.evaluate(() => {
-  const rows = JSON.parse(sessionStorage.getItem('mh_personnel')) || [];
+  const rows = JSON.parse(localStorage.getItem('mh_personnel')) || [];
   const e = rows.find(x => x.id === 'EMP-010');
   return !!e && e.status === 'Inactive';
 }));

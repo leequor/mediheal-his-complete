@@ -35,10 +35,16 @@
 
   function rec(p) {
     if (p.rec) return p.rec;
-    var s = parseInt(p.id.slice(-2), 10) || 0, sys = 112 + s % 24, dia = 70 + s % 14, hr = 70 + s % 22, t = 36.5 + (s % 5) / 10, o = 95 + s % 4;
+    // Vital signs come from a recorded observation, never from the patient id. A patient with nothing
+    // recorded reads "Not recorded" instead of a plausible-looking invention.
+    var vs = (window.HIS && HIS.vitals) ? HIS.vitals.latest(p.id) : null;
+    var vBp = vs && vs.bp ? vs.bp + ' mmHg' : 'Not recorded';
+    var vHr = vs && vs.hr ? vs.hr + ' bpm' : 'Not recorded';
+    var vT = vs && vs.temp ? vs.temp + ' °C' : 'Not recorded';
+    var vO = vs && (vs.spo2 || vs.weight) ? ((vs.spo2 ? vs.spo2 + '%' : NA) + ' · ' + (vs.weight ? vs.weight + ' kg' : NA)) : 'Not recorded';
     p.rec = {
       s1: [['Chief complaint', p.cc], ['Onset', 'Aug 30, 2026'], ['Severity', '4 of 10 \u00b7 intermittent'], ['Associated symptoms', 'None reported'], ['Medical history', 'None recorded'], ['Current medication', 'None recorded'], ['Family history', 'None recorded'], ['Last visit', NA]],
-      s2: [['Allergies', 'None recorded'], ['Allergy severity', NA], ['Blood pressure', sys + '/' + dia + ' mmHg'], ['Heart rate', hr + ' bpm'], ['Temperature', t.toFixed(1) + ' \u00b0C'], ['SpO\u2082 \u00b7 Weight', o + '% \u00b7 ' + NA]],
+      s2: [['Allergies', 'None recorded'], ['Allergy severity', NA], ['Blood pressure', vBp], ['Heart rate', vHr], ['Temperature', vT], ['SpO₂ · Weight', vO]],
       s3: [['Attending doctor', C.doctors[p.dept] || 'Dr. Elsie Chen'], ['Department', p.dept], ['Visit type', 'Outpatient consultation'], ['Next step', 'Record diagnosis']],
       upd: 'Updated Aug 31, 2026 \u00b7 ' + (C.doctors[p.dept] || 'Dr. Elsie Chen')
     };

@@ -314,7 +314,8 @@ console.log('\n--- 3. a new visitor does not inherit the last one ---');
     paid: HIS.ledger.paidOf(HIS.billing.bills[0])
   }));
   ok('signing out ends the session', afterSignOut.session === false, afterSignOut.session);
-  ok('signing out restores the sample data', afterSignOut.paid === made.paid - 500 || afterSignOut.paid < made.paid, afterSignOut.paid + ' vs ' + made.paid);
+  // Signing out keeps the payment now: records belong to the device, not to the session.
+  ok('signing out keeps the payment the visitor recorded', afterSignOut.paid === made.paid, afterSignOut.paid + ' vs ' + made.paid);
   await a.ctx.close();
 
   // Visitor B: a completely fresh browser context, i.e. a new visitor.
@@ -353,15 +354,16 @@ console.log('\n--- 3. a new visitor does not inherit the last one ---');
   await t2.waitForTimeout(300);
   const fresh2 = await t2.evaluate(() => ({
     signedIn: !!HIS.auth.account(),
-    hasTariffStore: sessionStorage.getItem('mh_tariffs') !== null
+    hasTariffStore: localStorage.getItem('mh_tariffs') !== null
   }));
   ok('a new tab is not signed in', fresh2.signedIn === false, fresh2.signedIn);
-  ok('a new tab carries no tariff store from the closed tab', fresh2.hasTariffStore === false, fresh2.hasTariffStore);
+  // Records are shared, so a second tab reads the same price list (it used to start from the seed).
+  ok('a new tab reads the shared tariff store', fresh2.hasTariffStore === true, fresh2.hasTariffStore);
   await t2.evaluate(pw => HIS.auth.attempt('superadmin@mediheal.test', pw, true), DEMO);
   await t2.goto(BASE + '/settings.html', { waitUntil: 'load' });
   await t2.waitForTimeout(400);
   const rows2 = await t2.evaluate(() => HIS.tariffs.all().length);
-  ok('a new tab starts from the seeded price list', rows2 === changed.n, rows2 + ' vs ' + changed.n);
+  ok('a new tab sees the price row this session wrote', rows2 === changed.after, rows2 + ' vs ' + changed.after);
   await ctx.close();
 }
 

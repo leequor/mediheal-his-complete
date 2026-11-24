@@ -140,7 +140,9 @@
       }
     } catch (e) { /* accounts module unavailable on this page */ }
     clear();
-    if (window.HIS.store) HIS.store.reset({ includeOwner: true });
+    // Signing out no longer discards the dataset: records written by one role must still be there for
+    // the next one (and after a reload). Settings has an explicit reset for anyone who wants the
+    // sample data back.
     if (selfReg && selfReg.length) {
       try { HIS.registry.save(HIS.registry.all().concat(selfReg)); } catch (e) { /* registry unavailable */ }
     }

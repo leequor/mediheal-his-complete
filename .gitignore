@@ -40,3 +40,6 @@ qa/eyeball/
 
 # Control census written by scripts/exhaustive-controls-check.mjs.
 qa/control-census.json
+
+# scratch probes (an underscore prefix means a one-off, not a suite)
+scripts/_*.mjs

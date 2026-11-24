@@ -3,6 +3,18 @@
 // General Medicine 4028:8827 -> 4030:8995, Nursing 4028:8869 -> 4030:9129, Laboratory 4028:8911 -> 4030:9263, Pharmacy 4028:8953 -> 4030:9397. Search box 351:537 -> 4005:3317 ("Cardio" search state, NOT read yet;
 // the search box here is a live filter instead, an addition). Add doctor 4001:5875 (state frame, NOT read yet; button shows a tooltip). Detail back button goes to the list.
 (function () {
+  // Doctors added from the department screen. Kept in the store so the row is still there after a
+  // reload, and keyed by department slug.
+  var EXTRA_KEY = 'mh_department_doctors';
+  function extras() {
+    var o = HIS.store ? HIS.store.get(EXTRA_KEY, null) : null;
+    return (o && typeof o === 'object' && !Array.isArray(o)) ? o : {};
+  }
+  function saveExtras(o) { if (HIS.store) HIS.store.set(EXTRA_KEY, o); }
+  function initialsOf(name) {
+    return String(name || '').replace(/^Dr\.?\s*/i, '').split(/\s+/).filter(Boolean).slice(0, 2)
+      .map(function (w) { return w[0].toUpperCase(); }).join('');
+  }
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const stage = document.getElementById('stage');
   const D = HIS.departments;
@@ -54,13 +66,15 @@
   function renderDetail(d) {
     document.title = d.dname + ' \u00b7 Departments \u00b7 MediHeal';
     stage.className = 'stage dp dt';
+    const added = (extras()[d.slug] || []).map(function (p) { return [initialsOf(p.name), p.name, p.role]; });
+    const rowsAll = added.concat(d.rows);
     const stats = [[d.doctors, 'Doctors'], [d.nurses, 'Nurses'], [d.opd, 'OPD today'], [d.occ + '/' + d.beds, 'Beds']];
     let h = "<button class='dp-back' aria-label='Back to Departments' data-act='back'>" + ICO.back + '</button>' +
       "<h1 class='dp-title'>" + esc(d.dname) + "</h1><div class='dp-sub'>" + esc(d.head + ' \u00b7 ' + d.role) + '</div>' + search('');
     stats.forEach((s, i) => { h += "<div class='dp-card dd-stat' style='left:" + [32, 380.5, 729, 1077.5][i] + "px'><span class='n'>" + s[0] + "</span><span class='l'>" + s[1] + "</span><span class='p'>" + ICO.plus(12, '#1a5379') + '</span></div>'; });
     h += "<div class='dp-occ'><span class='ol'>Bed occupancy</span><b class='op'>" + d.pct + "%</b><div class='tr'><span class='dp-fill' style='width:" + (d.pct * 13.28).toFixed(1) + "px'></span></div><div class='tg'>" + tagHtml(d.dtags || d.tags) + '</div></div>';
-    h += "<section class='dp-duty' style='height:" + (87 + 60 * d.rows.length) + "px'><span class='dp-dl'>" + esc(d.duty.toUpperCase()) + "</span><button class='dp-add' data-act='add'>" + esc(d.add) + '</button>';
-    d.rows.forEach((r, i) => {
+    h += "<section class='dp-duty' style='height:" + (87 + 60 * rowsAll.length) + "px'><span class='dp-dl'>" + esc(d.duty.toUpperCase()) + "</span><button class='dp-add' data-act='add' data-slug='" + esc(d.slug) + "'>" + esc(d.add) + '</button>';
+    rowsAll.forEach((r, i) => {
       h += "<div class='dp-row' data-t='" + esc((r[1] + ' ' + r[2]).toLowerCase()) + "' style='top:" + (73.2 + 60 * i).toFixed(1) + "px'><div class='dp-av'><span>" + esc(r[0]) + "</span></div><b class='dp-dn'>" + esc(r[1]) + "</b><span class='dp-dm'>" + esc(r[2]) + "</span><span class='dp-badge'>On duty</span></div>";
     });
     h += '</section>';
@@ -83,8 +97,52 @@
   stage.addEventListener('click', e => {
     const card = e.target.closest('.dp-card[data-slug]');
     if (card) { location.hash = card.dataset.slug; return; }
-    if (e.target.closest('[data-act=back]')) { history.length > 1 && location.hash ? history.back() : (location.hash = ''); }
+    if (e.target.closest('[data-act=back]')) { history.length > 1 && location.hash ? history.back() : (location.hash = ''); return; }
+    const add = e.target.closest('[data-act=add]');
+    if (add) { addPerson(add.dataset.slug); return; }
   });
+  // A doctor's name is not free text: it has to look like a name, and the list offers the hospital's
+  // own consultants first so "meowmeowmeow" cannot become a physician by accident.
+  function addPerson(slug) {
+    const d = D.filter(function (x) { return x.slug === slug; })[0];
+    if (!d) return;
+    const known = (HIS.doctors || []).filter(function () { return true; });
+    HIS.kit.modal({
+      title: 'Add a doctor to ' + d.dname,
+      sub: 'Choose a consultant, or type a full name with the Dr. prefix.',
+      body: "<div style='display:grid;gap:12px;margin-top:8px'>" +
+        "<label style='font-size:13px;color:#4d6a80'>Consultant<select id='dpNewName' style='width:100%;padding:9px;border:1px solid #dde5ec;border-radius:8px'>" +
+        "<option value=''>Choose a consultant</option>" + known.map(function (n) { return "<option>" + HIS.kit.esc(n) + '</option>'; }).join('') +
+        "<option value='__other'>Someone not on this list</option></select></label>" +
+        "<label id='dpOtherWrap' style='font-size:13px;color:#4d6a80;display:none'>Full name<input id='dpOther' placeholder='e.g. Dr. Mario Reyes' style='width:100%;padding:9px;border:1px solid #dde5ec;border-radius:8px;margin-top:4px'></label>" +
+        "<label style='font-size:13px;color:#4d6a80'>Role line<input id='dpRole' value='Consultant · " + HIS.kit.esc(d.dname) + "' style='width:100%;padding:9px;border:1px solid #dde5ec;border-radius:8px;margin-top:4px'></label>" +
+        "<p id='dpErr' role='alert' style='margin:0;color:#b3261e;font-size:13px'></p></div>",
+      saveLabel: 'Add doctor',
+      onSave: function () {
+        const sel = document.getElementById('dpNewName');
+        const other = document.getElementById('dpOther');
+        const chosen = sel.value === '__other' ? String(other.value || '').trim() : String(sel.value || '').trim();
+        const err = document.getElementById('dpErr');
+        if (!chosen) { err.textContent = 'Choose a consultant, or pick "Someone not on this list" and type a name.'; return false; }
+        if (!/^Dr\.?\s+[A-Za-zÀ-ɏ' .-]{2,60}$/.test(chosen)) {
+          err.textContent = 'A doctor reads like "Dr. Mario Reyes". "' + chosen.slice(0, 24) + '" is not a name.';
+          return false;
+        }
+        const o = extras();
+        o[slug] = (o[slug] || []).concat([{ name: chosen, role: document.getElementById('dpRole').value.trim() || ('Consultant · ' + d.dname) }]);
+        saveExtras(o);
+        if (window.HIS.audit) { try { HIS.audit.append({ who: (HIS.rbac.current() || {}).name || 'Staff', role: (HIS.rbac.current() || {}).label || 'Staff', what: 'Doctor added to ' + d.dname, entity: 'department:' + slug, before: null, after: chosen }); } catch (err2) { } }
+        HIS.kit.toast(chosen + ' added to ' + d.dname + '.');
+        route();
+        return true;
+      }
+    });
+    const sel = document.getElementById('dpNewName');
+    if (sel) sel.addEventListener('change', function () {
+      document.getElementById('dpOtherWrap').style.display = sel.value === '__other' ? 'block' : 'none';
+    });
+  }
+
   stage.addEventListener('keydown', e => { const c = e.target.closest && e.target.closest('.dp-card[data-slug]'); if (c && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); location.hash = c.dataset.slug; } });
   window.addEventListener('hashchange', route);
   route();

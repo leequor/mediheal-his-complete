@@ -180,10 +180,24 @@
     if (!r.home) return 'index.html';
     return r.external || (r.home + '.html');
   }
+  // A page this role cannot open used to bounce silently to the role's home, which reads as "the
+  // button is broken": clicking New inpatient as HR looked like a dead link because the guard moved
+  // the user somewhere else with no explanation. The bounce stays (the shell and the role's home page
+  // are built correctly there), but it now carries a note that the next page shows as a toast.
+  function noteOutOfScope() {
+    try {
+      var r = current() || {};
+      var allowed = ROLES && Object.keys(ROLES).filter(function (k) { return (ROLES[k].pages || []).indexOf(stem()) > -1; })
+        .map(function (k) { return ROLES[k].label; });
+      window.sessionStorage.setItem('mh_guard_note', JSON.stringify({
+        page: stem(), role: r.label || 'your role', allowed: allowed.slice(0, 3)
+      }));
+    } catch (e) { /* storage blocked: the redirect alone is still correct */ }
+  }
   // Route guard: authentication first, then role scope.
   function guard() {
     if (window.HIS.auth && !HIS.auth.requireAuth()) return false;
-    if (!allows()) { location.replace(home()); return false; }
+    if (!allows()) { noteOutOfScope(); location.replace(home()); return false; }
     return true;
   }
 
