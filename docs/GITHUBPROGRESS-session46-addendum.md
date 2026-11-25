@@ -27,3 +27,7 @@ Release evidence: `C:/Users/nekoc/mediheal-fixes-2026-11-25/release-verification
 Implementation committed as `54d4f21` (`Fix audited HIS data, permissions, payroll, and UI defects`), 66 files, 1,203 insertions and 263 deletions. Removed the trailing EOF blank line in the adversarial suite; its syntax check and the staged whitespace check passed. The working tree was clean after the source commit.
 
 The authorized `git push origin main` failed: `fatal: unable to access 'https://github.com/leequor/mediheal-his-complete.git/': Could not resolve host: github.com`. No source publication or deployment verification was completed. Do not call this release shipped. Resume with a normal push when GitHub networking is available, then inspect the Pages workflow and verify actual deployed assets and isolated-browser behavior.
+
+## Network-enabled release continuation
+
+Owner enabled network access and requested another attempt. GitHub API and git fetch origin now succeed. Local main contains the tested implementation 54d4f21 and publication notes 8d2c80d, with no working-tree changes and no remote-only commits. Proceed with the authorized normal push, inspect the new Pages workflow and verify committed runtime bytes plus isolated live-browser regressions. Results follow below.
