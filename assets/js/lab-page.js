@@ -19,12 +19,14 @@
     return p ? p.name : id;
   }
   function statusPill(s) {
-    var map = { Ordered: 'off', Collected: 'in', 'In Process': 'in', Resulted: 'warn', Validated: 'ok', Cancelled: 'red' };
+    // One hue per state: quiet grey before work starts, blue once it is in the lab,
+    // violet while it is being processed, amber when a value needs eyes, green when safe.
+    var map = { Ordered: 'off', Collected: 'info', 'In Process': 'proc', Resulted: 'teal', Validated: 'ok', Cancelled: 'red' };
     return "<span class='badge " + (map[s] || 'off') + "'>" + esc(s) + '</span>';
   }
   function flagPill(f) {
     if (!f) return '';
-    var cls = f === 'Critical' ? 'red' : f === 'Abnormal' ? 'warn' : 'ok';
+    var cls = f === 'Critical' ? 'red' : f === 'Abnormal' ? 'warn' : 'norm';
     return "<span class='badge " + cls + "'>" + esc(f) + '</span>';
   }
 
@@ -100,7 +102,7 @@
           "<span class='ad-who'><b>" + esc(o.id) + '</b><small>' + esc(o.orderedBy) + '</small></span>' +
           "<span class='ad-who'><b>" + esc(patientName(o.patientId)) + '</b><small>' + esc(o.patientId + ' \u00b7 ' + o.dept) + '</small></span>' +
           "<span class='mu'>" + esc(o.test) + (o.result ? '<br>' + flagPill(o.result.flag) + ' ' + esc(o.result.value + ' ' + o.result.unit) : '') + '</span>' +
-          "<span class='mu'>" + (o.priority === 'STAT' ? "<span class='badge red'>STAT</span>" : esc(o.priority)) + '</span>' +
+          "<span class='mu'>" + (o.priority === 'STAT' ? "<span class='badge stat'>STAT</span>" : esc(o.priority)) + '</span>' +
           '<span>' + statusPill(o.status) + '</span>' +
           "<span class='mu'>" + esc(when(o.orderedAt)) + '</span>' +
           "<span style='text-align:right'>" + actionFor(o) + '</span></div>';
