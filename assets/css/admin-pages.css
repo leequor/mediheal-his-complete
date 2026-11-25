@@ -278,3 +278,25 @@
 .ad-alert-row .ad-btn:hover{background:#b91c1c;border-color:#b91c1c}
 .badge.teal{background:#ccfbf1;color:#115e59}   /* Resulted: done in the lab, not an alarm */
 .badge.norm{background:#f0fdf4;color:#15803d;box-shadow:inset 0 0 0 1px #bbf7d0} /* Normal result, quieter than a Validated state */
+
+/* Alignment + calmer palette (2026-11-25, second pass) ---------------------
+   Inline result badges sat ~10px right of the test name because of their pill
+   padding, so a column of names looked ragged. Compact them and pull them back
+   to the text edge. Workflow hues also move from violet/teal to the blue →
+   indigo family, which is what a clinical dashboard normally uses.        */
+.badge.flag{height:22px;min-width:0;padding:0 8px;font-size:11px;line-height:20px;
+  margin-left:-8px;vertical-align:1px;letter-spacing:.02em}
+.badge.proc{background:#dbeafe;color:#1d4ed8}   /* In Process */
+.badge.teal{background:#e0e7ff;color:#3730a3}   /* Resulted */
+
+/* Laboratory readability (2026-11-25, third pass) -------------------------
+   Stat numbers now follow one semantic scale instead of one card being green
+   for no reason; rows get a faint zebra so a seven-row table can be scanned;
+   every priority renders as a badge so 'Routine' is not quieter than 'STAT'. */
+.ad-kpi.b .v{color:#1d4ed8}
+.ad-kpi.y .v{color:#92400e}
+.ad-kpi.g .v{color:#166534}
+.ad-body .ad-tr:nth-child(even){background:#fafcfe}
+.ad-body .ad-tr:hover{background:#f4f9ff}
+.badge.pri{height:22px;min-width:0;padding:0 9px;font-size:11px;line-height:20px;letter-spacing:.04em}
+.badge.pri.off{background:#f1f5f9;color:#475569;box-shadow:inset 0 0 0 1px #e2e8f0}

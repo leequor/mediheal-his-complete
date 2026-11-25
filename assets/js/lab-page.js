@@ -27,7 +27,8 @@
   function flagPill(f) {
     if (!f) return '';
     var cls = f === 'Critical' ? 'red' : f === 'Abnormal' ? 'warn' : 'norm';
-    return "<span class='badge " + cls + "'>" + esc(f) + '</span>';
+    // 'flag' keeps the pill compact so its text lines up with the test name above it.
+    return "<span class='badge flag " + cls + "'>" + esc(f) + '</span>';
   }
 
   function visible() {
@@ -70,8 +71,8 @@
 
       "<div class='ad-kpis'>" +
       "<div class='ad-kpi'><div class='l'>Awaiting collection</div><div class='v'>" + st.ordered + "</div><div class='d'>Specimen not yet taken</div></div>" +
-      "<div class='ad-kpi'><div class='l'>In process</div><div class='v'>" + (st.collected + st.processing) + "</div><div class='d'>Collected or running</div></div>" +
-      "<div class='ad-kpi'><div class='l'>Awaiting validation</div><div class='v'>" + st.resulted + "</div><div class='d'>Entered, not released</div></div>" +
+      "<div class='ad-kpi b'><div class='l'>In process</div><div class='v'>" + (st.collected + st.processing) + "</div><div class='d'>Collected or running</div></div>" +
+      "<div class='ad-kpi y'><div class='l'>Awaiting validation</div><div class='v'>" + st.resulted + "</div><div class='d'>Entered, not released</div></div>" +
       "<div class='ad-kpi g'><div class='l'>Validated</div><div class='v'>" + st.validated + "</div><div class='d'>Released to the record</div></div>" +
       '</div>' +
 
@@ -96,13 +97,13 @@
       '</select>' +
       "<button class='ad-btn' id='lbNew' type='button'>+ New order</button>" +
       '</div>' +
-      "<div class='ad-th ad-g-lab'><span>Order</span><span>Patient</span><span>Test</span><span>Priority</span><span>Status</span><span>Ordered</span><span></span></div>" +
+      "<div class='ad-th ad-g-lab'><span>Order</span><span>Patient</span><span>Test</span><span>Priority</span><span>Status</span><span>Ordered</span><span>Action</span></div>" +
       (list.length ? list.map(function (o) {
         return "<div class='ad-tr ad-g-lab'>" +
           "<span class='ad-who'><b>" + esc(o.id) + '</b><small>' + esc(o.orderedBy) + '</small></span>' +
           "<span class='ad-who'><b>" + esc(patientName(o.patientId)) + '</b><small>' + esc(o.patientId + ' \u00b7 ' + o.dept) + '</small></span>' +
           "<span class='mu'>" + esc(o.test) + (o.result ? '<br>' + flagPill(o.result.flag) + ' ' + esc(o.result.value + ' ' + o.result.unit) : '') + '</span>' +
-          "<span class='mu'>" + (o.priority === 'STAT' ? "<span class='badge stat'>STAT</span>" : esc(o.priority)) + '</span>' +
+          "<span class='mu'><span class='badge pri " + (o.priority === 'STAT' ? 'stat' : o.priority === 'Urgent' ? 'warn' : 'off') + "'>" + esc(o.priority) + '</span></span>' +
           '<span>' + statusPill(o.status) + '</span>' +
           "<span class='mu'>" + esc(when(o.orderedAt)) + '</span>' +
           "<span style='text-align:right'>" + actionFor(o) + '</span></div>';
