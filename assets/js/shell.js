@@ -286,6 +286,28 @@
     const add = (title, body, meta, page, focus) =>
       out.push({ id: role + ':' + title, title: title, body: body, meta: meta, page: page, focus: focus || null });
 
+    // Payroll release reaches the employee, not just the payroll screen. When a released run carries a
+    // line for the signed-in account's own personnelId, that account gets a notification with its own
+    // figures. Read state lives in the notification store, so it survives a reload and a sign-in.
+    if (a && a.personnelId) {
+      try {
+        const rs = HIS.store.get(HIS.store.KEY.payrollRuns, null);
+        const runs = rs && Array.isArray(rs.runs) ? rs.runs : [];
+        const rel = runs.filter(r => r.status === 'released').pop();
+        const line = rel ? (rel.lines || []).filter(l => l.employeeId === a.personnelId)[0] : null;
+        if (line) {
+          const money = n => '₱' + Number(n || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+          out.unshift({
+            id: 'payslip:' + rel.id + ':' + a.personnelId,
+            title: 'Your payslip is ready',
+            body: (rel.periodLabel || 'This cut-off') + ' · net ' + money(line.net),
+            meta: 'Payroll released ' + (rel.payDate || ''),
+            page: 'dashboard.html', focus: null, payslip: true
+          });
+        }
+      } catch (e) { /* no payroll data on this page */ }
+    }
+
     const lab = window.HIS.lab, ph = window.HIS.pharmacy, cl = window.HIS.claims,
       ad = window.HIS.admissions, ch = window.HIS.charges, bl = window.HIS.billing;
     const labRows = lab && lab.all ? lab.all() : [];

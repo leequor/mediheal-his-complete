@@ -39,7 +39,7 @@
   // were removed when their roles were merged (see the note in rbac.js): the demo was listing the
   // same person's work under two names, and a fourteen-row account list is a wall, not a roster.
   var SEED = [
-    ['superadmin@mediheal.test', 'Dr. Elsie Chen', 'superadmin', 'Administration', 'Chief Physician', null],
+    ['superadmin@mediheal.test', 'Dr. Elsie Chen', 'superadmin', 'Administration', 'Chief Physician', null, 'EMP-001'],
     ['reception@mediheal.test', 'Maricel Bautista', 'registration', 'Front Desk', 'Front Desk Officer', null],
     ['doctor@mediheal.test', 'Dr. Laurice Laureta', 'doctor', 'Cardiology', 'Consultant', null, 'EMP-002'],
     ['nurse@mediheal.test', 'Sofia Mendoza', 'nurse', 'Nursing', 'Staff Nurse', null],
@@ -48,7 +48,7 @@
     ['finance@mediheal.test', 'Rowena Lim', 'finance', 'Billing', 'Billing & Finance Officer', null],
     ['hr@mediheal.test', 'Carmela Dizon', 'hr', 'Human Resources', 'HR Officer', null],
     ['accounting@mediheal.test', 'Ana Villanueva', 'accounting', 'Accounting', 'Payroll Accountant', null],
-    ['department.head@mediheal.test', 'Dr. Marc Laureta', 'depthead', 'Orthopedics', 'Department Head', null],
+    ['department.head@mediheal.test', 'Dr. Marc Laureta', 'depthead', 'Orthopedics', 'Department Head', null, 'EMP-003'],
     ['auditor@mediheal.test', 'Ferdinand Yap', 'auditor', 'Compliance', 'Compliance Auditor', null],
     ['patient@mediheal.test', 'Isabel Geliz V. Ramos', 'patient', 'Patient', 'Patient', 'PT-99213']
   ];
