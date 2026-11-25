@@ -14,6 +14,9 @@
   var KEYS = {
     registrations: 'mh_regs_extra',   // owner
     appointments: 'mh_appts_extra',   // owner
+    // Status/reschedule edits to any appointment (seeded or newly booked), keyed by appointment id.
+    // Not an owner key: a reset puts the sample appointments back as they were.
+    apptState: 'mh_appt_state',
     profileEdits: 'mh_profile_edits',
     treatment: 'mh_treatment_state',
     nursing: 'mh_nursing_state',

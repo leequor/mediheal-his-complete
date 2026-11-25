@@ -47,6 +47,20 @@ textarea.ap-i{height:88px;padding:12px 14px;line-height:20px;resize:none;font-fa
 const $ = id => document.getElementById(id);
 // Appointments saved by appointment-form.html (session key mh_appts_extra via HIS.store, same tab).
 HIS.store.get('mh_appts_extra', []).forEach(r => HIS.appointments.push(r));
+// Edits are stored by appointment id. Before this, a status change only mutated the array in memory,
+// so it vanished on reload and no other account ever saw it.
+const APPT_STATE = 'mh_appt_state';
+const apptEdits = HIS.store.get(APPT_STATE, {});
+HIS.appointments = HIS.appointments.map(a => Object.assign({}, a, (a.id && apptEdits[a.id]) || {}));
+function saveApptEdit(a, patch) {
+  if (!a || !a.id) return;
+  const all = HIS.store.get(APPT_STATE, {});
+  all[a.id] = Object.assign({}, all[a.id] || {}, patch);
+  HIS.store.set(APPT_STATE, all);
+  if (window.HIS.audit) HIS.audit.append({ who: 'Appointments', role: 'Front desk',
+    what: 'Appointment ' + a.id + ' ' + (a.patient || '') + ' — ' + Object.keys(patch).join(', ') + ' updated',
+    entity: 'appointment:' + a.id, before: a.status || '', after: patch.status || '' });
+}
 $('sicon').innerHTML = svg('search', 16);
 $('picon').innerHTML = svg('plus', 16);
 // [label, value, icon, icon bg, icon color, width, height, left]
@@ -149,7 +163,17 @@ function form(a) {
       const dt = new Date(d.date + 'T' + d.time);
       const rec = { patient: d.patient, kind: d.kind, doctor: d.doctor, status: d.status, date: d.date, time: d.time,
         when: HIS.fmtShort(dt) + ' \u2022 ' + dt.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) };
-      if (a.i != null) HIS.appointments[a.i] = rec; else HIS.appointments.push(rec);
+      if (a.i != null) {
+        const id = HIS.appointments[a.i].id;
+        HIS.appointments[a.i] = Object.assign({}, rec, { id: id });
+        saveApptEdit(HIS.appointments[a.i], rec);
+      } else {
+        const created = Object.assign({ id: 'APT-' + Date.now().toString().slice(-6) }, rec);
+        HIS.appointments.push(created);
+        const extra = HIS.store.get('mh_appts_extra', []);
+        extra.push(created); HIS.store.set('mh_appts_extra', extra);
+        saveApptEdit(created, rec);
+      }
       render();
     }
   });
@@ -214,12 +238,15 @@ function actionModal(kind, i) {
       const d = layer.querySelector('[name=date]').value, t = layer.querySelector('[name=time]').value;
       if (!d || !t) return;
       const dt = new Date(d + 'T' + t);
-      Object.assign(HIS.appointments[i], {
+      const patch = {
         date: d, time: t, doctor: layer.querySelector('[name=doctor]').value,
-        when: HIS.fmtShort(dt) + ' \u2022 ' + dt.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
-      });
+        when: HIS.fmtShort(dt) + ' • ' + dt.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+      };
+      Object.assign(HIS.appointments[i], patch);
+      saveApptEdit(HIS.appointments[i], patch);
     } else {
       HIS.appointments[i].status = 'Cancelled';
+      saveApptEdit(HIS.appointments[i], { status: 'Cancelled' });
     }
     closeAp(); render();
   };
