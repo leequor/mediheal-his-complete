@@ -72,7 +72,7 @@
       "<div class='ad-kpis'>" +
       "<div class='ad-kpi'><div class='l'>Awaiting collection</div><div class='v'>" + st.ordered + "</div><div class='d'>Specimen not yet taken</div></div>" +
       "<div class='ad-kpi b'><div class='l'>In process</div><div class='v'>" + (st.collected + st.processing) + "</div><div class='d'>Collected or running</div></div>" +
-      "<div class='ad-kpi y'><div class='l'>Awaiting validation</div><div class='v'>" + st.resulted + "</div><div class='d'>Entered, not released</div></div>" +
+      "<div class='ad-kpi i'><div class='l'>Awaiting validation</div><div class='v'>" + st.resulted + "</div><div class='d'>Entered, not released</div></div>" +
       "<div class='ad-kpi g'><div class='l'>Validated</div><div class='v'>" + st.validated + "</div><div class='d'>Released to the record</div></div>" +
       '</div>' +
 

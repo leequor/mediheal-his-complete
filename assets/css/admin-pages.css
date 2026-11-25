@@ -300,3 +300,4 @@
 .ad-body .ad-tr:hover{background:#f4f9ff}
 .badge.pri{height:22px;min-width:0;padding:0 9px;font-size:11px;line-height:20px;letter-spacing:.04em}
 .badge.pri.off{background:#f1f5f9;color:#475569;box-shadow:inset 0 0 0 1px #e2e8f0}
+.ad-kpi.i .v{color:#3730a3}   /* matches the Resulted status pill, so a stage has one colour */
