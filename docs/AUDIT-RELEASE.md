@@ -45,11 +45,13 @@ This change addresses the 35 reproduced issues from the independent website audi
 ## Additional defects from the second scan
 
 - Pending prescriptions could dispense; infinite stock quantities, negative prices and invalid expiry dates could persist.
-- Charges accepted nonfinite totals and nonexistent/mismatched encounters. Lab orders and claims accepted another patient's encounter/invoice.
+- Charges accepted nonfinite totals and nonexistent/mismatched encounters. Lab orders and claims accepted another patient's encounter/invoice; claim ceilings omitted newly added charges.
+- Auditor accounts could mutate Billing and Charges despite their read-only scope.
 - Payroll recovery lacked an Accounting writer check. HR had no accessible cut-off reopening path; leave changes did not reach payroll attendance.
 - Older nursing IDs and saved daily attendance needed migrations. Reserved MRNs could collide with legacy registrations.
 - Treatment bed/discharge actions changed display state without updating the admission. Read-only clinical roles could trigger writer actions.
 - Migrated patients without registration metadata could crash two role dashboards, unknown ages printed undefined, and patient lookup interpolated names as HTML.
+- Narrow clinical rows joined patient names and metadata. The ninth Payroll row's action was covered by the totals footer.
 
 Related writes now stage together and roll back ordinary quota failures. Cross-tab races and crash recovery still require a server database; this remains a localStorage demonstration with client-side authorization.
 
@@ -76,6 +78,6 @@ The old visual state was reconstructed from b6964c6 and compared at 1440 and 136
 
 HR adds personnel and verifies attendance. Accounting sets missing salary/category through the new Set pay action, then recomputes payroll. HR personnel forms do not expose salaries. Auditor Billing and Charges controls and their domain APIs reject money/charge mutations.
 
-Release: local commit and authorized push are the next steps. GitHub Pages runs automatically on main pushes; live deployment is not yet verified.
+Release: implementation committed locally as `54d4f21`. The authorized `git push origin main` failed with `Could not resolve host: github.com`. Publication is incomplete and live deployment is not verified. GitHub Pages runs automatically when the main push succeeds.
 
 PDF output paginates and supports WinAnsi text. Unsupported non-Latin characters become question marks; full Unicode PDF typography is not implemented.

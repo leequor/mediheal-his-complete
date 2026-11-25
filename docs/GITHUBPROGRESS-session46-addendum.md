@@ -21,3 +21,9 @@ All functional/rule checks are passing: 21 domain suites (1,275 checks) plus aud
 The 1440 visual comparison has seven above-threshold expected changes (appointment placeholder contrast, attendance and personnel job labels, consultation shared data, profile canonical data, registry growth, staff alias). The 1366 comparison has six expected changes, including the clinical list rows and longer shared registries. Inspected screenshots include the larger registry, canonical profile, clinical detail, responsive row geometry and the actual new-staff pay-setup flow. Google Fonts were unavailable, so these are same-environment before/after comparisons; official baseline manifests were retained.
 
 Release evidence: `C:/Users/nekoc/mediheal-fixes-2026-11-25/release-verification.json` and per-suite logs; repository-owned checks and this report ship with the source. Source commit and authorized push follow these checks.
+
+## Publication attempt
+
+Implementation committed as `54d4f21` (`Fix audited HIS data, permissions, payroll, and UI defects`), 66 files, 1,203 insertions and 263 deletions. Removed the trailing EOF blank line in the adversarial suite; its syntax check and the staged whitespace check passed. The working tree was clean after the source commit.
+
+The authorized `git push origin main` failed: `fatal: unable to access 'https://github.com/leequor/mediheal-his-complete.git/': Could not resolve host: github.com`. No source publication or deployment verification was completed. Do not call this release shipped. Resume with a normal push when GitHub networking is available, then inspect the Pages workflow and verify actual deployed assets and isolated-browser behavior.

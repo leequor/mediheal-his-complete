@@ -1,7 +1,7 @@
 # Project status - MediHeal HIS
 
 **As of:** 2026-11-25, independent audit fixes (session 46).
-**Branch:** `main`; fixes local, GitHub push and deployment verification pending.
+**Branch:** `main`; fixes committed locally as `54d4f21`. GitHub push failed resolving `github.com`; publication and deployment verification are pending.
 **Surface:** 28 static pages, 68 JavaScript modules.
 **Data:** fictitious only, persisted in `localStorage` across reloads, tabs and sign-out. No server database.
 
