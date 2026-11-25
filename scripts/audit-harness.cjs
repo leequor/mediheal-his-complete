@@ -48,7 +48,12 @@ async function installRoutes(c){
 async function go(page,base,slug){await page.goto(base+'/'+slug+'.html',{waitUntil:'load',timeout:12000});await page.waitForTimeout(120);}
 async function login(page,base,role,ui=true,remember=true){
   await go(page,base,'index');
-  if(ui){await page.locator('#sie').fill(ROLES[role]+'@mediheal.test');await page.locator('#sip').fill(DEMO);await page.locator('#siBtn').click();}
+  if(ui){
+    await page.locator('#sie').fill(ROLES[role]+'@mediheal.test');
+    await page.locator('#sip').fill(DEMO);
+    await page.locator('#siBtn').click();
+    await page.waitForURL(url=>!url.pathname.endsWith('/index.html'),{waitUntil:'load'});
+  }
   else await page.evaluate(([em,pw,rem])=>HIS.auth.attempt(em,pw,rem),[ROLES[role]+'@mediheal.test',DEMO,remember]);
   await page.waitForTimeout(220);
 }

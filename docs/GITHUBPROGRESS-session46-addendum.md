@@ -31,3 +31,9 @@ The authorized `git push origin main` failed: `fatal: unable to access 'https://
 ## Network-enabled release continuation
 
 Owner enabled network access and requested another attempt. GitHub API and git fetch origin now succeed. Local main contains the tested implementation 54d4f21 and publication notes 8d2c80d, with no working-tree changes and no remote-only commits. Proceed with the authorized normal push, inspect the new Pages workflow and verify committed runtime bytes plus isolated live-browser regressions. Results follow below.
+
+## Deployed verification and final responsive fix
+
+Network access enabled: normal push succeeded, initial release ee290465ef3c4f0cfe45f8fe0b17fdf89a49c5f8 deployed successfully in Pages run 45578363919. All 122 live runtime files matched committed SHA-256 bytes. After correcting browser-runner navigation waits and requiring the intended route/role, all 59 existing audit assertions passed on the live origin and all 28 actual routes were checked at 1440 and 390 with no browser, console or asset errors. Initial mistimed runner results were retained in local evidence and are not counted as successful authenticated coverage.
+
+Live screenshots exposed a further responsive defect: below 1440, layout display rules overrode hidden on the sign-in form and password-help state. Added a specific hidden rule; the 10 new behavioral checks at 1440, 1366 and 390 reproduced six failures before the fix and now pass. The updated local audit suite passes 69 assertions. At 1366 the official visual harness compares the exact pre-fix deployed source against the new files: 27 pages within tolerance, one intentional index difference (7.266%, removing inactive help content), no rendering errors. Approved visual baselines were not overwritten. Manually inspected actual live Nursing and Payroll and the corrected phone sign-in capture. Publish this final CSS/test patch, then repeat live source and regression checks.
