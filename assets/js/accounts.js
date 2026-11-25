@@ -86,11 +86,30 @@
     // already hold the older seed, or that email fails with "No account uses that email address" until
     // the visitor clears storage. Seeded rows only, never user-created ones, and an existing row is
     // never overwritten, so local edits and deactivations survive.
+    // Repair: an earlier migration appended the new seeded account with the id the seed would have
+    // given it at its own index, which collided with an existing row (accounting@ and department.head@
+    // both became USR-0009). byId() returns the first match, so an account resolved to the wrong
+    // person. Re-id any duplicate before doing anything else.
+    var used = {}, changed = false;
+    rows.forEach(function (a) {
+      if (!a || !a.id) return;
+      while (used[a.id]) { a.id = nextId(rows); changed = true; }
+      used[a.id] = true;
+    });
+    if (changed) HIS.store.set(KEY, rows);
+
     var have = {};
     rows.forEach(function (a) { if (a && a.email) have[norm(a.email)] = true; });
     var missing = seed().filter(function (s) { return !have[norm(s.email)]; });
     if (missing.length) {
-      rows = rows.concat(missing);
+      // New rows get a fresh id. Never reuse the seed's positional id: it can already belong to
+      // somebody else in this browser's older list.
+      var merged = rows.slice();
+      missing.forEach(function (m) {
+        var row = Object.assign({}, m, { id: nextId(merged) });
+        merged.push(row);
+      });
+      rows = merged;
       HIS.store.set(KEY, rows);
       if (window.HIS.audit && HIS.audit.append) {
         HIS.audit.append({
