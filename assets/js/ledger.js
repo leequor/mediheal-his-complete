@@ -198,7 +198,7 @@
       return { ok: false, error: 'An electronic payment needs the provider reference number.' };
     }
     rows.push(tx);
-    save(rows);
+    if (!HIS.store.set(KEY, rows)) return { ok: false, error: 'Payment was not saved. Storage is full or unavailable; retry after freeing storage.' };
     if (window.HIS.audit && !input.silent) {
       HIS.audit.append({
         who: actorName(), role: roleLabel(),
@@ -546,4 +546,10 @@
     coveredOf: coveredOf, totals: totals, byMethod: byMethod, byPayer: byPayer,
     invariants: invariants, reconcile: reconcile
   };
+  ['recordPayment', 'confirm', 'void', 'refund', 'recordCoverage', 'recordCredit'].forEach(function (name) {
+    var fn = HIS.ledger[name]; HIS.ledger[name] = HIS.store.atomic(function () {
+      if (!HIS.rbac.can('money')) return { ok: false, error: 'Only Billing and Finance can record money movements.' };
+      return fn.apply(null, arguments);
+    });
+  });
 })();

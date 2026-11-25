@@ -193,8 +193,8 @@
     // is rare but real, and stranding a patient is worse than a flagged duplicate.
     const save = (attention) => {
       rec.attention = attention;
-      extra.push(rec);
-      HIS.store.set('mh_regs_extra', extra);
+      const saved = HIS.registry.register(rec);
+      if (!saved.ok) { HIS.kit.toast(saved.error); return; }
       location.href = 'registration.html'; // Figma 420:1427 -> 23:2285
     };
     const dup = HIS.registry.duplicatesAcross({ last: val('last'), dob: val('dob'), name: rec.name, mobile: val('phone') });

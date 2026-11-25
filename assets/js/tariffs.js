@@ -109,8 +109,8 @@
     if (!code) return { ok: false, error: 'A tariff needs a code.' };
     if (!CATEGORIES[input.category]) return { ok: false, error: 'Choose a tariff category.' };
     var price = Number(input.price);
-    if (!(price >= 0)) return { ok: false, error: 'Enter a price of zero or more.' };
-    if (!input.effectiveFrom) return { ok: false, error: 'A price change needs an effective date.' };
+    if (!isFinite(price) || !(price >= 0) || !Number.isSafeInteger(Math.round(price * 100))) return { ok: false, error: 'Enter a finite price of zero or more.' };
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(input.effectiveFrom || '') || !isFinite(Date.parse(input.effectiveFrom)) || new Date(input.effectiveFrom).toISOString().slice(0, 10) !== input.effectiveFrom) return { ok: false, error: 'A price change needs a valid effective date.' };
     var rows = read();
     var clash = rows.filter(function (r) { return r.code === code && r.effectiveFrom === input.effectiveFrom; })[0];
     if (clash) return { ok: false, error: 'That code already has a price effective ' + input.effectiveFrom + '.' };

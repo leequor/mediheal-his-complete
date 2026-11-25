@@ -6,21 +6,34 @@
   function esc(s) {
     return String(s == null ? '' : s)
       .replace(/\u20b1/g, 'PHP ').replace(/[\u2013\u2014]/g, '-').replace(/\u00b7/g, '-')
-      .replace(/[^\x20-\x7e]/g, '').replace(/([\\()])/g, '\\$1');
+      .replace(/([\\()])/g, '\\$1').replace(/[^\x20-\x7e]/g, function (c) { var n = c.charCodeAt(0); return n <= 255 ? '\\' + n.toString(8).padStart(3, '0') : '?'; });
   }
   function text(rows) {
-    var y = 780, stream = '';
+    var y = 780, streams = [''];
     rows.forEach(function (r) {
-      if (r[0]) stream += 'BT /F1 ' + (r[1] || 10) + ' Tf 40 ' + y + ' Td (' + esc(r[0]) + ') Tj ET\n';
-      y -= (r[2] || 15);
+      var size = r[1] || 10, height = r[2] || 15, width = Math.max(25, Math.floor(510 / (size * 0.6)));
+      var text = String(r[0] || ''), lines = [];
+      while (text.length > width) {
+        var cut = text.lastIndexOf(' ', width); if (cut < width / 2) cut = width;
+        lines.push(text.slice(0, cut)); text = text.slice(cut).trimStart();
+      }
+      lines.push(text);
+      lines.forEach(function (line) {
+        if (y - height < 40) { streams.push(''); y = 780; }
+        if (line) streams[streams.length - 1] += 'BT /F1 ' + size + ' Tf 40 ' + y + ' Td (' + esc(line) + ') Tj ET\n';
+        y -= height;
+      });
     });
+    var fontId = 3 + streams.length * 2;
     var objs = [
       '<< /Type /Catalog /Pages 2 0 R >>',
-      '<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
-      '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 5 0 R >> >> /Contents 4 0 R >>',
-      '<< /Length ' + stream.length + ' >>\nstream\n' + stream + 'endstream',
-      '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>'
+      '<< /Type /Pages /Kids [' + streams.map(function (_, i) { return (3 + i * 2) + ' 0 R'; }).join(' ') + '] /Count ' + streams.length + ' >>'
     ];
+    streams.forEach(function (stream, i) {
+      objs.push('<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 ' + fontId + ' 0 R >> >> /Contents ' + (4 + i * 2) + ' 0 R >>');
+      objs.push('<< /Length ' + stream.length + ' >>\nstream\n' + stream + 'endstream');
+    });
+    objs.push('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>');
     var pdf = '%PDF-1.4\n', offs = [];
     objs.forEach(function (o, i) { offs.push(pdf.length); pdf += (i + 1) + ' 0 obj\n' + o + '\nendobj\n'; });
     var xref = pdf.length;

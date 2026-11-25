@@ -33,7 +33,7 @@ HIS.nursing = {
         ],
         upd: 'Updated Aug 31, 2026 · 2:15 PM · A. Santos, RN'
       } },
-    { id: 'PT-99214', name: 'Jose Dela Cruz', ini: 'JD', wk: 'Ward 2', ward: 'Ward 2', bed: 'Bed 07', next: '4:00 PM' },
+    { id: 'PT-99221', name: 'Jose Dela Cruz', ini: 'JD', wk: 'Ward 2', ward: 'Ward 2', bed: 'Bed 07', next: '4:00 PM' },
     { id: 'PT-99220', name: 'Rosa Mendoza', ini: 'RM', wk: 'Ward 1', ward: 'Ward 1', bed: 'Bed 09', next: '5:00 PM' },
     { id: 'PT-99216', name: 'Ramon Bautista', ini: 'RB', wk: 'Ward 1', ward: 'Ward 1', bed: 'Bed 11', next: '6:00 PM' },
     { id: 'PT-99211', name: 'Eleanor Whitfield', ini: 'EW', wk: 'Neuro Ward', ward: 'Neuro Ward', bed: 'Bed N-04', next: '7:00 PM' },

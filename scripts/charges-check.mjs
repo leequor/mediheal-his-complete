@@ -108,6 +108,7 @@ console.log('\n--- 2. pharmacy dispense ---');
     const before = { total: HIS.ledger.invoiceAmount(bill), balance: HIS.ledger.balanceOf(bill), charges: HIS.charges.all().length };
     const rx = HIS.pharmacy.rxById('RX-0001');
     const batch = HIS.pharmacy.stock().filter(b => b.drug === rx.drug && b.qty > 0 && !HIS.pharmacy.isExpired(b))[0];
+    HIS.pharmacy.verify('RX-0001'); // Verification is required before stock may leave the shelf.
     const res = HIS.pharmacy.dispense('RX-0001', { batchId: batch.id, qty: 10 });
     const after = { total: HIS.ledger.invoiceAmount(bill), balance: HIS.ledger.balanceOf(bill), charges: HIS.charges.all().length };
     const charge = HIS.charges.all().slice(-1)[0];
@@ -128,6 +129,7 @@ console.log('\n--- 2. pharmacy dispense ---');
     const rx = HIS.pharmacy.rxById('RX-0002');
     const batch = HIS.pharmacy.stock().filter(b => b.drug === rx.drug && b.qty > 5 && !HIS.pharmacy.isExpired(b))[0];
     const before = HIS.charges.all().length;
+    HIS.pharmacy.verify('RX-0002'); // Verification is required before stock may leave the shelf.
     const res = HIS.pharmacy.dispense('RX-0002', { batchId: batch.id, qty: 5 });
     const charge = HIS.charges.all().slice(-1)[0];
     return { ok: res.ok, err: res.error, before, after: HIS.charges.all().length, qty: charge.qty, amount: charge.amount, price: batch.price, remaining: res.remaining };

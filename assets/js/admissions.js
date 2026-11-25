@@ -219,6 +219,7 @@
     }
 
     var at = input.admittedAt || clock().toISOString();
+    if (!isFinite(Date.parse(at))) return { ok: false, error: 'Enter a valid admission date.' };
     var rows = read();
 
     // The encounter is opened first so the admission can point at it and every later charge has an
@@ -300,16 +301,18 @@
     if (bedStatus(to.id) !== 'available') return { ok: false, error: 'Bed ' + to.label + ' is ' + bedStatus(to.id) + '.' };
 
     var at = input.at || new Date().toISOString();
+    if (!isFinite(Date.parse(at)) || Date.parse(at) < Date.parse(a.admittedAt)) return { ok: false, error: 'Enter a valid transfer date on or after admission.' };
     a.transfers = (a.transfers || []).concat([{
       at: at,
       from: { bedId: a.bedId, bedLabel: a.bedLabel, bedType: a.bedType, ward: a.ward },
       to: { bedId: to.id, bedLabel: to.label, bedType: to.type, ward: to.ward },
-      by: actor(), reason: String(input.reason).trim()
+      by: actor(), reason: String(input.reason).trim(), note: String(input.note || '').trim()
     }]);
     a.bedId = to.id; a.bedLabel = to.label; a.bedType = to.type; a.ward = to.ward; a.dept = to.dept;
+    if (input.attending) a.attending = String(input.attending).trim();
     save(rows);
 
-    if (window.HIS.registry) HIS.registry.update(a.patientId, { ward: to.ward, bed: to.label, dept: to.dept });
+    if (window.HIS.registry) HIS.registry.update(a.patientId, { ward: to.ward, bed: to.label, dept: to.dept, doctor: a.attending });
     audit('Patient transferred \u2014 ' + a.id + ' ' + a.patientId + ' ' + a.transfers[a.transfers.length - 1].from.bedLabel +
       ' \u2192 ' + to.label + ' \u00b7 ' + String(input.reason).trim(), 'admission:' + a.id, a.transfers[a.transfers.length - 1].from.bedLabel, to.label);
     return { ok: true, admission: a };
@@ -467,6 +470,7 @@
     if (!String(input.summary || '').trim()) return { ok: false, error: 'A discharge needs a summary.' };
 
     var at = input.at || clock().toISOString();
+    if (!isFinite(Date.parse(at))) return { ok: false, error: 'Enter a valid discharge date.' };
     if (new Date(at).getTime() < new Date(a.admittedAt).getTime()) {
       return { ok: false, error: 'The discharge time cannot be before the admission time.' };
     }

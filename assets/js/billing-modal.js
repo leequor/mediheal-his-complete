@@ -14,7 +14,7 @@
   var short = function (n) { var w = String(n).split(' '); return (w.length === 3 && w[1].length > 2) ? w[0] + ' ' + w[1][0] + '. ' + w[2] : n; };
 
   function spec(kind, b) {
-    var total = b.amount, paid = paidOf(b), bal = total - paid, cov = is01(b) ? 7040 : 0;
+    var total = HIS.ledger.invoiceAmount(b), paid = paidOf(b), bal = HIS.ledger.balanceOf(b), cov = is01(b) ? 7040 : 0;
     if (kind === 'pay') return {
       title: 'Record payment', sub: short(b.name) + ' \u00b7 ' + b.pt + ' \u00b7 Invoice ' + b.id + ' \u00b7 Balance due ' + peso(bal), ok: 'Record payment',
       l: ['Invoice', 'Payment method', 'Amount received', 'Reference number', 'Received by', 'Notes'],
@@ -126,7 +126,7 @@
     if (cur.kind === 'pay') {
       var w = document.getElementById('blmodal');
       var inp = w.querySelector('[data-i="2"]'), bal = HIS.ledger.balanceOf(b);
-      var amt = parseFloat(String(inp.value).replace(/[^0-9.]/g, ''));
+      var amt = HIS.kit.currency(inp.value);
       var bad = !(amt > 0) || amt > bal + 0.001;
       inp.classList.toggle('err', bad);
       if (bad) { toast(bal > 0 ? 'Enter an amount between \u20b10.01 and ' + p2(bal) : 'Nothing due on this invoice'); return; }
@@ -151,9 +151,10 @@
     }
     if (cur.kind === 'cov') {
       var wc = document.getElementById('blmodal');
-      var numOf = function (s) { return parseFloat(String(s || '').replace(/[^0-9.]/g, '')) || 0; };
+      var numOf = function (s) { return String(s || '').trim() ? HIS.kit.currency(s) : 0; };
       var g = function (i) { return wc.querySelector('[data-i="' + i + '"]').value; };
       var phAmt = numOf(g(1)), hmoAmt = numOf(g(3)), discAmt = numOf(g(4));
+      if ([phAmt, hmoAmt, discAmt].some(function (n) { return !isFinite(n) || n < 0; })) { toast('Enter valid coverage amounts of zero or more.'); return; }
       if (phAmt + hmoAmt + discAmt <= 0) {
         toast('Enter at least one coverage or discount amount.');
         return;

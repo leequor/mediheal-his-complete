@@ -258,9 +258,81 @@ document.addEventListener('keydown', function (e) {
   btn.click();
 });
 
-HIS.kit = { esc: esc, GEOM: GEOM, modal: modal, dropdown: dropdown, pill: pill, row: row, toast: toast,
+function currency(value) {
+  var text = String(value == null ? '' : value).trim().replace(/^(₱|PHP)\s*/i, '');
+  if (!/^(\d+|\d{1,3}(,\d{3})+)(\.\d{1,2})?$/.test(text)) return NaN;
+  var n = Number(text.replace(/,/g, '')); return isFinite(n) ? n : NaN;
+}
+HIS.kit = { esc: esc, currency: currency, GEOM: GEOM, modal: modal, dropdown: dropdown, pill: pill, row: row, toast: toast,
     modalStack: { open: stackOpen, close: stackClose, top: function () { return stack[stack.length - 1] || null; },
       depth: function () { return stack.length; }, all: function () { return stack.slice(); } } };
 
   watchOverlays();
+
+  // Legacy frame-based forms use positioned label divs. Associate them with real controls while
+  // retaining their geometry, and keep keyboard/background access within the active dialog.
+  var fieldSeq = 0, locked = [], activeDialog = null;
+  function visible(el) { return !!(el.offsetWidth || el.offsetHeight) && getComputedStyle(el).visibility !== 'hidden'; }
+  function topDialog() {
+    var ds = [].slice.call(document.querySelectorAll('[role=dialog]')).filter(visible);
+    function layer(el) { var z = 0; for (var p = el; p; p = p.parentElement) z = Math.max(z, Number(getComputedStyle(p).zIndex) || 0); return z; }
+    ds.sort(function (a, b) { return layer(a) - layer(b); }); return ds[ds.length - 1] || null;
+  }
+  function repairDialogs() {
+    document.querySelectorAll('[role=dialog]').forEach(function (d) {
+      if (!visible(d)) return;
+      var title = d.querySelector('h2,h3,.tp-m-t,.pe-m-t,.pm-t,.bl-m-t,.at-m-t,.pr-m-t,.ap-title,.at-m-title,.pr-m-title');
+      if (!d.hasAttribute('aria-label') && !d.hasAttribute('aria-labelledby') && title) d.setAttribute('aria-label', title.textContent.trim());
+      var labels = [].slice.call(d.querySelectorAll('.tp-m-l,.pe-m-l,.pm-l,.bl-m-l,.at-m-l,.pr-m-l,.ap-l'));
+      var fields = [].slice.call(d.querySelectorAll('input:not([type=hidden]),select,textarea'));
+      fields.forEach(function (f, i) {
+        if ((f.labels && f.labels.length) || f.hasAttribute('aria-label') || f.hasAttribute('aria-labelledby')) return;
+        var l = labels[i]; if (!l) return;
+        if (!f.id) f.id = 'kit-field-' + (++fieldSeq);
+        if (l.tagName !== 'LABEL') { var real = document.createElement('label'); [].slice.call(l.attributes).forEach(function (a) { real.setAttribute(a.name, a.value); }); real.textContent = l.textContent; l.replaceWith(real); l = real; }
+        l.setAttribute('for', f.id);
+      });
+    });
+    var top = topDialog();
+    if (top !== activeDialog) {
+      locked.forEach(function (r) { r.el.inert = r.inert; if (r.hidden === null) r.el.removeAttribute('aria-hidden'); else r.el.setAttribute('aria-hidden', r.hidden); });
+      locked = []; activeDialog = top;
+      if (top && top.getAttribute('aria-modal') === 'true') {
+        for (var node = top; node && node.parentElement && node.parentElement !== document.documentElement; node = node.parentElement) {
+          [].slice.call(node.parentElement.children).forEach(function (sibling) {
+            if (sibling === node || /^(SCRIPT|STYLE|LINK)$/.test(sibling.tagName)) return;
+            locked.push({ el: sibling, inert: sibling.inert, hidden: sibling.getAttribute('aria-hidden') }); sibling.inert = true; sibling.setAttribute('aria-hidden', 'true');
+          });
+        }
+      }
+    }
+    if (!HIS.rbac || !HIS.rbac.can) return;
+    var page = document.body.dataset.page, policy = {
+      consultation: [['[data-modal=dx]', 'diagnosis']], personnel: [['[data-modal],[data-off],[data-ok]', 'personnel']],
+      attendance: [['[data-act=approve],[data-act=reopen]', 'verifyAttendance'], ['[data-act=clockin],[data-act=clockout],[data-act=lapprove],[data-act=ldecline],[data-act=reviewleave],[data-act=reviewunpaid],[data-act=newreq]', 'attendance']],
+      payroll: [['[data-modal=gen],[data-modal=proc],[data-corr]:not([data-corr=detail]):not([data-corr=pdf])', 'payroll'], ['[data-ts=approve],[data-ts=reopen]', 'verifyAttendance']],
+      treatment: [['[data-modal=rx],[data-modal=order],[data-modal=proc],[data-modal=status],[data-modal=summary]', 'prescribe'], ['[data-modal=pharmacy]', 'pharmacyWork'], ['[data-modal=bed]', 'admission']],
+      billing: [['[data-modal=pay],[data-modal=cov]', 'money']],
+      charges: [['[data-act]', 'money']],
+      pharmacy: [['#phNewRx', 'prescribe'], ['#phReceive,[data-batch],[data-act]:not([data-act=view])', 'pharmacyWork']],
+      laboratory: [['#lbNew', 'labOrder'], ['[data-act]:not([data-act=view])', 'labWork']],
+      profile: [['[data-act=edit]', 'patientDetails'], ['[data-act=transfer],[data-act=discharge]', 'admission']]
+    };
+    (policy[page] || []).forEach(function (rule) { document.querySelectorAll(rule[0]).forEach(function (b) { if (!HIS.rbac.can(rule[1])) { b.disabled = true; b.setAttribute('aria-disabled', 'true'); b.title = 'Read-only for this account'; } }); });
+  }
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Tab') return;
+    repairDialogs(); var d = topDialog(); if (!d || d.getAttribute('aria-modal') !== 'true') return;
+    var fields = [].slice.call(d.querySelectorAll('button:not([disabled]),a[href],input:not([disabled]):not([type=hidden]),select:not([disabled]),textarea:not([disabled]),[tabindex="0"]')).filter(visible);
+    if (!fields.length) { e.preventDefault(); d.tabIndex = -1; d.focus(); return; }
+    var first = fields[0], last = fields[fields.length - 1];
+    if (!d.contains(document.activeElement) || (e.shiftKey && document.activeElement === first) || (!e.shiftKey && document.activeElement === last)) { e.preventDefault(); (e.shiftKey ? last : first).focus(); }
+  }, true);
+  var repairPending = false;
+  new MutationObserver(function () { if (repairPending) return; repairPending = true; requestAnimationFrame(function () { repairPending = false; repairDialogs(); }); }).observe(document.body, { childList: true, subtree: true });
+  document.addEventListener('his:storage-error', function (e) {
+    var alert = document.getElementById('storage-error');
+    if (!alert) { alert = document.createElement('div'); alert.id = 'storage-error'; alert.setAttribute('role', 'alert'); alert.style.cssText = 'position:fixed;bottom:12px;left:12px;right:12px;padding:16px;background:#ffd6d3;color:#9b1c14;z-index:10000'; document.body.appendChild(alert); }
+    alert.textContent = e.detail;
+  });
 })();

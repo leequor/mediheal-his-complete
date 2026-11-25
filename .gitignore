@@ -43,3 +43,4 @@ qa/control-census.json
 
 # scratch probes (an underscore prefix means a one-off, not a suite)
 scripts/_*.mjs
+qa/audit-results/

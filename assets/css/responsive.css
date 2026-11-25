@@ -1653,3 +1653,32 @@
   }
   .ad-th, .ac-edit, .ad-tr .ac-edit, .ad-tr.ac-g2 .ac-edit { font-size: 12px !important; }
 }
+
+/* Keep clinical identity and metadata separate when the fixed desktop rows enter flow. */
+@media (max-width: 1439px) {
+  #tpc .tp-rows .tp-r {
+    display: grid !important;
+    grid-template-columns: 38px minmax(0, 1fr);
+    gap: 4px 12px;
+    align-items: center;
+    padding: 12px !important;
+  }
+  #tpc .tp-rows .tp-r .av {
+    grid-column: 1;
+    grid-row: 1 / 4;
+    width: 38px !important;
+    height: 38px !important;
+    display: block !important;
+  }
+  #tpc .tp-rows .tp-r .nm,
+  #tpc .tp-rows .tp-r .rl,
+  #tpc .tp-rows .tp-r .id {
+    grid-column: 2;
+    display: block;
+    min-width: 0;
+    max-width: 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+  #tpc .tp-th { display: flex; justify-content: space-between; gap: 16px; }
+}

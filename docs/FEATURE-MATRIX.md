@@ -1,7 +1,7 @@
 # Feature matrix
 
 Every relevant capability, classified by what the code actually does. Written from the repository at
-M12, not from earlier milestone reports.
+M12 with session 46 corrections. Current audit evidence: [AUDIT-RELEASE.md](AUDIT-RELEASE.md).
 
 **Legend**
 
@@ -25,7 +25,7 @@ M12, not from earlier milestone reports.
 | Session persistence (30-day / 12-hour) | 1 | Two storage mechanisms, both tested |
 | Session expiry | 1 | Tested by advancing the clock |
 | Sign-out clears session | 1 | Back button cannot reveal a protected page |
-| 14 roles with distinct permissions | 1 | `roles-check.mjs` 142 checks |
+| 12 roles with distinct permissions | 1 | Page guards and action-level writer checks; `roles-check.mjs` 110 checks |
 | Page guard before render | 1 | Redirect happens before any DOM is written |
 | Navigation scoped per role | 1 | Single `NAV` table in `rbac.js` |
 | Account create / edit / deactivate | 1 | Super Administrator only |

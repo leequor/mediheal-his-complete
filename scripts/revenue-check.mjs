@@ -334,6 +334,7 @@ await page.waitForTimeout(300);
     const rx = HIS.pharmacy.rxById('RX-0003');
     const batch = HIS.pharmacy.stock().filter(b => b.drug === rx.drug && b.qty > 5 && !HIS.pharmacy.isExpired(b))[0];
     out.stockBefore = batch.qty;
+    HIS.pharmacy.verify('RX-0003'); // Verification is required before stock may leave the shelf.
     const d = HIS.pharmacy.dispense('RX-0003', { batchId: batch.id, qty: 6 });
     out.dispensed = d.ok;
     out.chargeId = d.billing && d.billing.charge && d.billing.charge.id;

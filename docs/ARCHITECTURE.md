@@ -10,7 +10,7 @@ page is an HTML file that loads the modules it needs and renders into a fixed 14
 ```
 index.html            sign-in
    │
-   ├─ dashboard.html            one shell, fourteen role configurations (dashboards.js)
+   ├─ dashboard.html            one shell, twelve role configurations (dashboards.js)
    ├─ registration*.html        patient registry and the two registration forms
    ├─ appointments*.html        booking, confirmation
    ├─ consultation.html         diagnosis capture
@@ -67,13 +67,9 @@ The order matters in three places:
 
 ## 4. Persistence
 
-`HIS.store` is the only module that touches browser storage. It uses `sessionStorage`, so every demonstration record is scoped to the tab: it survives navigation and refresh, and is discarded when the tab closes. It provides a typed read with a fallback,
-a write that never throws, a tiny pub/sub, a snapshot and a reset. Every key is registered in one
-`KEYS` table (`store.js`), so the full data surface is one readable list.
+Domain records use localStorage through HIS.store. Authentication uses localStorage for remembered sessions and sessionStorage otherwise. Records survive sign-out, reloads and tab closure. Registered keys share typed reads, write-failure feedback, pub/sub, snapshots and explicit reset.
 
-Seeding is **lazy and idempotent**: a store writes its seed only when its key is absent. A tab that
-already holds records is never overwritten. There is no destructive migration. Signing out — and the
-"Reset sample data" action — clear the keys so the next visitor starts from the seed.
+Migrations preserve legacy registration rows, profile contacts, missing clinical identities, duplicated self-registration rows and saved daily attendance. The default reset preserves owner intake and bookings. Domain transaction wrappers stage related store writes and roll back ordinary write failures; they do not lock simultaneous browser tabs or supply a server database.
 
 | Key group | Stores |
 |---|---|

@@ -14,9 +14,9 @@ HIS.attendance = {
     { id: 'EMP-003', name: 'Dr. Marc Laureta', role: 'Consultant', dept: 'Orthopedics', shift: '8 AM \u2013 5 PM', tin: '07:49 AM', tout: '05:21 PM', status: 'Present' },
     { id: 'EMP-004', name: 'Dr. Yumie Pasiol', role: 'Resident Physician', dept: 'General Medicine', shift: '8 AM \u2013 5 PM', tin: '08:06 AM', tout: '05:00 PM', status: 'Present' },
     { id: 'EMP-005', name: 'Andrea Santos', role: 'Head Nurse', dept: 'Nursing', shift: '7 AM \u2013 3 PM', tin: '07:24 AM', tout: '03:08 PM', status: 'Late' },
-    { id: 'EMP-006', name: 'Miguel Reyes', role: 'Medical Technologist', dept: 'Laboratory', shift: '8 AM \u2013 5 PM', tin: '08:37 AM', tout: '05:04 PM', status: 'Late' },
-    { id: 'EMP-007', name: 'Sofia Mendoza', role: 'Pharmacist', dept: 'Pharmacy', shift: '9 AM \u2013 6 PM', tin: '', tout: '', status: 'On leave' },
-    { id: 'EMP-008', name: 'Daniel Cruz', role: 'Administrative Officer', dept: 'Administration', shift: '8 AM \u2013 5 PM', tin: '', tout: '', status: 'Absent' }
+    { id: 'EMP-006', name: 'Miguel Reyes', role: 'Pharmacist', dept: 'Pharmacy', shift: '8 AM \u2013 5 PM', tin: '08:37 AM', tout: '05:04 PM', status: 'Late' },
+    { id: 'EMP-007', name: 'Sofia Mendoza', role: 'Staff Nurse', dept: 'Nursing', shift: '9 AM \u2013 6 PM', tin: '', tout: '', status: 'On leave' },
+    { id: 'EMP-008', name: 'Daniel Cruz', role: 'Medical Technologist', dept: 'Laboratory', shift: '8 AM \u2013 5 PM', tin: '', tout: '', status: 'Absent' }
   ],
   // Every request carries the reason it was filed for and who covers the shift. The form collected
   // both and the submit dropped them, so the leave list could only show name, dates and status.

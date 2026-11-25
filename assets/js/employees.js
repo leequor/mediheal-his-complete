@@ -205,11 +205,33 @@
   ];
 
   function byId(id) {
-    return EMPLOYEES.filter(function (e) { return e.id === id; })[0] || null;
+    return all().filter(function (e) { return e.id === id; })[0] || null;
   }
-  function all() { return EMPLOYEES.slice(); }
+  function all() {
+    var roster = HIS.store.get('mh_personnel', null);
+    if (!Array.isArray(roster)) return EMPLOYEES.slice();
+    return roster.filter(function (r) { return r.status !== 'Inactive'; }).map(function (r) {
+      var base = EMPLOYEES.filter(function (e) { return e.id === r.id; })[0];
+      var standard = { category: 'rank-and-file', employment: 'regular', monthlyBasic: 0, allowances: [],
+        shift: { start: '08:00', end: '17:00', breakMinutes: 60 }, restDays: [0, 6], payBasis: 'monthly',
+        schedule: { daysPerWeek: 5, hoursPerDay: 8, normalWorkdaysPerMonth: 22, paidRestDays: true, paidSpecialDays: true },
+        payPolicy: 'MH-PAY-2026.1', payEffectiveFrom: '2026-01-01', wage: { region: 'NCR', sector: 'non-agriculture', category: 'hospital', effectiveFrom: '2026-01-01' } };
+      return Object.assign({}, base || standard, r.payroll || {}, { id: r.id, name: r.name, role: r.role, dept: r.dept, hired: r.joined });
+    });
+  }
   function monthlyAllowance(e) {
     return (e.allowances || []).reduce(function (t, a) { return t + Number(a.amount || 0); }, 0);
+  }
+  function setPay(id, input) {
+    if (!HIS.rbac.can('payroll')) return { ok: false, error: 'Only Accounting can set employee pay.' };
+    var amount = Number(input.monthlyBasic);
+    if (!isFinite(amount) || amount <= 0 || !Number.isSafeInteger(Math.round(amount * 100))) return { ok: false, error: 'Enter a valid monthly salary greater than zero.' };
+    var rows = HIS.store.get('mh_personnel', []), employee = rows.filter(function (e) { return e.id === id; })[0];
+    if (!employee) return { ok: false, error: 'Personnel record not found.' };
+    employee.payroll = Object.assign({}, employee.payroll, { monthlyBasic: amount, category: input.category === 'managerial' ? 'managerial' : 'rank-and-file' });
+    if (!HIS.store.set('mh_personnel', rows)) return { ok: false, error: 'Pay setup could not be saved.' };
+    HIS.audit.append({ who: HIS.auth.account().name, role: HIS.rbac.current().label, what: 'Employee pay setup updated', entity: 'employee:' + id, after: amount });
+    return { ok: true };
   }
   function monthlyTaxableAllowance(e) {
     return (e.allowances || []).reduce(function (t, a) {
@@ -221,7 +243,7 @@
   }
 
   HIS.employees = {
-    all: all, byId: byId,
+    all: all, byId: byId, setPay: HIS.store.atomic(setPay),
     monthlyAllowance: monthlyAllowance,
     monthlyTaxableAllowance: monthlyTaxableAllowance,
     monthlyNonTaxableAllowance: monthlyNonTaxableAllowance

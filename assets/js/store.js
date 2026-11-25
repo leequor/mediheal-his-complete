@@ -20,6 +20,14 @@
     profileEdits: 'mh_profile_edits',
     treatment: 'mh_treatment_state',
     nursing: 'mh_nursing_state',
+    vitals: 'mh_vitals',
+    nursingNotes: 'mh_nursing_notes',
+    administrations: 'mh_med_administrations',
+    departmentDoctors: 'mh_department_doctors',
+    laboratory: 'mh_lab',
+    prescriptions: 'mh_rx',
+    stock: 'mh_stock',
+    stockMoves: 'mh_stock_moves',
     consultation: 'mh_consult_state',
     notifRead: 'mh_notif_read',
     attendance: 'mh_attendance_state',
@@ -61,6 +69,7 @@
   // policy). The fallback keeps a single page working; it simply does not survive a reload.
   var MEM = {};
   var PROBE = null;
+  var pending = null;
   function bucket() {
     try {
       var l = window.localStorage;
@@ -71,6 +80,7 @@
     } catch (e) { return null; }
   }
   function rawGet(key) {
+    if (pending && Object.prototype.hasOwnProperty.call(pending, key)) return pending[key];
     var s = bucket();
     if (s) { try { return s.getItem(key); } catch (e) { return null; } }
     return Object.prototype.hasOwnProperty.call(MEM, key) ? MEM[key] : null;
@@ -121,13 +131,46 @@
     } catch (e) { return fallback; }
   }
   function set(key, value) {
-    try { rawSet(key, JSON.stringify(value)); emit(key, value); return true; }
-    catch (e) { return false; } // storage blocked: the caller keeps the change in memory
+    try {
+      if (pending) { pending[key] = JSON.stringify(value); return true; }
+      if (!rawSet(key, JSON.stringify(value))) throw new Error('Storage is full or unavailable. Your change was not saved.');
+      emit(key, value); return true;
+    } catch (e) {
+      document.dispatchEvent(new CustomEvent('his:storage-error', { detail: 'Storage is full or unavailable. Your change was not saved. Keep this page open and free storage before retrying.' }));
+      return false;
+    }
   }
   function remove(key) {
+    if (pending) { pending[key] = null; return; }
     rawRemove(key);
     emit(key, undefined);
   }
+  // Stage a domain operation, including its audit/charge writes, before committing any key.
+  // On a write failure restore prior bytes; callers receive failure and keep their form open.
+  // This is synchronous browser storage, not a server transaction or a cross-tab lock.
+  function transaction(fn) {
+    if (pending) return fn();
+    pending = {};
+    var result, staged;
+    try { result = fn(); staged = pending; }
+    catch (e) { pending = null; return { ok: false, error: e.message || 'The change could not be saved.' }; }
+    pending = null;
+    if (result && result.ok === false) return result;
+    var before = {}, written = [], keys = Object.keys(staged);
+    for (var i = 0; i < keys.length; i++) {
+      var key = keys[i]; before[key] = rawGet(key);
+      if (staged[key] === null) rawRemove(key);
+      else if (!rawSet(key, staged[key])) {
+        written.reverse().forEach(function (k) { if (before[k] === null) rawRemove(k); else rawSet(k, before[k]); });
+        document.dispatchEvent(new CustomEvent('his:storage-error', { detail: 'Storage is full or unavailable. Your change was not saved. Free storage and retry.' }));
+        return { ok: false, error: 'The change could not be saved. Free storage and retry.' };
+      }
+      written.push(key);
+    }
+    keys.forEach(function (k) { emit(k, staged[k] === null ? undefined : JSON.parse(staged[k])); });
+    return result;
+  }
+  function atomic(fn) { return function () { var args = arguments; return transaction(function () { return fn.apply(null, args); }); }; }
   // Read-modify-write in one call: update('mh_x', [], rows => { rows.push(r); return rows; })
   function update(key, fallback, fn) { var v = fn(get(key, fallback)); set(key, v); return v; }
   function on(key, fn) { (subs[key] = subs[key] || []).push(fn); }
@@ -144,15 +187,19 @@
   }
   function reset(opts) {
     var owner = opts && opts.includeOwner;
+    var patients = !owner ? get(KEYS.patients, []).filter(function (p) { return p.ownerEntered || p.createdBy === 'Patient self-registration'; }) : [];
+    var accounts = !owner ? get(KEYS.accounts, []).filter(function (a) { return a.seeded === false && a.role === 'patient' && patients.some(function (p) { return p.id === a.patientId; }); }) : [];
     Object.keys(KEYS).forEach(function (k) {
       if (!owner && (k === 'registrations' || k === 'appointments')) return;
       remove(KEYS[k]);
     });
+    if (patients.length) set(KEYS.patients, patients);
+    if (accounts.length) set(KEYS.accounts, accounts);
   }
 
   HIS.store = {
     version: VERSION, KEY: KEYS,
     get: get, set: set, remove: remove, update: update, on: on,
-    names: names, list: list, snapshot: snapshot, reset: reset
+    names: names, list: list, snapshot: snapshot, reset: reset, transaction: transaction, atomic: atomic
   };
 })();

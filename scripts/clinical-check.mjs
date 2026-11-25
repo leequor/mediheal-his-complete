@@ -124,8 +124,9 @@ async function session(email, pagePath) {
 }
 
 // ---------------------------------------------------------------- 2. pharmacy workflow
+// Superadmin fixture covers prescribing plus pharmacy operations; writer roles are tested separately.
 {
-  const { ctx, page, errs } = await session('pharmacy@mediheal.test', '/pharmacy.html');
+  const { ctx, page, errs } = await session('superadmin@mediheal.test', '/pharmacy.html');
 
   const r = await page.evaluate(() => {
     const out = {};
@@ -164,6 +165,7 @@ async function session(email, pagePath) {
     const b = HIS.pharmacy.stock().filter(x => HIS.pharmacy.isExpired(x) && x.qty > 0)[0];
     if (!b) return { none: true };
     const made = HIS.pharmacy.createRx({ patientId: 'PT-99211', drug: b.drug, dosage: '1 vial daily', qty: 1, unit: b.unit });
+    HIS.pharmacy.verify(made.prescription.id);
     const res = HIS.pharmacy.dispense(made.prescription.id, { batchId: b.id, qty: 1 });
     return { batch: b.batch, ok: res.ok, error: res.error };
   });
@@ -172,6 +174,7 @@ async function session(email, pagePath) {
   // A batch of a different drug is refused.
   const wrong = await page.evaluate(() => {
     const b = HIS.pharmacy.batchesFor('Paracetamol 500 mg tablet')[0];
+    HIS.pharmacy.verify('RX-0002');
     return HIS.pharmacy.dispense('RX-0002', { batchId: b.id, qty: 1 });
   });
   ok('a batch of a different medication is refused', wrong.ok === false && /different/i.test(wrong.error), wrong.error);

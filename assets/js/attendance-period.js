@@ -263,6 +263,32 @@
       s = { period: s.period || PERIOD, activePeriodId: oldId, periods: PERIODS, records: s.records, timesheets: wrapped, version: 2 };
       HIS.store.set(KEY, s);
     }
+    var added = false;
+    HIS.employees.all().forEach(function (emp) {
+      s.periods.forEach(function (p) {
+        if (s.records.some(function (r) { return r.empId === emp.id && r.date >= p.start && r.date <= p.end; })) return;
+        periodDays(p).forEach(function (day) { s.records.push(buildRecord(emp, day, 'A')); });
+        s.timesheets[p.id] = s.timesheets[p.id] || {};
+        s.timesheets[p.id][emp.id] = { status: 'submitted', history: [] };
+        p.verified = false; added = true;
+      });
+    });
+    if (added) HIS.store.set(KEY, s);
+    var legacy = HIS.store.get('mh_attendance_state', null);
+    if (!s.legacyDailyImported && legacy && !legacy.periodLinked && legacy.dirty && Array.isArray(legacy.emps)) {
+      legacy.emps.forEach(function (e) {
+        var r = s.records.filter(function (r) { return r.empId === e.id && r.date === '2026-08-31'; })[0];
+        if (!r) return;
+        var parse = function (t) { var m = /^(\d{1,2}):(\d{2}) (AM|PM)$/.exec(t || ''); return m ? String(Number(m[1]) % 12 + (m[3] === 'PM' ? 12 : 0)).padStart(2, '0') + ':' + m[2] : null; };
+        r.timeIn = parse(e.tin); r.timeOut = parse(e.tout); r.worked = !!r.timeIn && !!r.timeOut;
+        r.status = e.status === 'On leave' ? 'leave' : e.status === 'Late' ? 'late' : r.worked ? 'present' : 'absent';
+        r.leaveApproved = r.status === 'leave'; r.leaveType = r.leaveApproved ? 'Approved leave (legacy register)' : null;
+        r.history = r.history || []; r.history.push({ at: new Date().toISOString(), by: 'migration', reason: 'Preserved saved daily register; HR must reverify.' });
+        var p = s.periods.filter(function (p) { return inPeriod(r, p); })[0];
+        p.verified = false; s.timesheets[p.id][e.id].status = 'submitted';
+      });
+      s.legacyDailyImported = true; HIS.store.set(KEY, s);
+    }
     return s;
   }
   function active() {
@@ -370,6 +396,7 @@
   }
 
   function approve(empId, note) {
+    if (!HIS.rbac.can('verifyAttendance')) return { ok: false, error: 'Only HR can approve attendance.' };
     var s = state();
     var p = active();
     var bank = s.timesheets[p.id] || (s.timesheets[p.id] = {});
@@ -400,8 +427,10 @@
   }
 
   function reopen(empId, reason) {
+    if (!HIS.rbac.can('verifyAttendance')) return { ok: false, error: 'Only HR can reopen attendance.' };
     var s = state();
-    var p = active();
+    var p = s.periods.filter(function (p) { return p.id === s.activePeriodId; })[0];
+    p.verified = false; p.verifiedAt = null; p.verifiedBy = null;
     var bank = s.timesheets[p.id] || (s.timesheets[p.id] = {});
     var ts = bank[empId] || { status: 'submitted', history: [] };
     if (ts.status !== 'approved') return { ok: false, error: 'That timesheet is not approved.' };
@@ -416,6 +445,11 @@
   // A correction writes the new value and records the old one. It never silently rewrites an
   // approved period: the timesheet drops back to `submitted` and payroll stops until re-approval.
   function correct(empId, date, patch, reason) {
+    if (!HIS.rbac.can('attendance')) return { ok: false, error: 'Only HR can correct attendance.' };
+    patch = patch || {};
+    if (['timeIn', 'timeOut'].some(function (k) { return patch[k] != null && patch[k] !== '' && !/^([01]\d|2[0-3]):[0-5]\d$/.test(patch[k]); }) || ['otHours', 'ndHours'].some(function (k) { return patch[k] != null && (!isFinite(Number(patch[k])) || Number(patch[k]) < 0 || Number(patch[k]) > 24); })) return { ok: false, error: 'Enter valid clock times and hours between zero and 24.' };
+    var periodForDate = periods().filter(function (p) { return date >= p.start && date <= p.end; })[0];
+    if (periodForDate && isVerified(periodForDate.id)) return { ok: false, error: 'This cut-off is verified and locked. HR must reopen it before making corrections.' };
     var s = state();
     var rec = s.records.filter(function (r) { return r.empId === empId && r.date === date; })[0];
     if (!rec) return { ok: false, error: 'No attendance record for that employee and date.' };
@@ -424,7 +458,7 @@
       otHours: rec.otHours, ndHours: rec.ndHours, dayType: rec.dayType
     };
     Object.keys(patch || {}).forEach(function (k) {
-      if (['timeIn', 'timeOut', 'status', 'otHours', 'ndHours', 'dayType', 'note'].indexOf(k) > -1) rec[k] = patch[k];
+      if (['timeIn', 'timeOut', 'status', 'otHours', 'ndHours', 'dayType', 'note', 'leaveType', 'leaveApproved'].indexOf(k) > -1) rec[k] = patch[k];
     });
     rec.worked = !!rec.timeIn && !!rec.timeOut;
     if (rec.worked) {
@@ -432,6 +466,7 @@
       var under = Math.max(0, toMinutes(rec.shiftEnd) - toMinutes(rec.timeOut));
       if (toMinutes(rec.timeOut) < toMinutes(rec.timeIn)) under = 0;
       rec.lateMinutes = late; rec.undertimeMinutes = under;
+      if (rec.status === 'present' || rec.status === 'late' || rec.status === 'undertime') rec.status = late > HIS.payrollCalc.CONFIG.graceMinutes ? 'late' : under > 0 ? 'undertime' : 'present';
     } else { rec.lateMinutes = 0; rec.undertimeMinutes = 0; }
     rec.history = rec.history || [];
     var a = HIS.auth && HIS.auth.account ? HIS.auth.account() : null;
@@ -440,7 +475,8 @@
       before: before, after: { timeIn: rec.timeIn, timeOut: rec.timeOut, status: rec.status, otHours: rec.otHours, ndHours: rec.ndHours, dayType: rec.dayType },
       reason: reason || ''
     });
-    var p = active();
+    var p = s.periods.filter(function (p) { return date >= p.start && date <= p.end; })[0];
+    if (!p) return { ok: false, error: 'The attendance date is outside a configured cut-off.' };
     var bank = s.timesheets[p.id] || (s.timesheets[p.id] = {});
     var ts = bank[empId] || { status: 'submitted', history: [] };
     var wasApproved = ts.status === 'approved';
@@ -486,13 +522,16 @@
   // records and publishes the hours to payroll. Accounting cannot compute a period that has not been
   // verified, so nobody can pay hours that HR has not signed off.
   function verify(periodId, who) {
+    if (!HIS.rbac.can('verifyAttendance')) return { ok: false, error: 'Only HR can verify and submit attendance.' };
     var s = state();
     var p = s.periods.filter(function (x) { return x.id === (periodId || s.activePeriodId); })[0];
     if (!p) return { ok: false, error: 'Pay period not found.' };
     if (p.verified) return { ok: true, already: true, period: p };
+    var bank = s.timesheets[p.id] || {};
+    if (HIS.employees.all().some(function (e) { return !bank[e.id] || bank[e.id].status !== 'approved'; })) return { ok: false, error: 'Approve all timesheets before verification.' };
     p.verified = true;
     p.verifiedAt = new Date().toISOString();
-    p.verifiedBy = who || 'HR Officer';
+    p.verifiedBy = HIS.auth.account().name;
     HIS.store.set(KEY, s);
     return { ok: true, period: p };
   }
@@ -502,13 +541,34 @@
     return !!(p && p.verified);
   }
 
+  function reopenAll(reason) {
+    if (!HIS.rbac.can('verifyAttendance')) return { ok: false, error: 'Only HR can reopen a cut-off.' };
+    if (!String(reason || '').trim()) return { ok: false, error: 'Give a reason for reopening the cut-off.' };
+    HIS.employees.all().forEach(function (e) { if (approved(e.id)) reopen(e.id, reason); });
+    return { ok: true };
+  }
+  function applyLeave(empId, start, end, type, reason) {
+    if (!HIS.rbac.can('attendance')) return { ok: false, error: 'Only HR can approve leave.' };
+    var dates = all().filter(function (r) { return r.empId === empId && r.date >= start && r.date <= end; });
+    if (dates.some(function (r) { var p = periods().filter(function (p) { return inPeriod(r, p); })[0]; return p && p.verified; })) return { ok: false, error: 'Reopen the affected cut-off before changing leave.' };
+    for (var i = 0; i < dates.length; i++) {
+      var res = correct(empId, dates[i].date, { timeIn: null, timeOut: null, status: 'leave', leaveType: type, leaveApproved: true, otHours: 0, ndHours: 0 }, reason);
+      if (!res.ok) return res;
+    }
+    return { ok: true, days: dates.length };
+  }
+
   HIS.attendancePeriod = {
     PERIOD: PERIOD, PERIODS: PERIODS, HOLIDAYS: HOLIDAYS, KEY: KEY,
     active: active, periods: periods, setPeriod: setPeriod,
     all: all, days: days, recordsFor: recordsFor, classify: classify,
     timesheet: timesheet, approved: approved, unapproved: unapproved, summary: summary,
     approve: approve, approveAll: approveAll, reopen: reopen, correct: correct,
-    verify: verify, isVerified: isVerified,
+    verify: verify, isVerified: isVerified, reopenAll: reopenAll, applyLeave: applyLeave,
     totals: totals, seed: seed, reset: reset
   };
+  ["correct","approve","approveAll","reopen","verify","reopenAll","applyLeave"].forEach(function (name) {
+    if (HIS.attendancePeriod[name]) HIS.attendancePeriod[name] = HIS.store.atomic(HIS.attendancePeriod[name]);
+  });
+
 })();

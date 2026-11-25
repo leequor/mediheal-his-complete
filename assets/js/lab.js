@@ -179,6 +179,7 @@
   }
 
   function create(input) {
+    if (!HIS.rbac.can('labOrder')) return { ok: false, error: 'Your account cannot perform this action.' };
     input = input || {};
     var p = window.HIS.registry && HIS.registry.byId(input.patientId);
     if (!p) return { ok: false, error: 'Choose a patient.' };
@@ -186,7 +187,9 @@
     var rows = all();
     // M12: name the episode. A charge must be able to say which encounter it happened in, so the
     // order opens (or reuses) the patient's outpatient encounter before it is priced.
-    var enc = input.encounterId ? { ok: true, encounter: { id: input.encounterId } } : null;
+    var selected = input.encounterId && HIS.encounters && HIS.encounters.byId(input.encounterId);
+    if (input.encounterId && (!selected || selected.patientId !== p.id)) return { ok: false, error: 'Choose an encounter belonging to this patient.' };
+    var enc = selected ? { ok: true, encounter: selected } : null;
     if (!enc && window.HIS.encounters) {
       enc = HIS.encounters.ensure(p.id, { dept: p.dept, provider: input.orderedBy || p.doctor });
     }
@@ -222,6 +225,7 @@
 
   // Each transition is guarded, so a screen cannot skip a step by calling the wrong function.
   function collect(id) {
+    if (!HIS.rbac.can('labWork')) return { ok: false, error: 'Your account cannot perform this action.' };
     var rows = all(), o = rows.filter(function (x) { return x.id === id; })[0];
     if (!o) return { ok: false, error: 'Order not found.' };
     if (o.status !== 'Ordered') return { ok: false, error: 'Only an ordered test can be collected.' };
@@ -234,6 +238,7 @@
   }
 
   function process(id) {
+    if (!HIS.rbac.can('labWork')) return { ok: false, error: 'Your account cannot perform this action.' };
     var rows = all(), o = rows.filter(function (x) { return x.id === id; })[0];
     if (!o) return { ok: false, error: 'Order not found.' };
     if (o.status !== 'Collected') return { ok: false, error: 'The specimen must be collected first.' };
@@ -245,6 +250,7 @@
   }
 
   function enterResult(id, data) {
+    if (!HIS.rbac.can('labWork')) return { ok: false, error: 'Your account cannot perform this action.' };
     data = data || {};
     var rows = all(), o = rows.filter(function (x) { return x.id === id; })[0];
     if (!o) return { ok: false, error: 'Order not found.' };
@@ -271,6 +277,7 @@
   }
 
   function validate(id) {
+    if (!HIS.rbac.can('labWork')) return { ok: false, error: 'Your account cannot perform this action.' };
     var rows = all(), o = rows.filter(function (x) { return x.id === id; })[0];
     if (!o) return { ok: false, error: 'Order not found.' };
     if (o.status !== 'Resulted') return { ok: false, error: 'Only an entered result can be validated.' };
@@ -286,6 +293,7 @@
   }
 
   function cancel(id, reason) {
+    if (!HIS.rbac.can('labOrder')) return { ok: false, error: 'Your account cannot perform this action.' };
     var rows = all(), o = rows.filter(function (x) { return x.id === id; })[0];
     if (!o) return { ok: false, error: 'Order not found.' };
     if (o.status === 'Validated') return { ok: false, error: 'A validated result cannot be cancelled.' };
@@ -317,6 +325,7 @@
   // A validated result is released and must not be edited. A correction archives the released value
   // and records a new one, so the report shows both and the audit log shows who changed what.
   function correctResult(id, data, reason) {
+    if (!HIS.rbac.can('labWork')) return { ok: false, error: 'Your account cannot perform this action.' };
     data = data || {};
     var rows = all(), o = rows.filter(function (x) { return x.id === id; })[0];
     if (!o) return { ok: false, error: 'Order not found.' };
@@ -345,6 +354,7 @@
   }
 
   function acknowledgeCritical(id) {
+    if (!HIS.rbac.can('labWork')) return { ok: false, error: 'Your account cannot perform this action.' };
     var rows = all(), o = rows.filter(function (x) { return x.id === id; })[0];
     if (!o) return { ok: false, error: 'Order not found.' };
     o.criticalAck = true;
@@ -379,4 +389,8 @@
     cancel: cancel, correctResult: correctResult, cancelPolicy: cancelPolicy,
     acknowledgeCritical: acknowledgeCritical, flagFor: flagFor, stats: stats
   };
+  ["create","collect","process","enterResult","validate","cancel","correctResult","acknowledgeCritical"].forEach(function (name) {
+    if (HIS.lab[name]) HIS.lab[name] = HIS.store.atomic(HIS.lab[name]);
+  });
+
 })();

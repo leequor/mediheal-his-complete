@@ -127,9 +127,8 @@ $('confirm').onclick = () => {
     patientInfo: { phone: $('ph').value, email: $('em').value, address: $('ad').value, dob: [S.month.value, S.day.value, S.year.value], sex: S.sex.value, civil: S.civil.value,
       bp: $('bp').value, temp: $('tp').value, weight: $('wt').value, height: $('ht').value, notes: $('nt').value }
   };
-  const list = HIS.store.get('mh_appts_extra', []);
-  list.push(rec);
-  HIS.store.set('mh_appts_extra', list);
+  const made = HIS.appointmentStore.create(rec);
+  if (!made.ok) { $('msg').textContent = made.error; HIS.kit.toast(made.error); return; }
   location.href = 'appointment-confirmed.html';
 };
 document.querySelectorAll('.f-in').forEach(i => i.addEventListener('input', () => i.classList.remove('err')));

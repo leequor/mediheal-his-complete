@@ -109,61 +109,13 @@
 
   function signOut() {
     var a = account();
-    // Signing out ends the demonstration: the sample dataset is restored for whoever signs in next,
-    // so one visitor's edits never greet the next. The audit trail is carried across the reset —
-    // a log that erased itself would not be a log — and both are discarded when the tab closes.
-    // See docs/PROJECT-STATUS.md §5.2.
-    var trail = window.HIS.audit ? HIS.audit.list() : null;
-    // A correction request is a message addressed to staff, not session state: if signing out
-    // erased it, the patient's request would vanish exactly when the front desk came to read it.
-    // It survives the reset for the same reason the audit trail does.
-    // Read by key, not through HIS.requests: sign-out happens on pages that do not load the module.
-    var reqKey = (window.HIS.requests && HIS.requests.KEY) || 'mh_patient_requests';
-    var reqs = HIS.store.get(reqKey, null);
-    // A patient who registered themselves is a real registry row, and a request from them is only
-    // useful if the row is still there when the front desk opens it. Those rows (and only those)
-    // survive the reset; anything staff edited is still discarded.
-    var selfReg = window.HIS.registry
-      ? HIS.registry.all().filter(function (p) { return p.createdBy === 'Patient self-registration'; })
-      : null;
-    // The portal account that goes with those rows is just as real. Without this it was destroyed
-    // with the sample data, so a patient who signed up, signed out and came back was told "No
-    // account uses that email address" and had no way back in (only the front desk could help).
-    // Narrow on purpose: patient role, created in this tab, never a seeded or staff account.
-    var selfAccts = null;
-    try {
-      var Acct = window.HIS.accounts;
-      if (Acct && Acct.all) {
-        selfAccts = Acct.all().filter(function (x) {
-          return x && x.seeded === false && x.role === 'patient';
-        });
-      }
-    } catch (e) { /* accounts module unavailable on this page */ }
     clear();
-    // Signing out no longer discards the dataset: records written by one role must still be there for
-    // the next one (and after a reload). Settings has an explicit reset for anyone who wants the
-    // sample data back.
-    if (selfReg && selfReg.length) {
-      try { HIS.registry.save(HIS.registry.all().concat(selfReg)); } catch (e) { /* registry unavailable */ }
-    }
-    if (selfAccts && selfAccts.length) {
-      try {
-        var Acct2 = window.HIS.accounts;
-        var have = Acct2.all().map(function (x) { return Acct2.norm(x.email); });
-        Acct2.save(Acct2.all().concat(selfAccts.filter(function (x) {
-          return have.indexOf(Acct2.norm(x.email)) < 0;
-        })));
-      } catch (e) { /* accounts unavailable */ }
-    }
-    if (Array.isArray(reqs) && reqs.length) HIS.store.set(reqKey, reqs);
-    if (window.HIS.audit) {
-      if (trail) HIS.store.set(HIS.audit.KEY, trail);
-      if (a) {
-        HIS.audit.append({
-          who: a.name, role: HIS.rbac ? (HIS.rbac.ROLES[a.role] || {}).label || a.role : a.role,
-          what: 'Signed out', entity: 'session:' + a.email, before: 'active', after: 'ended'
-        });
-      }
+    // Shared records already persist in localStorage. Ending a session must not rewrite them.
+    if (window.HIS.audit && a) {
+      HIS.audit.append({
+        who: a.name, role: HIS.rbac ? (HIS.rbac.ROLES[a.role] || {}).label || a.role : a.role,
+        what: 'Signed out', entity: 'session:' + a.email, before: 'active', after: 'ended'
+      });
     }
   }
 

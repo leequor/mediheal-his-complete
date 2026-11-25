@@ -33,8 +33,8 @@
   // ---- persistence (localStorage, own key) ----
   var KEY = HIS.store.KEY.treatment;
   function saveState() {
-    var o = { stock: st.stock, plans: {} };
-    T.plans.forEach(function (p) { o.plans[p.id] = { pstat: p.pstat || '', type: p.type, f: { meds: p.f.meds, next: p.f.next, procs: p.f.procs, care: p.f.care } }; });
+    var o = HIS.store.get(KEY, { plans: {} }); o.plans = o.plans || {}; o.stock = st.stock;
+    var p = byId(st.sel); o.plans[p.id] = { pstat: p.pstat || '', type: p.type, f: { meds: p.f.meds, next: p.f.next, procs: p.f.procs, care: p.f.care } };
     HIS.store.set(KEY, o);
   }
   (function loadState() {
@@ -91,13 +91,15 @@
     h += "<div class='tp-a tp-search'>" + ic('search', 18, 1.8) + "<input id='tpq' placeholder='Search patient name or ID' aria-label='Search patient' value='" + esc(st.q) + "'></div>";
     h += "<button class='tp-a tp-flt" + (st.menu ? ' open' : '') + "' id='tpd'><span class='v'>" + esc(st.dept) + '</span>' + ic('down', 16, 2) + '</button>';
     h += "<div class='tp-a tp-th'><span style='left:24px'>PATIENT / DIAGNOSIS</span><span style='left:402px'>PLAN</span></div>";
+    h += "<div class='tp-a tp-rows'>";
     v.forEach(function (p, i) {
       var on = p.id === st.sel;
-      h += "<button class='tp-a tp-r" + (on ? ' on' : '') + "' data-plan='" + p.id + "' style='top:" + (547 + 76 * i) + "px'>";
+      h += "<button class='tp-a tp-r" + (on ? ' on' : '') + "' data-plan='" + p.id + "' style='left:0;top:" + (76 * i) + "px'>";
       h += "<span class='av'>" + p.ini + "</span><span class='nm'>" + esc(p.name) + "</span><span class='rl'>" + esc(p.sub) + "</span><span class='id'>" + p.id + '</span>';
       h += "<span class='dot" + (p.pstat ? ' off' : '') + "'></span>";
       h += '</button>';
     });
+    h += '</div>';
     if (!v.length) h += at('tp-none', 68, 547, 'No plans match');
     h += "<div class='tp-a tp-ft'>" + at('tp-s12', 24, 18, 'Showing ' + (v.length ? '1\u2013' + v.length : '0') + ' of ' + T.plans.length + ' plans', 'font-size:11px;line-height:13.31px');
     h += at('tp-l', 375, 18, 'Page 1 of 1', 'color:#15405a') + '</div>';
@@ -314,16 +316,18 @@
   function vals() { var o = []; [].forEach.call(document.querySelectorAll('#tpmodal [data-i]'), function (n) { o[+n.dataset.i] = n.value.trim(); }); return o; }
   function qtyOf(v) { return parseInt(String(v || '').replace(/[^0-9]/g, ' ').trim().split(' ')[0], 10) || 0; }
 
-  function confirm() { confirm0(); saveState(); }
+  function confirm() { if (confirm0() !== false) saveState(); }
   function confirm0() {
+    var action = st.modal === 'pharmacy' ? 'pharmacyWork' : st.modal === 'bed' ? 'admission' : 'prescribe';
+    if (['results', 'dispensed'].indexOf(st.modal) < 0 && !HIS.rbac.can(action)) { tip('Your account cannot change this record.'); return false; }
     var kind = st.modal, s = spec(kind, byId(st.sel)), v = vals(), p = byId(st.sel), f = p.f, bad = false;
     var req = s.req.slice(); if (kind === 'status' && /cancel/i.test(v[2] || '')) req.push(4);
     [].forEach.call(document.querySelectorAll('#tpmodal [data-i]'), function (n) { var miss = req.indexOf(+n.dataset.i) > -1 && !n.value.trim(); n.classList.toggle('bad', miss); if (miss) bad = true; });
-    if (bad) { tip(kind === 'status' ? 'Enter the new status (a reason is required to cancel)' : 'Fill in the highlighted fields'); return; }
+    if (bad) { tip(kind === 'status' ? 'Enter the new status (a reason is required to cancel)' : 'Fill in the highlighted fields'); return false; }
     var msg;
     if (kind === 'pharmacy') {
       var n = qtyOf(v[2]), have = onHand(v[0]);
-      if (n < 1 || n > have) { document.querySelector('#tpmodal [data-i="2"]').classList.add('bad'); tip(n > have ? 'Only ' + have + ' on hand' : 'Enter a quantity to dispense'); return; }
+      if (n < 1 || n > have) { document.querySelector('#tpmodal [data-i="2"]').classList.add('bad'); tip(n > have ? 'Only ' + have + ' on hand' : 'Enter a quantity to dispense'); return false; }
       // M6: this dispenses against the real pharmacy store — it finds the prescription the doctor
       // raised and the first non-expired batch, and refuses if either is missing.
       var ph = window.HIS.pharmacy;
@@ -334,21 +338,22 @@
       if (!rx || !batch) {
         tip(!rx ? 'No open prescription for ' + v[0] + '. Raise one with Prescribe medication first.'
           : 'No single batch of ' + v[0] + ' holds ' + n + '. Split the quantity in Pharmacy.');
-        return;
+        return false;
       }
       var res = ph.dispense(rx.id, { batchId: batch.id, qty: n });
-      if (!res.ok) { tip(res.error); return; }
+      if (!res.ok) { tip(res.error); return false; }
       st.disp = { sub: s.sub, med: v[0], qty: v[2], by: v[3] || 'Pharmacist on duty', left: onHand(v[0]) };
-      f.next = 'Medication dispensed'; st.modal = 'dispensed'; render(); return;
+      f.next = 'Medication dispensed'; st.modal = 'dispensed'; render(); return true;
     }
     if (kind === 'summary') {
-      // ESTIMATED behaviour (Figma has no discharged state): the plan is marked completed and the next step reads Discharged
-      p.pstat = 'done'; f.next = 'Discharged on ' + v[2]; st.modal = ''; render(); tip('Discharge summary saved for ' + p.name); return;
+      var active = HIS.admissions.activeForPatient(p.id);
+      if (!active) { tip('There is no active admission to discharge.'); return false; }
+      var discharged = HIS.store.transaction(function () { return HIS.admissions.discharge(active.id, { disposition: 'Discharged home', summary: v[5], note: v.slice(0, 5).join(' · '), at: HIS.admissions.clock().toISOString() }); });
+      if (!discharged.ok) { tip(discharged.error); return false; }
+      p.pstat = 'done'; f.next = 'Discharged on ' + v[2]; st.modal = ''; render(); tip('Discharge summary saved for ' + p.name); return true;
     }
     if (kind === 'rx') {
       var nm = v[0].replace(/\s+tablets?$/i, '');
-      if (f.meds.toLowerCase().indexOf(nm.split(' ')[0].toLowerCase()) < 0) f.meds += ', ' + nm;
-      f.next = 'Dispense at pharmacy';
       // M6: the prescription is a real pharmacy order, so the pharmacist has work in their queue
       // and the patient portal can list it. Quantity comes from the duration field when it says
       // "N tablets", otherwise it falls back to 30.
@@ -359,17 +364,21 @@
         qty: Number(rxq) || 30, unit: /tablet/i.test(v[0]) ? 'tablet' : 'unit',
         notes: v[5], orderedBy: f.attending
       }) : null;
+      if (!made || !made.ok) { tip(made ? made.error : 'Pharmacy is unavailable.'); return false; }
+      if (f.meds.toLowerCase().indexOf(nm.split(' ')[0].toLowerCase()) < 0) f.meds += ', ' + nm;
+      f.next = 'Dispense at pharmacy';
       msg = made && made.ok ? nm + ' sent to pharmacy (' + made.prescription.id + ')'
         : nm + ' added to the plan \u00b7 pharmacy order not raised';
     } else if (kind === 'order') {
       var testName = v[0].replace(/\s*\(.*\)$/, '').trim();
       var prio = /stat/i.test(v[2]) ? 'STAT' : /urgent/i.test(v[2]) ? 'Urgent' : 'Routine';
-      f.next = 'Awaiting result: ' + testName;
       // M6: the order lands in the laboratory queue. A test the catalogue does not hold is NOT
       // silently invented — the plan records it and the message says it was not ordered.
       var lo = (window.HIS.lab && HIS.lab.create) ? HIS.lab.create({
         patientId: p.id, test: testName, priority: prio, notes: v[5], orderedBy: f.attending
       }) : null;
+      if (!lo || !lo.ok) { tip(lo ? lo.error : 'Laboratory is unavailable.'); return false; }
+      f.next = 'Awaiting result: ' + testName;
       msg = lo && lo.ok ? testName + ' ordered (' + lo.order.id + ')'
         : testName + ' recorded on the plan \u00b7 not in the laboratory catalogue';
     }
@@ -381,9 +390,12 @@
       var view = ad2 ? ad2.bedBoard(v[0]).filter(function (b) { return b.label === bedLabel; })[0] : null;
       if (!view || view.status !== 'available') {
         tip(view ? 'Bed ' + bedLabel + ' is ' + view.status + '. Choose another bed.' : 'Choose an available bed in ' + v[0] + '.');
-        return;
+        return false;
       }
       var wardName = String(v[0]).replace(/\s*Ward$/i, '');
+      var existing = ad2.activeForPatient(p.id);
+      var assigned = HIS.store.transaction(function () { return existing ? ad2.transfer(existing.id, { bedId: view.id, reason: v[5] || 'Assigned from treatment plan' }) : ad2.admit({ patientId: p.id, bedId: view.id, diagnosis: f.pdx || p.sub, attending: v[3] }); });
+      if (!assigned.ok) { tip(assigned.error); return false; }
       f.care = 'Inpatient \u00b7 ' + wardName + ', ' + bedLabel;
       p.type = 'Inpatient';
       msg = 'Bed assigned: ' + wardName + ', ' + bedLabel;

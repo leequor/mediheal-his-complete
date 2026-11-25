@@ -124,6 +124,8 @@
   // Always returns a charge unless the input itself is invalid. A missing invoice is not an error.
   function add(input) {
     input = input || {};
+    var writer = { laboratory: 'labOrder', pharmacy: 'pharmacyWork', consultation: 'diagnosis', room: 'admission', nursing: 'nursing', procedure: 'prescribe' }[input.source];
+    if (!HIS.rbac.can('money') && (!writer || !HIS.rbac.can(writer))) return { ok: false, error: 'Your account cannot raise this charge.' };
     if (Object.keys(SOURCES).indexOf(input.source) < 0) {
       return { ok: false, error: 'Unknown charge source: ' + input.source };
     }
@@ -131,8 +133,8 @@
     if (!String(input.description || '').trim()) return { ok: false, error: 'A charge needs a description.' };
     var qty = Number(input.qty == null ? 1 : input.qty);
     var unit = Number(input.unitPrice);
-    if (!(qty > 0)) return { ok: false, error: 'A charge needs a positive quantity.' };
-    if (!(unit >= 0)) return { ok: false, error: 'A charge needs a unit price.' };
+    if (!isFinite(qty) || !(qty > 0)) return { ok: false, error: 'A charge needs a finite positive quantity.' };
+    if (!isFinite(unit) || !(unit >= 0) || !Number.isSafeInteger(Math.round(qty * unit * 100))) return { ok: false, error: 'A charge needs a finite unit price and total.' };
 
     var patient = input.patientId && window.HIS.registry ? HIS.registry.byId(input.patientId) : null;
     if (input.patientId && !patient) return { ok: false, error: 'Patient ' + input.patientId + ' is not in the registry.' };
@@ -142,6 +144,8 @@
     if (existing) return { ok: true, charge: existing, duplicate: true };
 
     var encounter = resolveEncounter(input);
+    if (input.encounterId && !encounter) return { ok: false, error: 'Encounter not found.' };
+    if (encounter && encounter.patientId !== input.patientId) return { ok: false, error: 'The encounter belongs to another patient.' };
     var encounterId = encounter ? encounter.id : (input.encounterId || null);
 
     // The invoice comes from the episode, never from a search for "something with a balance".
@@ -285,6 +289,8 @@
   // Void every active charge raised by one source event. Used by the clinical modules when the event
   // itself is cancelled: a cancelled order must not leave a live charge behind.
   function voidForSource(source, sourceId, reason) {
+    var writer = source === 'laboratory' ? 'labOrder' : source === 'pharmacy' ? 'pharmacyWork' : 'money';
+    if (!HIS.rbac.can('money') && !HIS.rbac.can(writer)) return { ok: false, error: 'Your account cannot reverse this charge.' };
     var hits = active().filter(function (c) { return c.source === source && c.sourceId === String(sourceId); });
     var out = [];
     hits.forEach(function (c) { out.push(voidCharge(c.id, reason)); });
@@ -381,4 +387,14 @@
     add: add, assign: assign, unassign: unassign, void: voidCharge, voidForSource: voidForSource,
     stats: stats, reconcile: reconcile, reset: reset
   };
+  ["assign","unassign","void"].forEach(function (name) {
+    var fn = HIS.charges[name]; HIS.charges[name] = function () {
+      if (!HIS.rbac.can('money')) return { ok: false, error: 'Only Billing and Finance can administer charges.' };
+      return fn.apply(null, arguments);
+    };
+  });
+  ["add","assign","unassign","void","voidForSource"].forEach(function (name) {
+    if (HIS.charges[name]) HIS.charges[name] = HIS.store.atomic(HIS.charges[name]);
+  });
+
 })();

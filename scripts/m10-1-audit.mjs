@@ -1,3 +1,4 @@
+// Combined HR/Accounting fixture uses superadmin. Real role boundaries are asserted in hardening-check.cjs.
 // M10.1 remediation audit. Independent arithmetic, not a replay of the application's formulas.
 //
 //   1  Pag-IBIG: the 1% tier, its statutory basis and its boundaries
@@ -48,7 +49,7 @@ const errs = [];
 page.on('pageerror', e => errs.push(String(e.message)));
 page.on('console', m => { if (m.type() === 'error') errs.push(m.text()); });
 await page.goto(BASE + '/index.html', { waitUntil: 'load' });
-await page.evaluate(() => HIS.auth.attempt('hr@mediheal.test', 'MediHeal2026!', true));
+await page.evaluate(() => HIS.auth.attempt('superadmin@mediheal.test', 'MediHeal2026!', true));
 await page.goto(BASE + '/payroll.html', { waitUntil: 'load' });
 await page.waitForTimeout(400);
 
@@ -179,6 +180,7 @@ console.log('\n--- 2. minimum wage ---');
     dated.length === 1 && /below the NCR-28 floor/.test(dated[0]), JSON.stringify(dated));
 
   const gate = await page.evaluate(() => {
+    HIS.attendancePeriod.verify(HIS.attendancePeriod.active().id);
     const run = HIS.payrollRuns.current();
     if (run.status === 'draft') HIS.payrollRuns.review(run.id, 'audit');
     const realCheck = HIS.wageFloor.check;
@@ -202,6 +204,7 @@ console.log('\n--- 3. off-cycle corrections ---');
 {
   // Release the period run first: a correction only exists for a released payroll.
   const released = await page.evaluate(() => {
+    HIS.attendancePeriod.verify(HIS.attendancePeriod.active().id);
     const run = HIS.payrollRuns.current();
     if (run.status === 'draft') HIS.payrollRuns.review(run.id, 'audit');
     if (HIS.payrollRuns.current().status === 'reviewed') HIS.payrollRuns.approve(run.id, 'audit');
@@ -212,6 +215,7 @@ console.log('\n--- 3. off-cycle corrections ---');
 
   // Correct an absence away: EMP-008 was absent on 18 August, so removing it creates an underpayment.
   const under = await page.evaluate((runId) => {
+    HIS.attendancePeriod.reopen('EMP-008', 'Audit correction');
     HIS.attendancePeriod.correct('EMP-008', '2026-08-18', { timeIn: '08:00', timeOut: '17:00', status: 'present' }, 'employee was on approved errand');
     HIS.attendancePeriod.approve('EMP-008', 'audit');
     const before = HIS.payrollCorrections.all().length;
@@ -254,6 +258,7 @@ console.log('\n--- 3. off-cycle corrections ---');
 
   // A second correction must pay only the increment, and can go the other way.
   const over = await page.evaluate((runId) => {
+    HIS.attendancePeriod.reopen('EMP-008', 'Audit correction');
     HIS.attendancePeriod.correct('EMP-008', '2026-08-19', { timeIn: null, timeOut: null, status: 'absent' }, 'audit: reverse an extra day');
     HIS.attendancePeriod.approve('EMP-008', 'audit');
     const c2 = HIS.payrollCorrections.create({ originalRunId: runId, reason: 'A second day was recorded as present in error' });

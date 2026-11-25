@@ -1,10 +1,9 @@
-# Project status — MediHeal HIS
+# Project status - MediHeal HIS
 
-**As of:** M12 (revenue integration, admissions and bed management).
-**Branch:** `dev/autonomous-milestones`. **`main`:** untouched at `fd5bf9f`. **Deployed:** no.
-**Surface:** 28 static pages, 62 JavaScript modules, 19 stylesheets, 29 test harnesses.
-**Data:** fictitious only. Held in `sessionStorage` — it survives navigation and refresh within the
-tab and is gone when the tab closes. No server, no network calls, no real patient data.
+**As of:** 2026-11-25, independent audit fixes (session 46).
+**Branch:** `main`; fixes local, GitHub push and deployment verification pending.
+**Surface:** 28 static pages, 68 JavaScript modules.
+**Data:** fictitious only, persisted in `localStorage` across reloads, tabs and sign-out. No server database.
 
 This document describes what the code actually does. It is written from the repository, not from
 earlier progress reports. Where a capability is simulated, it says so.
@@ -40,7 +39,7 @@ inspection of rendered screenshots.
 
 ### Patient identity
 - One patient registry (`mh_patients`) that `HIS.patients` is re-pointed at, so no module can see a
-  different list. 7 seeded patients.
+  different list. 13 seeded identities, including the clinical sample patients previously missing from the registry.
 - Registration with duplicate detection (same surname + date of birth = probable; same full name or
   same mobile = possible). Nothing merges automatically.
 - Portal accounts link through `account.patientId`; guardian links live in their own table with an
@@ -194,7 +193,7 @@ These are honest gaps, not bugs:
 | Item | Effect | Status |
 |---|---|---|
 | Client-side auth | Anyone can forge a session | Documented, not fixable in a static demo |
-| `sessionStorage` | Per-tab, ~5 MB, no transactions | Architectural — see §5.1 and §5.2 |
+| `localStorage` | Browser-profile data, limited quota, no cross-tab write lock | Architectural; see sections 5.1 and 5.2 |
 | Admin tables below 1440px | Stack into unlabelled blocks | Shared with Laboratory, Pharmacy, Claims, Accounts, Audit, Reports, Admissions, Configuration |
 | Laboratory tariff lives in `lab.js` | Not in the charge master | Deliberate: the catalogue already holds a price per test |
 | Two seeded admissions | Room and board already inside their invoice opening amount | Marked `legacyBilledThrough`; accrual skips those dates |
@@ -202,42 +201,22 @@ These are honest gaps, not bugs:
 
 ### 5.1 Concurrency — what this store cannot do
 
-**`sessionStorage` is not a database.** Every store write is a read-modify-write of one JSON blob:
-`get(key)`, mutate in memory, `set(key)`. There is no lock, no transaction, no compare-and-swap and
-no server to serialise writers. The last write wins.
+Browser records are shared between tabs in the same profile. Domain operations stage related writes and restore prior bytes on an ordinary storage-write failure. They do not provide a cross-tab lock, a server transaction or recovery from a browser/process crash midway through a commit. Sequential edits to different nursing patients merge into the latest store; simultaneous writers can still race.
 
-The consequence, stated plainly:
-
-- **Within one tab, duplicate bed assignment is rejected.** `admit()` and `transfer()` both check
-  `occupantOf(bedId)` before writing, and `adt-boundary-check.mjs` §8 proves a second admission and a
-  transfer into an occupied bed are both refused. That guard is a check followed by a write, which is
-  sufficient because a single tab cannot interleave with itself.
-- **Across tabs, there is nothing to conflict over.** Demonstration data is tab-scoped, so two tabs
-  are two independent hospitals with independent datasets. `adt-boundary-check.mjs` §12 asserts that
-  an admission made in one tab is invisible to the other.
-- **This is isolation, not concurrency control.** It works because there is exactly one user. The
-  application does **not** claim that simultaneous real users cannot double-book a bed: with a shared
-  store, two writers reading before either writes would both pass the check.
-
-A production system needs a server, a transaction around the occupancy check, and a unique constraint
-on `(bed_id) WHERE status = 'active'` — none of which exists here. `docs/ARCHITECTURE.md` §11 lists
-the rest of what a real deployment would need.
+A production system requires a server database, transactional constraints and server authorization. See [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ### 5.2 Where the data lives, and what survives
 
 | Moment | What happens |
 |---|---|
-| First visit / new tab | The seeded dataset is written to `sessionStorage` on first read |
-| Navigating between pages | Everything is preserved for the tab |
-| Refresh | Everything is preserved |
-| Sign out | Session ends; every record is restored to the seeded dataset; the audit trail is carried across so the session stays readable |
-| "Reset sample data" in the account menu | Same reset, without signing out |
-| Closing the tab | `sessionStorage` is discarded; the next visit starts from the seed |
+| First visit | Missing stores seed their synthetic records |
+| Navigation, refresh, closing/reopening a tab | Records persist in this browser profile |
+| Sign out | Authentication ends; patient, clinical, workforce and financial records persist |
+| Reset sample data | Demo stores reset; owner registrations, bookings, self-registered patients and matching patient accounts are preserved |
+| Full reset with includeOwner | Every registered record store clears |
+| Clear browser storage / another browser profile | Separate or empty dataset |
 
-The only thing that can outlive the tab is the sign-in itself: ticking **Keep me signed in** stores a
-session token in `localStorage` for 30 days. It holds a user id, an email and an expiry — no patient,
-clinical, financial or payroll record. Leaving the box unticked (the default) keeps the session in
-`sessionStorage` too, so nothing at all persists.
+Authentication is separate: remembered sessions use localStorage for 30 days; other sessions use sessionStorage for 12 hours. Clinical and financial records use localStorage in both cases.
 
 ## 6. Verification
 
@@ -246,23 +225,23 @@ Run with `PW=<path to playwright-core>` set (see `README.md`). Counts are the ac
 | Harness | Assertions | Proves |
 |---|---|---|
 | `smoke.mjs` | 28 pages | No console errors, no overflow, no dead controls |
-| `roles-check.mjs` | 144 | Every role reaches its allowlist, blocked elsewhere |
+| `roles-check.mjs` | 110 | Every role reaches its allowlist, blocked elsewhere |
 | `auth-check.mjs` | 25 | Sign-in, session, expiry, audit |
 | `clinical-check.mjs` | 53 | Laboratory and pharmacy rules, integration with treatment |
 | `finance-check.mjs` | 31 | One money chain across Billing, Reports and the portal |
 | `portal-check.mjs` | 40 | Patient identity, guardians, documents |
 | `payroll-check.mjs` | 89 | Payroll arithmetic against hand-calculated figures |
-| `claims-check.mjs` | 41 | Claim machine, role gates, settlement boundary |
+| `claims-check.mjs` | 43 | Claim machine, role gates, settlement boundary |
 | `ledger-check.mjs` | 46 | Payments, refunds, coverage, idempotency, invariants |
 | `charges-check.mjs` | 44 | Clinical activity becomes a charge, once; unbilled persistence |
 | `revenue-check.mjs` | 81 | Charge master, consultation billing, ADT, accrual, queue, returns, tariff change |
-| `adt-boundary-check.mjs` | 65 |
+| `adt-boundary-check.mjs` | 64 |
 | `qa-check.mjs` | 91 | Sign-in routes, appointment counts, avatars, role notifications, dashboard sources, bed dialog, payslip modal, build-text sweep |
 | `qa-final-check.mjs` | 73 | Payslip archive inspected byte-for-byte, duplicate submit, notification read/read-all/switch, fresh-session isolation, Departments as dept head, both sign-in routes |
 | `qa-nav-check.mjs` | 115 |
 | `exhaustive-controls-check.mjs` | 36 |
 | `claims-modal-stack-check.mjs` | 76 | Nested modal layering, real clicks and hit tests, validation contract, stack cleanup | Control census, row-action targeting, claim dialog geometry and outcomes, repeat and permission guards | Avatar ink-centroid centring, per-account profile identity, notification destination and read-versus-done, role scoping | Noon cutoff edges, transfer pricing, idempotency, reopen, reload, derived occupancy, two-tab lost update |
-| `acceptance-audit.mjs` | 180 | Independent M10 acceptance |
+| `acceptance-audit.mjs` | 181 | Independent M10 acceptance |
 | `m10-1-audit.mjs` | 77 | Pag-IBIG tiers, wage floor, corrections, negative balances |
 | `m10-2-audit.mjs` | 78 | Wage conversion factors and boundaries |
 | `m10-3-audit.mjs` | 75 | Divisor per purpose, compensation types, regional orders |
@@ -272,7 +251,7 @@ Run with `PW=<path to playwright-core>` set (see `README.md`). Counts are the ac
 | `visual-check.mjs` | 28 pages | Pixel diff against `qa/baseline` at 1440 and 1366 |
 | `buttons.mjs` | all pages | 0 dead controls |
 
-**Total: 1,370 assertions across 20 rule-asserting harnesses, plus 144 role checks — 1,514 in all.**, plus a 28-page smoke sweep, a 27-page axe audit, 140 responsive checks and 56 visual baselines (28 pages × 2 widths).
+Historical harness totals above are not a current release result. Session 46 results, test commands and limitations are recorded in [AUDIT-RELEASE.md](AUDIT-RELEASE.md).
 
 ## 7. Where to start reading
 

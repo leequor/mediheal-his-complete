@@ -78,7 +78,7 @@
   function create(input) {
     input = input || {};
     var role = HIS.rbac ? HIS.rbac.key() : null;
-    if (['hr', 'finance', 'superadmin'].indexOf(role) < 0) {
+    if (['accounting', 'superadmin'].indexOf(role) < 0) {
       return { ok: false, error: 'Your role cannot raise a payroll correction.' };
     }
     var original = HIS.payrollRuns.get(input.originalRunId);
@@ -194,7 +194,7 @@
     if (!c) return { ok: false, error: 'Correction not found.' };
     if (c.status !== from) return { ok: false, error: 'A ' + c.status + ' correction cannot move to ' + to + '.' };
     var role = HIS.rbac ? HIS.rbac.key() : null;
-    if (['hr', 'finance', 'superadmin'].indexOf(role) < 0) {
+    if (['accounting', 'superadmin'].indexOf(role) < 0) {
       return { ok: false, error: 'Your role cannot ' + action + ' a correction.' };
     }
     if (to === 'released') {
@@ -228,6 +228,7 @@
   // Authorise recovering an overpayment. Does not deduct: it records the authorisation and leaves
   // the line `authorized-pending-deduction` for a future run to act on.
   function authorizeRecovery(id, employeeId, input) {
+    if (!HIS.rbac.can('payroll')) return { ok: false, error: 'Only Accounting can authorize a recovery.' };
     input = input || {};
     var s = state();
     var c = s.corrections.filter(function (x) { return x.id === id; })[0];
@@ -314,4 +315,8 @@
     statement: statement, statementPdf: statementPdf,
     alreadyCorrected: alreadyCorrected, reset: reset
   };
+  ["create","review","approve","release","authorizeRecovery"].forEach(function (name) {
+    if (HIS.payrollCorrections[name]) HIS.payrollCorrections[name] = HIS.store.atomic(HIS.payrollCorrections[name]);
+  });
+
 })();

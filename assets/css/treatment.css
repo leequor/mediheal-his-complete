@@ -39,6 +39,8 @@
 .tp-th span{position:absolute;top:10.5px;font:600 11px/13.31px Inter,sans-serif;color:#5b8db8}
 .tp-r{left:68px;width:456px;height:76px;border:0;padding:0;margin:0;background:#fff;box-shadow:inset 1px 0 0 #c8dcea,inset -1px 0 0 #c8dcea,inset 0 -1px 0 #e3edf3;text-align:left;cursor:pointer;font-family:Inter,sans-serif}
 .tp-r>*{position:absolute;white-space:nowrap}
+.tp-rows{left:68px;top:547px;width:456px;height:608px;overflow-y:auto;overflow-x:hidden}
+.tp-rows .tp-r .nm,.tp-rows .tp-r .rl{max-width:330px;overflow:hidden;text-overflow:ellipsis}
 .tp-r:hover{background:#f6fafd}
 .tp-r.on{background:#f0f8fd;box-shadow:inset 3px 0 0 #1c6d9c,inset 0 -1px 0 #e3edf3}
 .tp-r .av{left:24px;top:19px;width:38px;height:38px;border-radius:50%;background:#e8f4fb;color:#1c6d9c;font:600 12px/38px Inter,sans-serif;text-align:center}

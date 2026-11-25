@@ -209,9 +209,20 @@
     return true;
   }
 
+  function can(action, record) {
+    var role = key();
+    if (role === 'superadmin') return true;
+    var writers = {
+      diagnosis: ['doctor'], nursing: ['nurse'], personnel: ['hr'],
+      attendance: ['hr'], verifyAttendance: ['hr'], payroll: ['accounting'],
+      patientDetails: ['registration'], admission: ['registration', 'nurse'],
+      prescribe: ['doctor'], labOrder: ['doctor', 'lab'], labWork: ['lab'], pharmacyWork: ['pharmacist'], money: ['finance']
+    };
+    return !!writers[action] && writers[action].indexOf(role) >= 0;
+  }
   HIS.rbac = {
     ROLES: ROLES, NAV: NAV,
     key: key, current: current, person: person, stem: stem,
-    allows: allows, nav: nav, navGroups: navGroups, home: home, guard: guard
+    allows: allows, nav: nav, navGroups: navGroups, home: home, guard: guard, can: can
   };
 })();

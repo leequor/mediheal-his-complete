@@ -89,7 +89,7 @@ const errs = [];
 page.on('pageerror', e => errs.push(String(e.message)));
 page.on('console', m => { if (m.type() === 'error') errs.push(m.text()); });
 await page.goto(BASE + '/index.html', { waitUntil: 'load' });
-await page.evaluate(() => HIS.auth.attempt('hr@mediheal.test', 'MediHeal2026!', true));
+await page.evaluate(() => HIS.auth.attempt('superadmin@mediheal.test', 'MediHeal2026!', true));
 await page.goto(BASE + '/payroll.html', { waitUntil: 'load' });
 await page.waitForTimeout(400);
 
@@ -192,10 +192,10 @@ console.log('\n--- 1. attendance and payroll integration ---');
 {
   const r = await page.evaluate(() => {
     const run = HIS.payrollRuns.current();
-    if (run.status === 'draft') HIS.payrollRuns.review(run.id, 'audit');
+    HIS.attendancePeriod.verify(run.periodId); if (run.status === 'draft') HIS.payrollRuns.review(run.id, 'audit');
     HIS.attendancePeriod.reopen('EMP-006', 'acceptance audit');
     const approve = HIS.payrollRuns.approve(run.id, 'audit');
-    HIS.attendancePeriod.approve('EMP-006', 'audit');
+    HIS.attendancePeriod.approve('EMP-006', 'audit'); HIS.attendancePeriod.verify(HIS.attendancePeriod.active().id);
     const after = HIS.payrollRuns.approve(run.id, 'audit');
     return { blocked: approve.ok, err: approve.error, okAfter: after.ok, status: HIS.payrollRuns.current().status };
   });
@@ -222,7 +222,7 @@ console.log('\n--- 1. attendance and payroll integration ---');
     const before = { version: run.version, net: run.totals.net, emp: run.lines.filter(l => l.employeeId === 'EMP-002')[0].net };
     // Change EMP-002 from present to absent on one day.
     HIS.attendancePeriod.correct('EMP-002', '2026-08-18', { timeIn: null, timeOut: null, status: 'absent' }, 'audit correction');
-    HIS.attendancePeriod.approve('EMP-002', 'audit');
+    HIS.attendancePeriod.approve('EMP-002', 'audit'); HIS.attendancePeriod.verify(HIS.attendancePeriod.active().id);
     const rec = HIS.payrollRuns.recompute(run.id, 'attendance corrected');
     const after = HIS.payrollRuns.current();
     return {
@@ -250,7 +250,7 @@ console.log('\n--- 1. attendance and payroll integration ---');
 {
   const r = await page.evaluate(() => {
     const run = HIS.payrollRuns.current();
-    HIS.payrollRuns.review(run.id, 'audit');
+    HIS.attendancePeriod.verify(run.periodId); HIS.payrollRuns.review(run.id, 'audit');
     const ap = HIS.payrollRuns.approve(run.id, 'audit');
     const rel = HIS.payrollRuns.release(run.id, 'audit');
     const recomp = HIS.payrollRuns.recompute(run.id, 'audit');
@@ -554,7 +554,7 @@ await page.waitForTimeout(400);
 // 4. PAYSLIPS
 // =================================================================================================
 console.log('\n--- 4. payslips ---');
-await page.evaluate(() => { HIS.auth.clear(); HIS.auth.attempt('hr@mediheal.test', 'MediHeal2026!', true); });
+await page.evaluate(() => { HIS.auth.clear(); HIS.auth.attempt('superadmin@mediheal.test', 'MediHeal2026!', true); });
 await page.goto(BASE + '/payroll.html', { waitUntil: 'load' });
 await page.waitForTimeout(400);
 {

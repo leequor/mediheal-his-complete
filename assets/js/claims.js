@@ -269,9 +269,11 @@
     var patient = input.patientId ? (HIS.registry ? HIS.registry.byId(input.patientId) : null) : null;
     var bill = (HIS.billing.bills || []).filter(function (b) { return b.id === input.invoiceId; })[0];
     if (!bill) return { ok: false, error: 'Choose the invoice this claim is for.' };
+    if (input.patientId && (!patient || patient.id !== bill.pt)) return { ok: false, error: 'The claim patient must match the invoice patient.' };
     var amount = Number(input.requestedAmount);
     if (!isFinite(amount) || amount <= 0) return { ok: false, error: 'Enter a claim amount greater than zero.' };
-    if (amount > bill.amount + 1e-9) return { ok: false, error: 'A claim cannot exceed the invoice total of ' + peso(bill.amount) + '.' };
+    var total = HIS.ledger.invoiceAmount(bill);
+    if (amount > total + 1e-9) return { ok: false, error: 'A claim cannot exceed the invoice total of ' + peso(total) + '.' };
     if (!String(input.payer || '').trim()) return { ok: false, error: 'Choose the payer.' };
     if (!String(input.memberRef || '').trim()) return { ok: false, error: 'Enter the member reference.' };
     var payerType = input.payerType === 'hmo' ? 'hmo' : 'philhealth';
@@ -463,4 +465,8 @@
     setDocument: setDocument, addNote: addNote, stats: stats,
     seed: seed, reset: reset
   };
+  ["create","transition","addNote"].forEach(function (name) {
+    if (HIS.claims[name]) HIS.claims[name] = HIS.store.atomic(HIS.claims[name]);
+  });
+
 })();

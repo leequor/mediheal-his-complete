@@ -30,6 +30,11 @@
   // records other than the drawn one are DERIVED from the patient row (not in Figma)
   function rec(p) {
     if (p.rec) return p.rec;
+    var registered = HIS.registry.byId(p.id);
+    if (registered && (registered.ownerEntered || registered.createdBy === 'Patient self-registration')) {
+      p.rec = { meds: [['Medication orders', 'None recorded']], vit: [['Observations', 'Not recorded']], care: [['Assigned nurse', 'Not assigned'], ['Care setting', p.ward + ', ' + p.bed]], upd: 'No nursing observations recorded' };
+      return p.rec;
+    }
     var s = parseInt(p.id.slice(-2), 10) || 0, sys = 112 + s % 24, dia = 70 + s % 14, hr = 70 + s % 22, t = 36.5 + (s % 5) / 10, o = 95 + s % 4;
     var rd = function (a, b, c, d, e) { return 'BP ' + (sys + a) + '/' + (dia + b) + ' \u00b7 HR ' + (hr + c) + ' \u00b7 ' + (t + d).toFixed(1) + ' \u00b0C \u00b7 SpO\u2082 ' + (o + e) + '%'; };
     p.rec = {
@@ -56,13 +61,21 @@
   // ---- persistence (localStorage, own key) ----
   var KEY = HIS.store.KEY.nursing;
   function saveState() {
-    var o = { doses: st.doses, vitDue: st.vitDue, vitDone: st.vitDone, recs: {} };
-    N.pts.forEach(function (p) { o.recs[p.id] = rec(p); });
+    var o = HIS.store.get(KEY, { recs: {}, vitDone: {} });
+    o.recs = o.recs || {}; o.recs[st.sel] = rec(byId(st.sel));
+    o.doses = 5 + HIS.store.get('mh_med_administrations', []).length;
+    o.vitDone = Object.assign({}, o.vitDone || {}, st.vitDone);
+    o.vitDue = Math.max(0, 3 - Object.keys(o.vitDone).length);
     HIS.store.set(KEY, o);
   }
   (function loadState() {
     var o = HIS.store.get(KEY, null);
     if (!o) return;
+    if (!o.identityMigration && o.recs && o.recs['PT-99214']) {
+      o.recs['PT-99221'] = o.recs['PT-99221'] || o.recs['PT-99214']; delete o.recs['PT-99214'];
+      if (o.vitDone && o.vitDone['PT-99214']) { o.vitDone['PT-99221'] = o.vitDone['PT-99214']; delete o.vitDone['PT-99214']; }
+      o.identityMigration = 1; HIS.store.set(KEY, o);
+    }
     if (typeof o.doses === 'number') st.doses = o.doses;
     if (typeof o.vitDue === 'number') st.vitDue = o.vitDue;
     if (o.vitDone && typeof o.vitDone === 'object') st.vitDone = o.vitDone;
@@ -98,13 +111,15 @@
     h += "<div class='tp-a tp-search'>" + ic('search', 18, 1.8) + "<input id='tpq' placeholder='Search patient name or ID' aria-label='Search patient' value='" + esc(st.q) + "'></div>";
     h += "<button class='tp-a tp-flt" + (st.menu ? ' open' : '') + "' id='tpd'><span class='v'>" + esc(st.ward) + '</span>' + ic('down', 16, 2) + '</button>';
     h += "<div class='tp-a tp-th'><span style='left:24px'>PATIENT / WARD</span><span style='left:409px'>DUE</span></div>";
+    h += "<div class='tp-a tp-rows'>";
     v.forEach(function (p, i) {
       var on = p.id === st.sel;
-      h += "<button class='tp-a tp-r" + (on ? ' on' : '') + "' data-pt='" + p.id + "' style='top:" + (547 + 76 * i) + "px'>";
+      h += "<button class='tp-a tp-r" + (on ? ' on' : '') + "' data-pt='" + p.id + "' style='left:0;top:" + (76 * i) + "px'>";
       h += "<span class='av'>" + p.ini + "</span><span class='nm'>" + esc(p.name) + "</span><span class='rl'>" + esc(p.ward + ' \u00b7 ' + p.bed + ' \u00b7 Next due ' + p.next) + "</span><span class='id'>" + p.id + '</span>';
       h += "<span class='dot'></span>";
       h += '</button>';
     });
+    h += '</div>';
     if (!v.length) h += at('tp-none', 68, 547, 'No patients match');
     h += "<div class='tp-a tp-ft'>" + at('tp-s12', 24, 18, 'Showing ' + (v.length ? '1\u2013' + v.length : '0') + ' of ' + N.pts.length + ' patients', 'font-size:11px;line-height:13.31px');
     h += at('tp-l', 375, 18, 'Page 1 of 1', 'color:#15405a') + '</div>';
@@ -140,6 +155,8 @@
     h += at('tp-hr', 572, 1003, '', 'width:776px');
     h += at('tp-sico', 572, 1027, ic('phone', 17, 1.8)) + at('tp-sh', 598, 1026, 'Care team and shift');
     h += rows(r.care, 1063);
+    var notes = HIS.nursingRecords.notes(p.id);
+    if (notes.length) h += "<button class='tp-a tp-btn2' data-history='1' style='left:1210px;top:1020px;width:138px'>Progress notes (" + notes.length + ')</button>';
     h += "<div class='tp-a tp-foot'>" + at('tp-l', 24, 16, ic('shield', 15, 1.8, 'color:#6f8890'), '') + at('tp-l', 46, 17, 'Confidential patient record') + at('tp-l', 480, 17, esc(r.upd), 'width:320px;text-align:right') + '</div>';
     return h;
   }
@@ -198,24 +215,28 @@
 
   function vals() { var o = []; [].forEach.call(document.querySelectorAll('#tpmodal [data-i]'), function (n) { o[+n.dataset.i] = n.value.trim(); }); return o; }
 
-  function confirm() { confirm0(); saveState(); }
+  function confirm() { if (confirm0() !== false) saveState(); }
   function confirm0() {
     var kind = st.modal, s = spec(kind, byId(st.sel)), v = vals(), p = byId(st.sel), r = rec(p), bad = false, msg;
     [].forEach.call(document.querySelectorAll('#tpmodal [data-i]'), function (n) { var miss = s.req.indexOf(+n.dataset.i) > -1 && !n.value.trim(); n.classList.toggle('bad', miss); if (miss) bad = true; });
-    if (bad) { tip('Fill in the highlighted fields'); return; }
+    if (bad) { tip('Fill in the highlighted fields'); return false; }
     if (kind === 'med') {
-      var w = v[0].toLowerCase().split(' ')[0], hit = -1;
-      r.meds.forEach(function (m, i) { if (hit < 0 && /^due/i.test(m[1]) && m[0].toLowerCase().indexOf(w) === 0) hit = i; });
-      if (hit > -1) r.meds[hit][1] = 'Given \u00b7 ' + v[3] + ' \u00b7 ' + v[4];
+      var dose = HIS.nursingRecords.administer(p.id, { drug: v[0], dose: v[1], scheduled: v[2], givenAt: v[3], note: v[5] }, r.meds);
+      if (!dose.ok) { tip(dose.error); return false; }
+      r.meds[dose.index][1] = 'Given · ' + v[3] + ' · ' + dose.administration.by;
       st.doses++; msg = v[0] + ' given at ' + v[3];
     } else if (kind === 'vitals') {
+      var observation = HIS.vitals.record(p.id, { bp: v[0], hr: v[1], temp: v[2], spo2: v[3], note: v[5] });
+      if (!observation.ok) { tip(observation.error); return false; }
       var reading = 'BP ' + v[0].replace(/\s*mmHg$/i, '') + ' \u00b7 HR ' + v[1].replace(/\s*bpm$/i, '') + ' \u00b7 ' + v[2] + ' \u00b7 SpO\u2082 ' + v[3];
       r.vit.forEach(function (m) { if (m[1] === 'Next vitals due') m[1] = reading; if (m[0] === 'Pain score' && v[4]) m[1] = v[4]; });
       if (!st.vitDone[p.id] && st.vitDue > 0) { st.vitDone[p.id] = true; st.vitDue--; }
       msg = 'Vitals saved for ' + p.name;
     } else {
+      var note = HIS.nursingRecords.note(p.id, { type: v[0], shift: v[1], condition: v[3], body: v[4], plan: v[5] });
+      if (!note.ok) { tip(note.error); return false; }
       if (v[5]) r.care.forEach(function (m) { if (m[0] === 'Next step') m[1] = v[5]; });
-      r.upd = 'Updated Aug 31, 2026 \u00b7 ' + v[2];
+      r.upd = 'Updated · ' + note.note.by;
       msg = 'Progress note saved for ' + p.name;
     }
     st.modal = ''; render(); tip(msg);
@@ -223,6 +244,7 @@
 
   stage.addEventListener('click', function (ev) {
     var X = ev.target;
+    if (X.closest('[data-history]')) { HIS.kit.modal({ title: 'Progress notes', sub: byId(st.sel).name, body: HIS.nursingRecords.notes(st.sel).map(function (n) { return '<p><b>' + esc(n.by + ' · ' + n.at) + '</b><br>' + esc(n.body) + '<br>' + esc(n.plan || '') + '</p>'; }).join(''), saveLabel: 'Close', onSave: function () { return true; } }); return; }
     if (X.closest('[data-close]')) { st.menu = false; st.modal = ''; render(); return; }
     var o = X.closest('.tp-o');
     if (o) { st.ward = o.dataset.opt; st.menu = false; render(); return; }

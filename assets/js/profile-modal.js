@@ -51,10 +51,7 @@
     if (cond) setV('Admission Details', 5, cond);
   }
   (function applySaved() {
-    var r = loadAll()[id];
-    if (!r) return;
-    (r.v || []).forEach(function (x) { setV(x[0], x[1], x[2]); });
-    if (r.dis) markDischarged(r.dis.cond);
+    // Current demographics and admission state are rendered by their owning stores.
   })();
 
   // [label top, input top, left, width]; the modals end with a textarea at 388
@@ -69,7 +66,7 @@
     if (kind === 'edit') return { title: 'Edit patient details', sub: sub(), ok: 'Save changes', f: [
       ['Phone number', getV('Contact & Address', 0)], ['Email address', getV('Contact & Address', 1)],
       ['Emergency contact', getV('Emergency Contact', 0)], ['Emergency contact number', getV('Emergency Contact', 2)],
-      ['Street address', getV('Contact & Address', 2)], ['Existing conditions / allergies', getV('Health History & Reason', 0)]] };
+      ['Street address', getV('Contact & Address', 2)], ['Existing conditions', getV('Health History & Reason', 0)]] };
     if (kind === 'transfer') return { title: 'Transfer patient', sub: sub(), ok: 'Confirm transfer', f: [
       ['Transfer to department', 'General Medicine'], ['Receiving doctor', 'Dr. Yumie Pasiol'], ['Ward', 'General Medicine Ward'], ['Bed number', isG ? 'G-14' : ''],
       ['Reason for transfer', isG ? 'Cardiac work-up complete; continue care in General Medicine' : ''],
@@ -89,6 +86,7 @@
     POS.forEach(function (p, i) {
       h += "<div class='pm-l' style='top:" + p[0] + 'px;left:' + p[2] + "px'>" + esc(s.f[i][0]) + '</div>';
       if (i === 5) h += "<textarea class='pm-i pm-ta' data-i='5' style='top:" + p[1] + 'px;left:' + p[2] + 'px;width:' + p[3] + "px'>" + esc(s.f[i][1]) + '</textarea>';
+      else if (kind === 'transfer' && i === 3) h += "<select class='pm-i' data-i='3' style='top:" + p[1] + 'px;left:' + p[2] + 'px;width:' + p[3] + "px'><option value=''>Choose an available bed</option>" + HIS.admissions.beds().filter(function (b) { return HIS.admissions.bedStatus(b.id) === 'available'; }).map(function (b) { return "<option value='" + esc(b.id) + "'>" + esc(b.ward + ' · ' + b.label) + '</option>'; }).join('') + '</select>';
       else h += "<input class='pm-i' data-i='" + i + "' value='" + esc(s.f[i][1]) + "' style='top:" + p[1] + 'px;left:' + p[2] + 'px;width:' + p[3] + "px'>";
     });
     h += "<button class='pm-c' data-pclose='1' style='top:504px'>Cancel</button><button class='pm-ok' id='pmok' style='top:504px'>" + esc(s.ok) + '</button>';
@@ -110,21 +108,36 @@
     var k = cur.kind, bad;
     if (k === 'print') { HIS.pdf.save(profileRows(), id + '_profile.pdf'); close(); toast('Profile saved as ' + id + '_profile.pdf'); return; }
     if (k === 'edit') {
+      if (!HIS.rbac.can('patientDetails')) { toast('Only Registration can edit patient details.'); return; }
       bad = [flag(0, !val(0)), flag(1, val(1) && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(val(1)))];
       if (bad[0] || bad[1]) { toast(bad[0] ? 'Phone number is required' : 'Enter a valid email address'); return; }
+      var patient = HIS.registry.byId(id);
+      var saved = HIS.registry.update(id, { mobile: val(0), email: val(1), address: Object.assign({}, patient.address, { street: val(4) }), emergency: Object.assign({}, patient.emergency, { name: val(2), mobile: val(3) }), conditions: val(5) });
+      if (!saved.ok) { toast(saved.error); return; }
       sv('Contact & Address', 0, val(0)); sv('Contact & Address', 1, val(1)); sv('Contact & Address', 2, val(4));
       sv('Emergency Contact', 0, val(2)); sv('Emergency Contact', 2, val(3)); sv('Health History & Reason', 0, val(5));
       close(); toast('Patient details saved');
     } else if (k === 'transfer') {
+      if (!HIS.rbac.can('admission')) { toast('This account cannot transfer patients.'); return; }
       bad = [0, 1, 2, 3].map(function (i) { return flag(i, !val(i)); });
       if (bad.indexOf(true) > -1) { toast('Fill in the department, doctor, ward and bed'); return; }
-      var dep = val(0);
+      var admission = HIS.admissions.activeForPatient(id);
+      if (!admission) { toast('This patient has no active admission. Admit them through Admissions first.'); return; }
+      var moved = HIS.store.transaction(function () { return HIS.admissions.transfer(admission.id, { bedId: val(3), reason: val(4), attending: val(1), note: val(5), at: HIS.admissions.clock().toISOString() }); });
+      if (!moved.ok) { toast(moved.error); return; }
+      var dep = moved.admission.dept;
       sv('Admission Details', 0, dep); sv('Admission Details', 1, val(1)); sv('Admission Details', 2, val(2)); sv('Admission Details', 3, val(3));
-      close(); toast('Patient transferred to ' + dep);
+      close(); location.reload();
     } else {
+      if (!HIS.rbac.can('admission')) { toast('This account cannot discharge patients.'); return; }
       bad = [flag(0, !val(0)), flag(1, !val(1))];
       if (bad[0] || bad[1]) { toast('Discharge date and condition are required'); return; }
-      var c = val(1); markDischarged(c); persist(function (r) { r.dis = { cond: c }; }); close(); toast('Patient discharged');
+      var active = HIS.admissions.activeForPatient(id);
+      if (!active) { toast('This patient has no active admission.'); return; }
+      if (!isFinite(Date.parse(val(0)))) { toast('Enter a valid discharge date.'); return; }
+      var out = HIS.store.transaction(function () { return HIS.admissions.discharge(active.id, { disposition: 'Discharged home', summary: val(5), note: [val(1), val(2), val(3), val(4)].filter(Boolean).join(' · '), at: new Date(val(0)).toISOString() }); });
+      if (!out.ok) { toast(out.error); return; }
+      close(); location.reload();
     }
   }
 

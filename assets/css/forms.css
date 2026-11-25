@@ -12,7 +12,7 @@
 /* text inputs (Figma Interactive Input: white, 1px #8e8e8e, r10, placeholder black at 20%) */
 .f-in{position:absolute;background:#fff;border:1px solid #8e8e8e;border-radius:10px;padding:0 10px;font:400 11px/13.31px var(--font-inter);color:#000;outline:0}
 textarea.f-in{padding:12px 10px 0;resize:none;overflow:auto}
-.f-in::placeholder{color:rgba(0,0,0,.2);opacity:1}
+.f-in::placeholder{color:var(--section,#1b4e6b);opacity:1}
 .f-in:focus{border-color:#1b4e6b;box-shadow:0 0 0 1px #1b4e6b}
 .f-in.err{border-color:#e0322c;box-shadow:0 0 0 1px #e0322c}
 

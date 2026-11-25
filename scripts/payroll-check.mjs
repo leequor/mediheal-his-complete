@@ -50,7 +50,7 @@ const errs = [];
 page.on('pageerror', e => errs.push(String(e.message)));
 page.on('console', m => { if (m.type() === 'error') errs.push(m.text()); });
 await page.goto(BASE + '/index.html', { waitUntil: 'load' });
-await page.evaluate(() => HIS.auth.attempt('hr@mediheal.test', 'MediHeal2026!', true));
+await page.evaluate(() => HIS.auth.attempt('superadmin@mediheal.test', 'MediHeal2026!', true));
 await page.goto(BASE + '/payroll.html', { waitUntil: 'load' });
 await page.waitForTimeout(400);
 
@@ -295,15 +295,15 @@ CASES.forEach((c, i) => {
   const r = await page.evaluate(() => {
     const run = HIS.payrollRuns.current();
     const skip = HIS.payrollRuns.approve(run.id, '');   // draft -> approved is not a legal move
-    HIS.payrollRuns.review(run.id, '');
+    HIS.attendancePeriod.verify(run.periodId); HIS.payrollRuns.review(run.id, '');
     // Reopen one timesheet AFTER the run was built. The run's own blocked list is empty, so only a
     // live check can catch this.
     HIS.attendancePeriod.reopen('EMP-008', 'test');
     const blockedApprove = HIS.payrollRuns.approve(run.id, '');
-    HIS.attendancePeriod.approve('EMP-008', 'test');
+    HIS.attendancePeriod.approve('EMP-008', 'test'); HIS.attendancePeriod.verify(HIS.attendancePeriod.active().id);
     const recomputed = HIS.payrollRuns.recompute(run.id, 'after re-approval');
     const after = HIS.payrollRuns.current();
-    HIS.payrollRuns.review(run.id, '');
+    HIS.attendancePeriod.verify(run.periodId); HIS.payrollRuns.review(run.id, '');
     const approved = HIS.payrollRuns.approve(run.id, '');
     const released = HIS.payrollRuns.release(run.id, '');
     const twice = HIS.payrollRuns.release(run.id, '');

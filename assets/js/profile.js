@@ -6,7 +6,6 @@
   const stage = document.getElementById('stage');
   const id = new URLSearchParams(location.search).get('id') || 'PT-99213';
   const all = HIS.patients.slice();
-  HIS.store.get('mh_regs_extra', []).forEach(p => all.unshift(p));
   const pat = all.find(p => p.id === id);
   const ini = n => String(n || '?').trim().split(/\s+/).filter(Boolean).map((w, i, a) => (i === 0 || i === a.length - 1) ? w[0] : '').join('').toUpperCase();
 
@@ -38,6 +37,18 @@
 
   let P = (HIS.profiles || {})[id];
   if (!P && pat) P = fallback(pat);
+  if (P && pat) {
+    P = Object.assign({}, P, { name: pat.name });
+    const address = pat.address || {}, emergency = pat.emergency || {};
+    P.contact = [['Phone', pat.mobile || D], ['Email', pat.email || D], ['Address', [address.street, address.barangay, address.city, address.province, address.zip].filter(Boolean).join(', ') || D]];
+    P.emergency = [['Name', emergency.name || D], ['Relationship', emergency.relation || D], ['Contact Number', emergency.mobile || D]];
+    const dateLabel = value => value && isFinite(Date.parse(value)) ? new Date(value).toLocaleString('en-PH', {timeZone:'Asia/Manila',year:'numeric',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}) : value || D;
+    P.meta = pat.id + ' \u00b7 ' + (pat.age == null ? 'Age not recorded' : pat.age + ' yrs') + ' \u00b7 ' + pat.type;
+    P.registration = [['Registered By', pat.createdBy || (P.registration && P.registration[0][1]) || D], ['Registered At', pat.registered || D], ['Patient Type', pat.type]];
+    if (pat.conditions) P.health = [['Existing Conditions', pat.conditions]].concat((P.health || []).slice(1));
+    P.tags = [[pat.type, pat.type === 'Inpatient' ? 'o' : 'g2'], [pat.status, 'g']];
+    P.admission = [['Department', pat.dept || D], ['Assigned Doctor', pat.doctor || D], ['Ward', pat.ward || D], ['Bed Number', pat.bed || D], ['Admission Date', dateLabel(pat.admittedAt)], ['Condition', pat.status || D]];
+  }
   if (!P) {
     const r = focusReqId && window.HIS.requests ? HIS.requests.byId(focusReqId) : null;
     const when = r ? new Date(r.at).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' }) : '';

@@ -151,12 +151,13 @@
   }
 
   function createRx(input) {
+    if (!HIS.rbac.can('prescribe')) return { ok: false, error: 'Your account cannot perform this action.' };
     input = input || {};
     var p = window.HIS.registry && HIS.registry.byId(input.patientId);
     if (!p) return { ok: false, error: 'Choose a patient.' };
     if (!String(input.drug || '').trim()) return { ok: false, error: 'Choose a medication.' };
     var qty = Number(input.qty);
-    if (!(qty > 0)) return { ok: false, error: 'Enter a quantity greater than zero.' };
+    if (!Number.isSafeInteger(qty) || qty <= 0) return { ok: false, error: 'Enter a whole quantity greater than zero.' };
     var rows = rx();
     var enc = window.HIS.encounters ? HIS.encounters.ensure(p.id, { dept: p.dept, provider: input.orderedBy || p.doctor }) : null;
     var r = {
@@ -174,6 +175,7 @@
   }
 
   function verify(id) {
+    if (!HIS.rbac.can('pharmacyWork')) return { ok: false, error: 'Your account cannot perform this action.' };
     var rows = rx(), r = rows.filter(function (x) { return x.id === id; })[0];
     if (!r) return { ok: false, error: 'Prescription not found.' };
     if (r.status !== 'Pending') return { ok: false, error: 'Only a pending prescription can be verified.' };
@@ -186,6 +188,7 @@
   }
 
   function reject(id, reason) {
+    if (!HIS.rbac.can('pharmacyWork')) return { ok: false, error: 'Your account cannot perform this action.' };
     var rows = rx(), r = rows.filter(function (x) { return x.id === id; })[0];
     if (!r) return { ok: false, error: 'Prescription not found.' };
     if (r.status === 'Dispensed') return { ok: false, error: 'A dispensed prescription cannot be rejected.' };
@@ -199,14 +202,16 @@
 
   // Dispense from a specific batch. Everything is validated before anything is written.
   function dispense(rxId, input) {
+    if (!HIS.rbac.can('pharmacyWork')) return { ok: false, error: 'Your account cannot perform this action.' };
     input = input || {};
     var rows = rx(), r = rows.filter(function (x) { return x.id === rxId; })[0];
     if (!r) return { ok: false, error: 'Prescription not found.' };
     if (r.status === 'Rejected') return { ok: false, error: 'This prescription was rejected.' };
     if (r.status === 'Dispensed') return { ok: false, error: 'This prescription is already fully dispensed.' };
+    if (['Verified', 'Partial'].indexOf(r.status) < 0) return { ok: false, error: 'Verify this prescription before dispensing.' };
 
     var want = Number(input.qty);
-    if (!(want > 0)) return { ok: false, error: 'Enter a quantity to dispense.' };
+    if (!Number.isSafeInteger(want) || want <= 0) return { ok: false, error: 'Enter a whole quantity to dispense.' };
     var left = remaining(r);
     if (want > left) return { ok: false, error: 'Only ' + left + ' ' + r.unit + ' remain on this prescription.' };
 
@@ -259,6 +264,7 @@
   // recorded beside the dispense it reverses. Partial returns are refused rather than approximated —
   // a half-returned batch has no honest single price.
   function returnDispense(rxId, dispenseIndex, reason) {
+    if (!HIS.rbac.can('pharmacyWork')) return { ok: false, error: 'Your account cannot perform this action.' };
     var rows = rx(), r = rows.filter(function (x) { return x.id === rxId; })[0];
     if (!r) return { ok: false, error: 'Prescription not found.' };
     if (!String(reason || '').trim()) return { ok: false, error: 'A return needs a reason.' };
@@ -301,12 +307,14 @@
 
   // ---- inventory movement -------------------------------------------------------------------
   function receive(input) {
+    if (!HIS.rbac.can('pharmacyWork')) return { ok: false, error: 'Your account cannot perform this action.' };
     input = input || {};
     if (!String(input.drug || '').trim()) return { ok: false, error: 'Choose a medication.' };
     var qty = Number(input.qty);
-    if (!(qty > 0)) return { ok: false, error: 'Enter a quantity greater than zero.' };
-    if (!input.expiry) return { ok: false, error: 'Enter the batch expiry date.' };
+    if (!Number.isSafeInteger(qty) || qty <= 0) return { ok: false, error: 'Enter a whole quantity greater than zero.' };
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(input.expiry || '') || !isFinite(Date.parse(input.expiry)) || new Date(input.expiry).toISOString().slice(0, 10) !== input.expiry) return { ok: false, error: 'Enter a valid batch expiry date.' };
     if (new Date(input.expiry).getTime() < Date.now()) return { ok: false, error: 'That batch is already expired.' };
+    if (['unitCost', 'price', 'reorder'].some(function (k) { var n = Number(input[k] == null || input[k] === '' ? 0 : input[k]); return !isFinite(n) || n < 0 || n > Number.MAX_SAFE_INTEGER / 100; })) return { ok: false, error: 'Cost, price and reorder level must be finite, non-negative numbers.' };
     var batches = stock();
     var b = {
       id: 'BT-' + String(batches.length + 1).padStart(4, '0'),
@@ -327,10 +335,11 @@
   }
 
   function adjust(batchId, delta, reason) {
+    if (!HIS.rbac.can('pharmacyWork')) return { ok: false, error: 'Your account cannot perform this action.' };
     var batches = stock(), b = batches.filter(function (x) { return x.id === batchId; })[0];
     if (!b) return { ok: false, error: 'Batch not found.' };
     var d = Number(delta);
-    if (!isFinite(d) || d === 0) return { ok: false, error: 'Enter a non-zero adjustment.' };
+    if (!Number.isSafeInteger(d) || d === 0 || !Number.isSafeInteger(b.qty + d)) return { ok: false, error: 'Enter a non-zero whole adjustment.' };
     if (b.qty + d < 0) return { ok: false, error: 'Stock cannot go negative (batch holds ' + b.qty + ').' };
     if (!String(reason || '').trim()) return { ok: false, error: 'An adjustment needs a reason.' };
     var before = b.qty;
@@ -346,6 +355,7 @@
   // Remove an expired batch from the shelf. The quantity is not recoverable, so this is a disposal
   // movement rather than a plain zeroing of the row.
   function dispose(batchId, reason) {
+    if (!HIS.rbac.can('pharmacyWork')) return { ok: false, error: 'Your account cannot perform this action.' };
     var batches = stock(), b = batches.filter(function (x) { return x.id === batchId; })[0];
     if (!b) return { ok: false, error: 'Batch not found.' };
     if (b.qty === 0) return { ok: false, error: 'That batch is already empty.' };
@@ -386,4 +396,8 @@
     createRx: createRx, verify: verify, reject: reject, dispense: dispense, returnDispense: returnDispense,
     receive: receive, adjust: adjust, dispose: dispose, stats: stats
   };
+  ["createRx","verify","reject","dispense","returnDispense","receive","adjust","dispose"].forEach(function (name) {
+    if (HIS.pharmacy[name]) HIS.pharmacy[name] = HIS.store.atomic(HIS.pharmacy[name]);
+  });
+
 })();

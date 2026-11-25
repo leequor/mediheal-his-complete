@@ -87,6 +87,7 @@
   function computeLines() {
     var lines = [], blocked = [];
     HIS.employees.all().forEach(function (emp) {
+      if (!(emp.monthlyBasic > 0)) { blocked.push({ employeeId: emp.id, name: emp.name, reason: 'HR must complete salary setup.' }); return; }
       var att = HIS.attendancePeriod.summary(emp.id);
       if (!att) {
         blocked.push({
@@ -137,6 +138,7 @@
   }
 
   function create(opts) {
+    if (!HIS.rbac.can('payroll')) return { ok: false, error: 'This account has read-only payroll access.' };
     opts = opts || {};
     var s = state();
     var P = period();
@@ -173,10 +175,16 @@
     }
     return { ok: true, run: run };
   }
+  function preview() {
+    var p = period(), built = computeLines();
+    return { id: 'preview', periodId: p.id, periodLabel: p.label, payDate: p.payDate, frequency: p.frequency,
+      version: 0, status: 'draft', lines: built.lines, blocked: built.blocked, totals: totalsOf(built.lines), history: [], versions: [] };
+  }
 
   // Recompute re-reads attendance and salary and produces a new version. The previous lines are
   // archived, never overwritten, so an approved historical calculation can still be inspected.
   function recompute(runId, reason) {
+    if (!HIS.rbac.can('payroll')) return { ok: false, error: 'Only Accounting can compute payroll.' };
     var s = state();
     var run = s.runs.filter(function (r) { return r.id === runId; })[0];
     if (!run) return { ok: false, error: 'Run not found.' };
@@ -215,6 +223,9 @@
   }
 
   function transition(runId, from, to, action, note) {
+    if (!HIS.rbac.can('payroll')) return { ok: false, error: 'Only Accounting can process payroll.' };
+    var candidate = get(runId);
+    if (!candidate || !HIS.attendancePeriod.isVerified(candidate.periodId)) return { ok: false, error: 'HR must verify and submit this cut-off before payroll can be processed.' };
     var s = state();
     var run = s.runs.filter(function (r) { return r.id === runId; })[0];
     if (!run) return { ok: false, error: 'Run not found.' };
@@ -438,6 +449,7 @@
   function reset() { HIS.store.remove(KEY); return state(); }
 
   HIS.payrollRuns = {
+    preview: preview,
     KEY: KEY, period: period, forPeriod: forPeriod, PERIOD: HIS.attendancePeriod.PERIOD,
     list: list, get: get, current: current,
     create: create, recompute: recompute, review: review, approve: approve, release: release,
@@ -446,4 +458,8 @@
     payslip: payslip, payslipPdf: payslipPdf, payslipBatch: payslipBatch, csv: csv,
     thirteenth: thirteenth, annual: annual, reset: reset
   };
+  ["create","recompute","review","approve","release"].forEach(function (name) {
+    if (HIS.payrollRuns[name]) HIS.payrollRuns[name] = HIS.store.atomic(HIS.payrollRuns[name]);
+  });
+
 })();

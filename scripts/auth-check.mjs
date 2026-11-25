@@ -174,7 +174,7 @@ ok('old password stops working after reset', api.oldPassAfterReset === false);
 ok('new password works after reset', api.newPassAfterReset === true);
 ok('role change takes effect on the next session', api.loginAfterRoleChange && api.roleIsAuditor === 'auditor', JSON.stringify({ ok: api.loginAfterRoleChange, role: api.roleIsAuditor }));
 ok('deactivated account cannot sign in', api.loginWhenDisabled === false);
-ok('the seeded roster is restored after the flow account is removed', api.finalCount === api.seedCount && api.finalCount === 11, String(api.finalCount));
+ok('the seeded roster is restored after the flow account is removed', api.finalCount === api.seedCount && api.finalCount === 12, String(api.finalCount));
 
 // ---- 12. audit log captured the auth events ------------------------------
 // Produced right here rather than relied on from earlier steps: freshIndex() clears localStorage

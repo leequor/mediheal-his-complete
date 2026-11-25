@@ -73,6 +73,7 @@
 .a-th span:last-child{text-align:right;padding-right:24px}
 .a-row{height:64px;border-bottom:1px solid #e3edf3;font:500 15px/18px var(--font-inter);color:#1c2b30}
 .a-row .nm{font-weight:600}
+.a-row>span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .a-row .ty{color:#6f8890}
 .a-pill{display:inline-flex;align-items:center;height:24px;padding:0 10px;border-radius:99px;font:600 13px/16px var(--font-inter)}
 .a-pill.Confirmed{background:#e7f6ee;color:#1f7a4d}

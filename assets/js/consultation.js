@@ -34,7 +34,16 @@
   var byId = function (id) { return C.pts.filter(function (p) { return p.id === id; })[0]; };
 
   function rec(p) {
-    if (p.rec) return p.rec;
+    if (p.rec) {
+      var latest = HIS.vitals && HIS.vitals.latest(p.id);
+      if (latest) p.rec.s2.forEach(function (r) {
+        if (r[0] === 'Blood pressure') r[1] = latest.bp ? latest.bp + ' mmHg' : 'Not recorded';
+        if (r[0] === 'Heart rate') r[1] = latest.hr ? latest.hr + ' bpm' : 'Not recorded';
+        if (r[0] === 'Temperature') r[1] = latest.temp ? latest.temp + ' °C' : 'Not recorded';
+        if (r[0].indexOf('Weight') >= 0) r[1] = [latest.spo2 && latest.spo2 + '%', latest.weight && latest.weight + ' kg'].filter(Boolean).join(' · ') || 'Not recorded';
+      });
+      return p.rec;
+    }
     // Vital signs come from a recorded observation, never from the patient id. A patient with nothing
     // recorded reads "Not recorded" instead of a plausible-looking invention.
     var vs = (window.HIS && HIS.vitals) ? HIS.vitals.latest(p.id) : null;
@@ -153,19 +162,21 @@
     h += "<div class='tp-a tp-search'>" + ic('search', 18, 1.8) + "<input id='tpq' placeholder='Search patient name or ID' aria-label='Search patient' value='" + esc(st.q) + "'></div>";
     h += "<button class='tp-a tp-flt" + (st.menu ? ' open' : '') + "' id='tpd'><span class='v'>" + esc(st.dept) + '</span>' + ic('down', 16, 2) + '</button>';
     h += "<div class='tp-a tp-th'><span style='left:24px'>PATIENT / COMPLAINT</span><span style='left:393px'>QUEUE</span></div>";
+    h += "<div class='tp-a tp-rows'>";
     w.forEach(function (p, i) {
-      h += "<button class='tp-a tp-r new' data-accept='" + p.id + "' style='top:" + (547 + 76 * i) + "px' title='Accept " + esc(p.name) + " into the queue'>";
+      h += "<button class='tp-a tp-r new' data-accept='" + p.id + "' style='left:0;top:" + (76 * i) + "px' title='Accept " + esc(p.name) + " into the queue'>";
       h += "<span class='av'>" + initialsOf(p.name) + "</span><span class='nm'>" + esc(p.name) + "</span><span class='rl'>New registration \u00b7 " + esc(p.type || 'Outpatient') + '</span><span class="id">' + p.id + '</span>';
       h += "<span class='newtag'>New</span><span class='acc'>Accept</span>";
       h += '</button>';
     });
     v.forEach(function (p, i) {
       var on = p.id === st.sel;
-      h += "<button class='tp-a tp-r" + (on ? ' on' : '') + "' data-pt='" + p.id + "' style='top:" + (547 + 76 * (i + w.length)) + "px'>";
+      h += "<button class='tp-a tp-r" + (on ? ' on' : '') + "' data-pt='" + p.id + "' style='left:0;top:" + (76 * (i + w.length)) + "px'>";
       h += "<span class='av'>" + p.ini + "</span><span class='nm'>" + esc(p.name) + "</span><span class='rl'>" + esc(p.rl) + "</span><span class='id'>" + p.id + '</span>';
       h += "<span class='dot'></span>";
       h += '</button>';
     });
+    h += '</div>';
     if (!v.length && !w.length) h += at('tp-none', 68, 547, 'No patients match');
     h += "<div class='tp-a tp-ft'>" + at('tp-s12', 24, 18, 'Showing ' + (v.length ? '1\u2013' + v.length : '0') + ' of ' + C.pts.length + ' patients', 'font-size:11px;line-height:13.31px');
     h += at('tp-l', 300, 18, w.length ? w.length + ' waiting to be accepted' : 'Page 1 of 1', 'color:#15405a') + '</div>';
@@ -299,6 +310,7 @@
       (res.unbilled ? ' (unbilled)' : '');
   }
   function confirm0() {
+    if (['superadmin', 'doctor'].indexOf(HIS.rbac.key()) < 0) { tip('Only an authorized physician can record a diagnosis.'); return; }
     var p = byId(st.sel), r = rec(p), bad = false, f = st.f;
     [0, 1, 2, 3, 4].forEach(function (i) {
       var n = document.querySelector('#tpmodal [data-i="' + i + '"]'), miss = !String(f[i] || '').trim();
@@ -308,9 +320,9 @@
     if (bad) { tip('Fill in the highlighted fields'); return; }
     var nx = nextStep(f[3], p);
     r.s3.forEach(function (m) { if (m[0] === 'Next step') m[1] = nx; });
-    r.upd = 'Updated Aug 31, 2026 \u00b7 ' + DR;
+    r.upd = 'Updated · ' + HIS.auth.account().name;
     if (!st.done[p.id]) { st.done[p.id] = true; if (st.prog > 0) st.prog--; st.comp++; }
-    st.saved = { diag: f[0].trim() + ' \u00b7 ' + f[1].trim(), outcome: f[3], by: DR, next: nx };
+    st.saved = { diag: f[0].trim() + ' \u00b7 ' + f[1].trim(), outcome: f[3], by: HIS.auth.account().name, next: nx };
     // Persist the diagnosis on the record: saveState() stores rec(p), so it survives a reload and reopens
     // prefilled. Without this the modal claimed a save while every field was dropped.
     r.dx = { f: f.slice(), saved: st.saved };
@@ -339,7 +351,11 @@
     if (acc) { accept(acc.dataset.accept); return; }
     var r = X.closest('[data-pt]');
     if (r) { st.sel = r.dataset.pt; render(); return; }
-    if (X.closest('[data-hist]')) { tip('Visit history is not available in this view'); return; }
+    if (X.closest('[data-hist]')) {
+      var notes = HIS.nursingRecords.notes(st.sel);
+      HIS.kit.modal({ title: 'Clinical history', sub: byId(st.sel).name, body: notes.length ? notes.map(function (n) { return '<p><b>' + esc(n.by + ' · ' + n.at) + '</b><br>' + esc(n.body) + '<br>' + esc(n.plan || '') + '</p>'; }).join('') : '<p>No nursing progress notes recorded.</p>', saveLabel: 'Close', onSave: function () { return true; } });
+      return;
+    }
     var m = X.closest('[data-modal]');
     if (m) { st.modal = 'dx'; st.pn = false; st.f = dxInit(byId(st.sel)); render(); var fi = document.querySelector('#tpmodal .tp-m-i'); if (fi) fi.focus({ preventScroll: true }); return; }
     if (X.closest('[data-ok]')) confirm();

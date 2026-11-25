@@ -19,7 +19,7 @@ synthetic. Nothing here is a hospital database.
 | `HIS.ledger` (`assets/js/ledger.js`) | `mh_tx` — every movement of money | store a balance on an invoice |
 | `HIS.audit` (`assets/js/audit.js`) | `mh_audit` | accept a password |
 | `HIS.lab` (`assets/js/lab.js`) | `mh_lab` | invent a result |
-| `HIS.employees` (`assets/js/employees.js`) | the salary master (in code, not storage) | store a per-period amount |
+| `HIS.employees` (`assets/js/employees.js`) | the seed salary master plus personnel payroll setup in `mh_personnel` | store a per-period amount |
 | `HIS.attendancePeriod` (`assets/js/attendance-period.js`) | `mh_attendance_period` — one record per employee per day, plus the timesheet status | compute money |
 | `HIS.payrollRuns` (`assets/js/payroll-runs.js`) | `mh_payroll_runs` — runs, versions, blocked lists | recompute statutory tables itself |
 | `HIS.wageFloor` (`assets/js/wage-floor.js`) | the effective-dated wage orders (in code) | set anyone's pay |
@@ -356,3 +356,13 @@ seeds, a present key is read as-is.
 revenue). The plain name list used by the registration and appointment forms is `HIS.deptNames`.
 Before the QA pass both were called `HIS.departments`, so whichever module loaded last won: the
 Departments page crashed for the department head, and the dashboard read `.name` off a string.
+
+
+## Session 46 ownership corrections - 2026-11-25
+
+- The registry imports legacy mh_regs_extra intake once and reserves IDs above both original and clinical seed IDs. Staff intake writes mh_patients; profile contact edits update that same record.
+- HIS.appointmentStore owns merged appointments and persistent IDs; staff and portal reads resolve mh_appt_state overlays consistently.
+- HIS.vitals owns mh_vitals. HIS.nursingRecords owns mh_nursing_notes and mh_med_administrations; notes preserve body/plan and doses require a due medication. Signed-in identities supply authors.
+- HIS.attendancePeriod owns payroll attendance, including clock corrections and approved leave. HR reopens and verifies; Accounting computes and releases. Added staff receive submitted timesheets and require pay setup.
+- Pharmacy verification precedes dispensing; quantities/prices are finite. Encounter, invoice, charge and claim patients must agree.
+- HIS.store.atomic stages related writes and restores prior bytes after a storage-write failure. This provides neither simultaneous-tab locking nor crash recovery. All clinical/configuration keys are registered for explicit reset.

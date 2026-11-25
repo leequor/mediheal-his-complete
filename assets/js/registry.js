@@ -130,7 +130,84 @@
       rows = SEED.map(function (r) { return JSON.parse(JSON.stringify(r)); });
       write(PKEY, rows);
     }
+    var changed = false, seen = {};
+    rows = rows.filter(function (p) { if (!p || !p.id || seen[p.id]) { changed = true; return false; } seen[p.id] = true; return true; });
+    SEED.forEach(function (p) { if (!seen[p.id]) { rows.push(JSON.parse(JSON.stringify(p))); seen[p.id] = true; changed = true; } });
+    // Complete the explicitly named clinical sample patients; never generate clinical observations.
+    var missing = [
+      ['PT-99208', 'Ana Villanueva', 'Cardiology'], ['PT-99216', 'Ramon Bautista', 'General Medicine'],
+      ['PT-99218', 'Luis Garcia', 'Gastroenterology'], ['PT-99219', 'Nina Flores', 'General Medicine'],
+      ['PT-99220', 'Rosa Mendoza', 'General Medicine'], ['PT-99221', 'Jose Dela Cruz', 'General Medicine']
+    ];
+    missing.forEach(function (s) {
+      if (rows.some(function (r) { return r.name === s[1]; })) return;
+      var id = s[0];
+      if (seen[id]) id = 'PT-' + (rows.reduce(function (m, r) { return Math.max(m, Number(r.id.slice(3)) || 0); }, 99999) + 1);
+      rows.push({ id: id, legacyClinicalId: s[0], registered: 'Aug 31, 2026', name: s[1], first: s[1].split(' ')[0], last: s[1].split(' ').slice(-1)[0],
+        dob: '', sex: '', mobile: '', type: 'Inpatient', status: 'Admitted', dept: s[2], doctor: '', seeded: true });
+      seen[id] = true; changed = true;
+    });
+    // A legacy registration could already occupy a clinical sample's formerly unreserved MRN.
+    // Keep that owner's chart and move the sample's saved care/plan to its new canonical ID once.
+    rows.filter(function (p) { return p.legacyClinicalId && p.legacyClinicalId !== p.id && !p.clinicalRecordsMigration; }).forEach(function (p) {
+      ['mh_nursing_state', 'mh_consult_state', 'mh_treatment_state'].forEach(function (key) {
+        var state = read(key, null), touched = false;
+        if (!state) return;
+        ['recs', 'plans', 'vitDone', 'done'].forEach(function (bank) {
+          if (state[bank] && Object.prototype.hasOwnProperty.call(state[bank], p.legacyClinicalId)) {
+            if (!Object.prototype.hasOwnProperty.call(state[bank], p.id)) state[bank][p.id] = state[bank][p.legacyClinicalId];
+            delete state[bank][p.legacyClinicalId]; touched = true;
+          }
+        });
+        if (touched) write(key, state);
+      });
+      p.clinicalRecordsMigration = 1; changed = true;
+    });
+    // Legacy staff forms wrote complete charts into a second table. Import each MRN once.
+    (read('mh_regs_extra', []) || []).forEach(function (p) {
+      if (!p || !p.id || seen[p.id]) return;
+      rows.push(fromRegistration(p)); seen[p.id] = true; changed = true;
+    });
+    var edits = read('mh_profile_edits', {});
+    rows.forEach(function (p) {
+      if (p.profileMigration === 1 || !edits[p.id]) return;
+      (edits[p.id].v || []).forEach(function (v) {
+        if (v[0] === 'Contact & Address') {
+          if (v[1] === 0) p.mobile = v[2];
+          if (v[1] === 1) p.email = v[2];
+          if (v[1] === 2) p.address = Object.assign({}, p.address, { street: v[2] });
+        }
+        if (v[0] === 'Health History & Reason' && v[1] === 0) p.conditions = v[2];
+        if (v[0] === 'Emergency Contact') {
+          p.emergency = Object.assign({}, p.emergency);
+          if (v[1] === 0) p.emergency.name = v[2];
+          if (v[1] === 2) p.emergency.mobile = v[2];
+        }
+      });
+      p.profileMigration = 1; changed = true;
+    });
+    if (changed) write(PKEY, rows);
     return rows;
+  }
+  function fromRegistration(p) {
+    var d = p.details || {}, em = d.emergency || {}, ins = d.insurance || {};
+    return Object.assign({}, p, { first: p.first || p.name.split(' ')[0], last: p.last || p.name.split(' ').slice(-1)[0],
+      dob: isoDay(p.dob || d.dob), sex: p.sex || d.gender || '', mobile: p.mobile || d.phone || '', email: p.email || d.email || '',
+      civil: d.civil || '', bloodType: d.blood || '', allergies: d.conditions || 'None recorded',
+      address: { street: d.street || '', city: d.city || '', province: d.province || '', zip: d.zip || '' },
+      emergency: { name: [em.first, em.last].filter(Boolean).join(' '), relation: em.relationship || '', mobile: em.phone || '' },
+      philhealth: { no: ins.philhealth || '', category: ins.memberType || '' }, hmo: { provider: ins.hmo || null, memberId: ins.policy || '', coverage: 0 },
+      ward: d.ward || null, bed: d.bed || null, admittedAt: d.admitted || null });
+  }
+  function register(p) {
+    if (!p || !String(p.name || '').trim()) return { ok: false, error: 'A patient name is required.' };
+    var rows = all(), rec = fromRegistration(p);
+    if (rec.dob && !validDob(rec.dob)) return { ok: false, error: 'Enter a valid date of birth that is not in the future.' };
+    if (rows.some(function (r) { return r.id === rec.id; })) rec.id = nextMrn();
+    rec.createdBy = actorName(); rec.createdAt = new Date().toISOString(); rec.ownerEntered = true; rows.push(rec);
+    if (!write(PKEY, rows)) return { ok: false, error: 'The patient record could not be saved. Please retry.' };
+    if (HIS.audit) HIS.audit.append({ who: actorName(), role: roleLabel(), what: 'Patient registered', entity: 'patient:' + rec.id, after: rec.name });
+    return { ok: true, patient: rec };
   }
   function save(rows) { write(PKEY, rows); return rows; }
 
@@ -154,7 +231,7 @@
     var max = all().reduce(function (m, p) {
       var n = parseInt(String(p.id).replace(/\D/g, ''), 10);
       return isNaN(n) ? m : Math.max(m, n);
-    }, 99200);
+    }, 99999);
     return 'PT-' + (max + 1);
   }
 
@@ -213,7 +290,7 @@
     input = input || {};
     var name = String(input.name || [input.first, input.middle, input.last].filter(Boolean).join(' ') || '').trim();
     if (!name) return { ok: false, error: 'A patient name is required.' };
-    if (!input.dob) return { ok: false, error: 'A date of birth is required.' };
+    if (!validDob(input.dob)) return { ok: false, error: 'Enter a valid date of birth that is not in the future.' };
     var rows = all();
     var id = input.id && !byId(input.id) ? String(input.id).toUpperCase() : nextMrn();
     var rec = {
@@ -233,10 +310,11 @@
       registered: input.registered || stamp(), status: input.status || 'Waiting', attention: !!input.attention,
       ward: input.ward || null, bed: input.bed || null, admittedAt: input.admittedAt || null,
       createdAt: new Date().toISOString(),
+      ownerEntered: true,
       createdBy: input.createdBy || (window.HIS && HIS.auth && HIS.auth.account() ? HIS.auth.account().name : 'system')
     };
     rows.push(rec);
-    save(rows);
+    if (!write(PKEY, rows)) return { ok: false, error: 'The patient record could not be saved. Please retry.' };
     if (window.HIS.audit) {
       HIS.audit.append({
         who: rec.createdBy, role: roleLabel(),
@@ -247,6 +325,10 @@
     return { ok: true, patient: rec };
   }
 
+  function validDob(value) {
+    return /^\d{4}-\d{2}-\d{2}$/.test(value || '') && isFinite(Date.parse(value)) && new Date(value).toISOString().slice(0, 10) === value && value <= new Date().toISOString().slice(0, 10);
+  }
+
   function update(id, patch) {
     var rows = all();
     var i = rows.findIndex(function (p) { return p.id === id; });
@@ -254,7 +336,7 @@
     var before = rows[i];
     var after = Object.assign({}, before, patch, { id: before.id });
     rows[i] = after;
-    save(rows);
+    if (!write(PKEY, rows)) return { ok: false, error: 'Patient changes could not be saved. Please retry.' };
     var changed = Object.keys(patch).filter(function (k) { return k !== 'id'; });
     if (window.HIS.audit && changed.length) {
       HIS.audit.append({
@@ -403,11 +485,7 @@
   function appointmentsFor(patientId) {
     var p = byId(patientId);
     if (!p) return [];
-    var list = (window.HIS && HIS.appointments) || [];
-    try {
-      var extra = HIS.store.get('mh_appts_extra', []);
-      if (Array.isArray(extra) && extra.length) list = list.concat(extra);
-    } catch (e) { /* storage blocked */ }
+    var list = HIS.appointmentStore.all();
     return list.filter(function (a) {
       if (a.pt) return a.pt === p.id;
       var n = String(a.patient || '').trim().toLowerCase();
@@ -433,13 +511,37 @@
 
   HIS.registry = {
     KEY: PKEY, GUARDIAN_KEY: GKEY,
-    all: all, save: save, byId: byId, search: search, create: create, update: update,
+    all: all, save: save, byId: byId, search: search, create: create, update: update, register: register,
     nextMrn: nextMrn, duplicates: duplicates, duplicatesAcross: duplicatesAcross, isoDay: isoDay, ageFrom: ageFrom,
     accountFor: accountFor, linkAccount: linkAccount,
     guardians: guardians, dependentsOf: dependentsOf, guardianRowsFor: guardianRowsFor,
     addGuardian: addGuardian, revokeGuardian: revokeGuardian,
     appointmentsFor: appointmentsFor, invoicesFor: invoicesFor, stats: stats
   };
+
+  var appointmentSeed = (HIS.appointments || []).slice();
+  function allAppointments() {
+    var extra = read('mh_appts_extra', []), used = {}, max = 0, changed = false;
+    appointmentSeed.concat(extra).forEach(function (a) { var n = Number(String(a.id || '').replace(/\D/g, '')); if (n > max) max = n; });
+    appointmentSeed.forEach(function (a) { used[a.id] = true; });
+    extra.forEach(function (a) { if (!a.id || used[a.id]) { a.id = 'APT-' + String(++max).padStart(4, '0'); changed = true; } used[a.id] = true; });
+    if (changed) write('mh_appts_extra', extra);
+    var edits = read('mh_appt_state', {});
+    return appointmentSeed.concat(extra).map(function (a) { return Object.assign({}, a, edits[a.id] || {}); });
+  }
+  function bookAppointment(input) {
+    var list = allAppointments(), p = Object.assign({}, input);
+    var norm = function (s) { return String(s || '').trim().toLowerCase().replace(/\s+/g, ' '); };
+    var candidates = all().filter(function (r) { return norm(r.name) === norm(p.patient) || norm([r.first, r.last].join(' ')) === norm(p.patient); });
+    if (candidates.length === 1) p.pt = candidates[0].id;
+    if (list.some(function (a) { return a.status !== 'Cancelled' && norm(a.patient) === norm(p.patient) && a.doctor === p.doctor && (a.when === p.when || (a.date === p.date && a.time === p.time)); })) return { ok: false, error: 'This patient already has an appointment with that doctor at this time.' };
+    var max = list.reduce(function (m, a) { return Math.max(m, Number(String(a.id).replace(/\D/g, '')) || 0); }, 0);
+    p.id = 'APT-' + String(max + 1).padStart(4, '0');
+    var extra = read('mh_appts_extra', []); extra.push(p);
+    if (!write('mh_appts_extra', extra)) return { ok: false, error: 'The appointment could not be saved. Please retry.' };
+    return { ok: true, appointment: p };
+  }
+  HIS.appointmentStore = { all: allAppointments, create: bookAppointment };
 
   // Re-point the legacy array at the registry so no module can see a different patient list.
   // `HIS.patients` was a plain array; nothing in the codebase pushes to it, so a getter is safe.
@@ -449,4 +551,23 @@
       get: function () { return HIS.registry.all(); }
     });
   } catch (e) { /* a page that froze HIS keeps its local array */ }
+
+  // Every clinical queue resolves identity from the registry, including new registrations.
+  var patients = all();
+  function queue(list, make, inpatientOnly) {
+    if (!list) return;
+    list.forEach(function (p) {
+      var r = patients.filter(function (x) { return x.name === p.name; })[0] || patients.filter(function (x) { return x.id === p.id; })[0];
+      if (r) { p.id = r.id; p.name = r.name; }
+    });
+    patients.filter(function (p) { return !inpatientOnly || p.type === 'Inpatient'; }).forEach(function (p) { if (!list.some(function (r) { return r.id === p.id; })) list.push(make(p)); });
+  }
+  queue(HIS.consult && HIS.consult.pts, function (p) { return { id: p.id, name: p.name, ini: p.name.split(' ').map(function (s) { return s[0]; }).slice(0, 2).join(''), cc: (p.details || {}).reason || 'Consultation', rl: 'Registered patient', dept: p.dept || 'General Medicine', sex: p.sex, age: p.age, kind: p.type }; });
+  queue(HIS.treatment && HIS.treatment.plans, function (p) { return { id: p.id, name: p.name, ini: p.name.slice(0, 1), sub: 'New treatment plan', dept: p.dept || 'General Medicine', type: p.type, sex: p.sex || 'Not recorded', age: p.age, f: {
+    pdx: 'Not recorded', started: 'Not started', goal: 'Not recorded', duration: 'Not recorded', meds: 'None recorded', procs: 'None scheduled', monitoring: 'Not recorded', review: 'Not scheduled', allergies: p.allergies || 'None recorded', severity: 'Not recorded', bp: 'Not recorded', hr: 'Not recorded', temp: 'Not recorded', spo2: 'Not recorded', attending: p.doctor || 'Not assigned', department: p.dept || 'General Medicine', care: p.type || 'Outpatient', next: 'Review patient' } }; });
+  queue(HIS.nursing && HIS.nursing.pts, function (p) { return { id: p.id, name: p.name, ini: p.name.slice(0, 1), wk: p.ward || 'Unassigned', ward: p.ward || 'Unassigned', bed: p.bed || 'Not assigned', next: 'Not scheduled' }; }, true);
+  ["create","register","update"].forEach(function (name) {
+    if (HIS.registry[name]) HIS.registry[name] = HIS.store.atomic(HIS.registry[name]);
+  });
+
 })();

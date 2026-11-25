@@ -126,12 +126,12 @@ function render() {
     (state.tab === 'All' || p.type === state.tab) &&
     (state.dept === 'All Departments' || p.dept === state.dept) &&
     (state.stat === 'All Statuses' || p.status === state.stat) &&
-    (!q || (p.name + ' ' + p.id + ' ' + p.doctor + ' ' + p.dept).toLowerCase().includes(q)));
+    (!q || (p.name + ' ' + p.id + ' ' + HIS.kit.esc(p.doctor || 'Not assigned') + ' ' + p.dept).toLowerCase().includes(q)));
   $('rows').innerHTML = list.length ? list.map(p =>
-    "<div class='rrow'><div class='pt'><span class='ini'>" + initialsOf(p.name) + '</span><div><b>' + HIS.kit.esc(p.name) + '</b><small>' + p.id + ' \u00b7 ' + p.age + ' yrs</small></div></div>' +
+    "<div class='rrow'><div class='pt'><span class='ini'>" + HIS.kit.esc(initialsOf(p.name)) + '</span><div><b>' + HIS.kit.esc(p.name) + '</b><small>' + p.id + ' \u00b7 ' + (p.age == null ? 'Age not recorded' : p.age + ' yrs') + '</small></div></div>' +
     "<div><span class='badge " + HIS.statusClass[p.type] + "'>" + p.type + '</span></div>' +
-    "<div class='tx'>" + HIS.kit.esc(p.dept) + '</div><div class=\'dc\'>' + HIS.kit.esc(p.doctor) + '</div><div class=\'tx\'>' + HIS.kit.esc(p.registered) + '</div>' +
-    "<div><span class='badge " + HIS.statusClass[p.status] + "'>" + p.status + '</span></div>' +
+    "<div class='tx'>" + HIS.kit.esc(p.dept) + '</div><div class=\'dc\'>' + HIS.kit.esc(p.doctor || 'Not assigned') + '</div><div class=\'tx\'>' + HIS.kit.esc(p.registered) + '</div>' +
+    "<div><span class='badge " + HIS.statusClass[p.status] + "'>" + HIS.kit.esc(p.status) + '</span></div>' +
     "<div><button class='go-btn' data-id='" + p.id + "' aria-label='Open profile for " + HIS.kit.esc(p.name) + "' title='Open patient profile'>" + svg('arrow', 16) + '</button></div></div>').join('')
     : "<div class='empty'>No patients match these filters.</div>";
 }
@@ -218,10 +218,10 @@ function findPatient() {
     if (!t) { res.innerHTML = "<div class='fp-empty'>Start typing to check the registry.</div>"; return; }
     if (!list.length) { res.innerHTML = "<div class='fp-empty'>No patient matches that search.</div>"; return; }
     const p = list[0];
-    res.innerHTML = "<div class='fp-r'><span class='fp-av'>" + initialsOf(p.name) + "</span><b>" + p.name + "</b>" +
-      "<small>" + p.id + ' \u00b7 ' + p.age + ' yrs \u00b7 ' + p.dept + ' \u00b7 ' + p.doctor + "</small>" +
-      "<small>Registered " + p.registered + "</small>" +
-      "<span class='badge " + HIS.statusClass[p.status] + " fp-pill'>" + p.status + "</span>" +
+    res.innerHTML = "<div class='fp-r'><span class='fp-av'>" + HIS.kit.esc(initialsOf(p.name)) + "</span><b>" + HIS.kit.esc(p.name) + "</b>" +
+      "<small>" + p.id + ' \u00b7 ' + (p.age == null ? 'Age not recorded' : p.age + ' yrs') + ' \u00b7 ' + HIS.kit.esc(p.dept) + ' \u00b7 ' + HIS.kit.esc(p.doctor || 'Not assigned') + "</small>" +
+      "<small>Registered " + HIS.kit.esc(p.registered || 'Not recorded') + "</small>" +
+      "<span class='badge " + HIS.statusClass[p.status] + " fp-pill'>" + HIS.kit.esc(p.status) + "</span>" +
       "<a class='fp-open' href='profile.html?id=" + encodeURIComponent(p.id) + "'>Open profile</a></div>";
   }
   q.addEventListener('input', draw); draw(); q.focus();

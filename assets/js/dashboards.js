@@ -142,14 +142,14 @@
             title: 'Recent registrations', sub: 'Newest patient records created at the desk',
             cols: [{ t: 'PATIENT', left: 20, w: 130 }, { t: 'TYPE', left: 151, w: 85 }, { t: 'DEPARTMENT', left: 283, w: 125 }, { t: 'DOCTOR', left: 440, w: 85 }, { t: 'TIME', left: 591, w: 85 }, { t: 'STATUS', left: 712, w: 85 }],
             rows: P.map(function (p) {
-              return { cells: [[p.name, p.id + ' \u00b7 ' + p.age + ' yrs'], [p.type, HIS.statusClass[p.type]], p.dept, p.doctor, (p.registered.split('\u00b7')[1] || '').trim(), [p.status, HIS.statusClass[p.status]]] };
+              return { cells: [[p.name, p.id + ' \u00b7 ' + (p.age == null ? 'Age not recorded' : p.age + ' yrs')], [p.type, HIS.statusClass[p.type]], p.dept, p.doctor, (String(p.registered || '').split('\u00b7')[1] || '').trim(), [p.status, HIS.statusClass[p.status]]] };
             }),
             empty: 'No patients registered'
           },
           feed: {
             title: 'Admission queue', sub: 'Patients waiting for a bed', icon: 'bed',
             items: P.filter(function (p) { return p.status === 'Waiting' || p.status === 'Admitted'; }).slice(0, 4).map(function (p) {
-              return { time: p.id.replace('PT-', ''), title: p.name, line1: p.dept + ' \u00b7 ' + p.doctor, line2: p.type + ' \u00b7 ' + p.age + ' yrs', status: p.status, kind: HIS.statusClass[p.status] || 'off' };
+              return { time: p.id.replace('PT-', ''), title: p.name, line1: p.dept + ' \u00b7 ' + p.doctor, line2: p.type + ' \u00b7 ' + (p.age == null ? 'Age not recorded' : p.age + ' yrs'), status: p.status, kind: HIS.statusClass[p.status] || 'off' };
             }),
             empty: 'Nobody is waiting'
           }
@@ -169,7 +169,7 @@
             title: 'Consultation queue', sub: 'Patients waiting to be seen',
             cols: [{ t: 'PATIENT', left: 20, w: 130 }, { t: 'TYPE', left: 151, w: 85 }, { t: 'DEPARTMENT', left: 283, w: 125 }, { t: 'DOCTOR', left: 440, w: 85 }, { t: 'TIME', left: 591, w: 85 }, { t: 'STATUS', left: 712, w: 85 }],
             rows: P.map(function (p) {
-              return { cells: [[p.name, p.id + ' \u00b7 ' + p.age + ' yrs'], [p.type, HIS.statusClass[p.type]], p.dept, p.doctor, (p.registered.split('\u00b7')[1] || '').trim(), [p.status, HIS.statusClass[p.status]]] };
+              return { cells: [[p.name, p.id + ' \u00b7 ' + (p.age == null ? 'Age not recorded' : p.age + ' yrs')], [p.type, HIS.statusClass[p.type]], p.dept, p.doctor, (String(p.registered || '').split('\u00b7')[1] || '').trim(), [p.status, HIS.statusClass[p.status]]] };
             }),
             empty: 'The queue is empty'
           },
@@ -420,7 +420,7 @@
           feed: {
             title: 'Department workload', sub: 'Patients by status', icon: 'chart',
             items: deptPts.slice(0, 4).map(function (p) {
-              return { time: p.id.replace('PT-', ''), title: p.name, line1: p.doctor, line2: p.type + ' \u00b7 ' + p.age + ' yrs', status: p.status, kind: HIS.statusClass[p.status] || 'off' };
+              return { time: p.id.replace('PT-', ''), title: p.name, line1: p.doctor, line2: p.type + ' \u00b7 ' + (p.age == null ? 'Age not recorded' : p.age + ' yrs'), status: p.status, kind: HIS.statusClass[p.status] || 'off' };
             }),
             empty: 'No patients in this department'
           }

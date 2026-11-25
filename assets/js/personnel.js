@@ -36,7 +36,18 @@
   var KEY = 'mh_personnel';
   var saved = HIS.store ? HIS.store.get(KEY, null) : null;
   if (Array.isArray(saved) && saved.length) P.emps = saved;
-  function persist() { if (HIS.store) HIS.store.set(KEY, P.emps); }
+  // Repair the old sample job labels without overwriting later HR edits.
+  var jobs = { 'EMP-006': ['Medical Technologist', 'Laboratory', 'Pharmacist', 'Pharmacy'], 'EMP-007': ['Pharmacist', 'Pharmacy', 'Staff Nurse', 'Nursing'], 'EMP-008': ['Administrative Officer', 'Administration', 'Medical Technologist', 'Laboratory'] };
+  P.emps.forEach(function (e) { var j = jobs[e.id]; if (j && e.role === j[0] && e.dept === j[1]) { e.role = j[2]; e.dept = j[3]; } });
+  HIS.store.set(KEY, P.emps);
+  function persist() {
+    if (!HIS.store) return;
+    if (!HIS.rbac.can('payroll')) {
+      var latest = HIS.store.get(KEY, []);
+      P.emps.forEach(function (e) { var current = latest.filter(function (r) { return r.id === e.id; })[0]; if (current && current.payroll) e.payroll = current.payroll; });
+    }
+    HIS.store.set(KEY, P.emps);
+  }
   // Next free EMP-nnn from the highest number present, so a removed tail cannot reuse an id.
   function nextId() {
     var max = 0;
@@ -48,6 +59,7 @@
 
   function visible() {
     return P.emps.filter(function (e) {
+      if (HIS.rbac.key() === 'depthead' && e.dept !== HIS.auth.account().dept) return false;
       return (st.dept === ALL || e.dept === st.dept) && (!st.q || (e.name + ' ' + e.id + ' ' + e.role + ' ' + e.dept).toLowerCase().indexOf(st.q.trim().toLowerCase()) > -1);
     });
   }
@@ -145,9 +157,14 @@
     h += sel(P.depts, d.dept, 'dept', 32, 224) + sel(P.types, d.type, 'type', 348, 224);
     h += "<input class='pe-m-i' data-f='addr' style='left:32px;top:306px;width:616px' value='" + esc(d.addr) + "'>";
     h += "<textarea class='pe-m-i' data-f='ec' style='left:32px;top:388px;width:616px'>" + esc(d.ec) + '</textarea>';
+    var canPay = HIS.rbac.can('payroll');
+    var pay = add ? {} : ((HIS.employees && HIS.employees.byId(e.id)) || {});
+    if (canPay) h = h.replace("class='pe-modal'", "class='pe-modal' style='height:664px'");
+    if (canPay) h += "<label class='pe-m-l' style='left:32px;top:470px' for='peSalary'>Monthly basic salary (PHP)</label><input class='pe-m-i' id='peSalary' type='number' min='0' step='0.01' data-f='salary' style='left:32px;top:492px;width:300px' placeholder='Set before payroll' value='" + (pay.monthlyBasic || '') + "'>";
+    if (canPay) h += "<label class='pe-m-l' style='left:348px;top:470px' for='peCategory'>Payroll category</label><select class='pe-m-i' id='peCategory' data-f='category' style='left:348px;top:492px;width:300px'><option value='rank-and-file'" + (pay.category === 'managerial' ? '' : ' selected') + ">Rank and file</option><option value='managerial'" + (pay.category === 'managerial' ? ' selected' : '') + '>Managerial</option></select>';
     if (!add) h += "<button class='pe-m-off' data-off='1' style='top:504px'>Deactivate</button>";
     h += "<button class='pe-m-c' data-close='1' style='top:504px'>Cancel</button><button class='pe-m-ok' data-ok='1' style='top:504px'>" + (add ? 'Add personnel' : 'Save changes') + '</button></div>';
-    return h;
+    return canPay ? h.replace(/top:504px/g, 'top:600px') : h;
   }
 
   var tipT;
@@ -180,19 +197,23 @@
     var r = T.closest('[data-emp]');
     if (r) { st.sel = r.dataset.emp; render(); return; }
     var m = T.closest('[data-modal]'); if (m) { st.modal = m.dataset.modal; render(); return; }
+    if (!HIS.rbac.can('personnel')) { if (T.closest('[data-off],[data-ok]')) tip('Only HR can change personnel records.'); return; }
     if (T.closest('[data-off]')) { var x = byId(st.sel); x.status = 'Inactive'; persist(); st.modal = ''; render(); tip(x.name + ' marked Inactive'); return; }
     if (T.closest('[data-ok]')) {
       var f = readForm(), bad = false;
+      if (f.salary && (!(Number(f.salary) > 0) || !isFinite(Number(f.salary)))) { tip('Enter a positive monthly salary, or leave it empty until pay setup is ready.'); return; }
       [].forEach.call(document.querySelectorAll('#pemodal [data-f]'), function (n) { var miss = (n.dataset.f === 'full' || n.dataset.f === 'role') && !n.value.trim(); n.classList.toggle('bad', miss); if (miss) bad = true; });
       if (bad) { tip('Full name and role are required'); return; }
       if (st.modal === 'add') {
         var id = nextId();
         P.emps.push({ id: id, name: f.full, role: f.role, dept: f.dept, status: 'Active', full: f.full, dob: '', sex: '\u2014', civil: '\u2014', email: '\u2014', mobile: '\u2014', addr: f.addr || '\u2014', office: '\u2014', type: f.type, joined: P.today, reports: P.chief, ec: parseEc(f.ec) });
+        P.emps[P.emps.length - 1].payroll = { monthlyBasic: Number(f.salary) || 0, category: f.category };
         persist();
         st.sel = id; st.q = ''; st.dept = ALL; st.modal = ''; st.reveal = true; render(); tip(f.full + ' added as ' + id);
       } else {
         var e = byId(st.sel);
-        e.full = f.full; e.role = f.role; e.dept = f.dept; e.type = f.type; e.addr = f.addr || '\u2014'; e.ec = parseEc(f.ec, e.ec);
+        e.full = f.full; e.name = f.full; e.role = f.role; e.dept = f.dept; e.type = f.type; e.addr = f.addr || '\u2014'; e.ec = parseEc(f.ec, e.ec);
+        if (HIS.rbac.can('payroll')) e.payroll = Object.assign({}, e.payroll, { monthlyBasic: Number(f.salary) || 0, category: f.category });
         persist();
         st.modal = ''; render(); tip('Changes saved for ' + e.name);
       }

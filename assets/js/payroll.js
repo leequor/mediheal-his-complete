@@ -28,7 +28,7 @@
   // never produces a second payroll for the same period.
   function ensureRun() {
     var run = HIS.payrollRuns.current();
-    if (!run) run = HIS.payrollRuns.create({ note: 'Initial run for the period' }).run;
+    if (!run) run = HIS.rbac.can('payroll') ? HIS.payrollRuns.create({ note: 'Initial run for the period' }).run : HIS.payrollRuns.preview();
     return run;
   }
   var run = ensureRun();
@@ -144,20 +144,23 @@
     HCOL.forEach(function (c) { h += at('pr-h', c[1], 16.5, c[0]); });
     RCOL.forEach(function (c) { h += at('pr-h', c[1], 16.5, c[0], 'width:' + c[2] + 'px;text-align:right'); });
     h += at('pr-h', 1068, 16.5, 'PAYMENT STATUS') + at('pr-h', 1186, 16.5, 'ACTION', 'width:94px;text-align:right') + '</div>';
+    h += "<div class='pr-a pr-rows' role='region' aria-label='Employee payroll rows'>";
     v.forEach(function (e, i) {
       var l = line(e), b = blocked(e), s = statusOf(e);
       var cells = l
         ? [[560, 112, l.earnings.basic], [680, 110, l.earnings.allowances], [798, 112, l.deductions], [918, 126, l.net, 'net']]
         : [[560, 112, 0], [680, 110, 0], [798, 112, 0], [918, 126, 0, 'net']];
-      h += "<div class='pr-a pr-r' style='top:" + (196 + 64 * i) + "px'>" + cb(!!st.sel[e.id], 24, 24, e.id);
+      h += "<div class='pr-a pr-r' style='top:" + (64 * i) + "px'>" + cb(!!st.sel[e.id], 24, 24, e.id);
       h += "<span class='nm'>" + esc(e.name) + "</span><span class='mt'>" + e.id + ' \u00b7 ' + esc(e.role) + "</span><span class='dp'>" + esc(e.dept) + '</span>';
       h += "<span class='dh'>" + (l ? l.days.worked + ' days \u00b7 ' + Math.round((l.days.worked * 8) + l.days.overtimeHours) + ' h' : (b ? 'no approved timesheet' : '\u2014')) + '</span>';
       cells.forEach(function (c) {
         h += "<span class='am " + (c[3] || '') + "' style='left:" + c[0] + 'px;width:' + c[1] + "px'>" + (l ? fmt(c[2]) : '\u2014') + '</span>';
       });
       h += "<span class='pr-p " + (s === 'Blocked' ? 'Pending' : s) + "'>" + (s === 'Paid' ? '<i></i>' : '') + "<span class='lb'>" + s + '</span></span>';
-      h += "<button class='pr-ps' data-slip='" + e.id + "'>" + ic('file', 15, 1.8) + '<span>' + (l ? 'Payslip' : 'Review') + '</span></button></div>';
+      var setup = !e.monthlyBasic && HIS.rbac.can('payroll');
+      h += "<button class='pr-ps' " + (setup ? 'data-paysetup' : 'data-slip') + "='" + e.id + "'>" + ic('file', 15, 1.8) + '<span>' + (setup ? 'Set pay' : l ? 'Payslip' : 'Review') + '</span></button></div>';
     });
+    h += '</div>';
     if (!v.length) h += "<div class='pr-a pr-none'>No employees match</div>";
     var vis = v.map(line).filter(Boolean);
     h += "<div class='pr-a pr-tot'><span class='tl'>Pay period total \u00b7 " + vis.length + ' employee' + (vis.length === 1 ? '' : 's') + '</span>';
@@ -543,6 +546,14 @@
         tip(rr.ok ? 'Timesheet reopened \u2014 payroll is blocked until it is approved again' : rr.error);
         render(); return;
       }
+    }
+    var setupButton = T.closest('[data-paysetup]');
+    if (setupButton) {
+      HIS.kit.modal({ title: 'Set employee pay', sub: esc(HIS.employees.byId(setupButton.dataset.paysetup).name), body: "<label>Monthly basic salary (PHP)<input type='number' name='monthlyBasic' min='0.01' step='0.01' required></label><label>Payroll category<select name='category'><option value='rank-and-file'>Rank and file</option><option value='managerial'>Managerial</option></select></label>", onSave: function (v, err) {
+        var result = HIS.employees.setPay(setupButton.dataset.paysetup, v);
+        if (!result.ok) { err.textContent = result.error; return false; }
+        HIS.payrollRuns.recompute(run.id, 'Employee pay setup'); render();
+      } }); return;
     }
     var sl = T.closest('[data-slip]');
     if (sl) { st.emp = HIS.employees.byId(sl.dataset.slip); st.modal = 'slip'; render(); return; }

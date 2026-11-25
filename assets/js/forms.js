@@ -19,12 +19,21 @@ function fSelect(el, { options, placeholder, onChange }) {
     const o = e.target.closest('button');
     if (!o) return;
     value = options[+o.dataset.i];
+    el.querySelectorAll('[role=option]').forEach(item => item.setAttribute('aria-selected', item === o ? 'true' : 'false'));
     v.textContent = value;
     el.classList.remove('err');
     setOpen(false);
     if (onChange) onChange(value);
   };
-  el.addEventListener('keydown', e => { if (e.key === 'Escape') { setOpen(false); b.focus(); } });
+  el.addEventListener('keydown', e => {
+    if (e.key === 'Escape') { e.preventDefault(); setOpen(false); b.focus(); return; }
+    if (['ArrowDown', 'ArrowUp', 'Home', 'End'].indexOf(e.key) < 0) return;
+    e.preventDefault(); setOpen(true);
+    const options = [...el.querySelectorAll('[role=option]')];
+    let i = options.indexOf(document.activeElement);
+    i = e.key === 'Home' ? 0 : e.key === 'End' ? options.length - 1 : e.key === 'ArrowDown' ? Math.min(i + 1, options.length - 1) : Math.max(i - 1, 0);
+    options[i].focus();
+  });
   return {
     get value() { return value; },
     el,

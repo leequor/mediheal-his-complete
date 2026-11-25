@@ -34,7 +34,7 @@
       emps: A.emps.map(function (e) { return { id: e.id, tin: e.tin, tout: e.tout, status: e.status, reviewed: !!e.reviewed }; }),
       leaves: A.leaves, synced: A.synced,
       syncedCount: A.syncedCount == null ? null : A.syncedCount,
-      dirty: !!A.dirty
+      dirty: !!A.dirty, periodLinked: true
     });
   }
   function loadSaved() {
@@ -71,6 +71,37 @@
   }
   var pending = function () { return A.leaves.filter(function (l) { return l.status === 'Pending'; }); };
 
+  function dailyRoster() {
+    var date = '2026-08-31';
+    A.emps = HIS.employees.all().map(function (emp) {
+      var e = find(emp.id) || { id: emp.id, tin: '', tout: '', status: 'Absent', shift: '8 AM \u2013 5 PM' };
+      e.name = emp.name; e.role = emp.role; e.dept = emp.dept;
+      var r = HIS.attendancePeriod.all().filter(function (r) { return r.empId === emp.id && r.date === date; })[0];
+      if (r && r.history && r.history.length) {
+        var clockLabel = function (t) { if (!t) return ''; var parts = t.split(':'), h = Number(parts[0]); return String(h % 12 || 12).padStart(2, '0') + ':' + parts[1] + (h >= 12 ? ' PM' : ' AM'); };
+        e.tin = clockLabel(r.timeIn); e.tout = clockLabel(r.timeOut);
+        e.status = r.status === 'leave' ? 'On leave' : r.status === 'late' ? 'Late' : r.worked ? 'Present' : 'Absent';
+      }
+      return e;
+    });
+  }
+
+  function leaveDates(leave) {
+    if (leave.start && leave.end) return [leave.start, leave.end];
+    var match = /^(\w+) (\d+)(?:[\u2013-](\d+))?, (\d{4})$/.exec(leave.range || '');
+    if (!match) return null;
+    var month = String(['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'].indexOf(match[1]) + 1).padStart(2, '0');
+    return [match[4] + '-' + month + '-' + match[2].padStart(2, '0'), match[4] + '-' + month + '-' + (match[3] || match[2]).padStart(2, '0')];
+  }
+  function approveLeave(leave) {
+    var emp = A.emps.filter(function (e) { return e.id === leave.empId || e.name === leave.name; })[0], dates = leaveDates(leave);
+    if (!emp || !dates) { tip('Choose a valid employee and leave date range.'); return false; }
+    var res = HIS.attendancePeriod.applyLeave(emp.id, dates[0], dates[1], leave.type, leave.reason || 'Leave approved by HR');
+    if (!res.ok) { tip(res.error); return false; }
+    leave.empId = emp.id; leave.start = dates[0]; leave.end = dates[1];
+    return true;
+  }
+
   function top() {
     var N = A.emps.length, inn = A.emps.filter(function (e) { return e.tin; }).length, lv = cnt('On leave'), ab = cnt('Absent');
     var h = "<h1 class='at-a at-t' style='left:68px;top:115px'>Attendance</h1>" + at('at-d', 68, 166, 'Track daily clock-in, clock-out and leave for hospital personnel.');
@@ -83,6 +114,7 @@
     // The old "Sync to payroll" slot next to this button is gone, so the verify action takes the room
     // it needs instead of clipping a 26-character label into an 18-character box.
     h += "<button class='at-btn' data-act='approve' title='Verify &amp; Submit Attendance' style='left:1004px;width:300px'>" + ic('file', 18, 1.8) + '<span>Verify &amp; Submit Attendance</span></button>';
+    if (HIS.attendancePeriod.active().verified) h = h.replace("data-act='approve'", "data-act='reopen'").replace('Verify &amp; Submit Attendance</span>', 'Reopen cut-off</span>');
     // No separate "Sync to payroll" button: verifying the cut-off is what publishes the hours to
     // Accounting. Two buttons for one hand-off is how a demo contradicts itself.
     var M = [['users', 'Total personnel', String(N), inn + ' clocked in \u00b7 ' + (N - inn) + ' not in'], ['usercheck', 'Present', String(cnt('Present')), 'On time, within 15-minute grace'],
@@ -266,6 +298,7 @@
   }
 
   function render(keepFocus) {
+    dailyRoster();
     wrap.innerHTML = top() + register() + cards() + "<div id='atmenu'>" + menu() + '</div><div id="atmodal">' + modal() + '</div>';
     if (keepFocus) { var q = document.getElementById('atq'); q.focus(); var c = st.caret == null ? q.value.length : st.caret; q.setSelectionRange(c, c); }
   }
@@ -281,6 +314,8 @@
   function applyIn(e, t) { e.tin = t; e.status = tmin(t) > startMin(e.shift) + 15 ? 'Late' : 'Present'; }
 
   function clock(kind) {
+    if (!HIS.rbac.can('attendance')) { tip('Only HR can record attendance.'); return; }
+    if (HIS.attendancePeriod.active().verified) { tip('This cut-off is verified and locked. Reopen the employee timesheet before changing attendance.'); return; }
     var f = st.f, bad = {}, e = f.emp ? find(f.emp) : null, msg = '';
     if (!e) { bad.emp = true; msg = 'Choose an employee'; }
     else if (kind === 'in' && !f.tin) { bad.tin = true; msg = 'Choose a time in'; }
@@ -288,6 +323,14 @@
     else if (kind === 'out' && !(f.tin || e.tin)) { bad.tin = true; msg = e.name + ' has no time in yet. Choose one first'; }
     else if (f.tout && tmin(f.tout) <= tmin(f.tin || e.tin || '12:00 AM')) { bad.tout = true; msg = 'Time out must be after time in'; }
     if (msg) { st.bad = bad; render(); tip(msg); return; }
+    var time24 = function (t) { var m = tmin(t); return String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0'); };
+    var patch = {};
+    if (f.tin) patch.timeIn = time24(f.tin);
+    if (kind === 'out' || f.tout) patch.timeOut = time24(f.tout);
+    patch.status = 'present';
+    var date = HIS.today.getFullYear() + '-' + String(HIS.today.getMonth() + 1).padStart(2, '0') + '-' + String(HIS.today.getDate()).padStart(2, '0');
+    var corrected = HIS.attendancePeriod.correct(e.id, date, patch, 'Clock entry from Attendance');
+    if (!corrected.ok) { tip(corrected.error); return; }
     if (f.tin) applyIn(e, f.tin);
     if (kind === 'out' || f.tout) e.tout = f.tout;
     A.dirty = true; save();
@@ -317,18 +360,27 @@
     var b = T.closest('[data-act]');
     if (!b) return;
     var a = b.dataset.act, N = A.emps.length, ready = A.emps.filter(function (x) { return x.status !== 'Absent'; }).length, rev = A.emps.filter(function (x) { return x.status === 'Absent' && !x.reviewed; });
+    if (['clockin','clockout','lapprove','ldecline','reviewleave','reviewunpaid','newreq','submitnew'].indexOf(a) >= 0 && !HIS.rbac.can('attendance')) { tip('Only HR can change attendance or leave.'); return; }
+    if (a === 'reopen') {
+      HIS.kit.modal({ title: 'Reopen attendance cut-off', sub: A.period, saveLabel: 'Reopen', body: "<label>Reason<input name='reason' required></label>", onSave: function (v, err) {
+        var res = HIS.attendancePeriod.reopenAll(v.reason); if (!res.ok) { err.textContent = res.error; return false; } render();
+      } }); return;
+    }
     if (a === 'export') { csv(); st.ok = { t: 'Attendance exported', m: 'The ' + A.date + ' daily register for ' + N + ' employees was exported as a spreadsheet.' }; st.modal = 'ok'; render(); }
     else if (a === 'approve') {
+      if (!HIS.rbac.can('verifyAttendance')) { tip('Only HR can verify attendance.'); return; }
+      var wasVerified = !!HIS.attendancePeriod.active().verified;
       // Step 1 of the hand-off. Approve the pay-period timesheets, then verify and lock the cut-off so
       // the hours are published to Accounting. Accounting refuses to compute anything unverified.
       var ap = HIS.attendancePeriod.approveAll('Verified by HR at cut-off');
       var vf = HIS.attendancePeriod.verify(A.activePeriodId, 'HR Officer');
+      if (!vf.ok) { tip(vf.error); return; }
       // approveAll() reports how many it changed THIS time. On a second verify that is 0, which used to
       // print "0 of 8 verified" beside a success tick. Report the state of the cut-off instead.
       var total = HIS.employees.all().length;
       var left = HIS.attendancePeriod.unapproved().length;
       var done = total - left;
-      var already = ap.approved === 0 && left === 0;
+      var already = wasVerified;
       st.ok = {
         t: already ? 'Attendance already verified' : 'Attendance verified and submitted',
         m: done + ' of ' + total + ' pay-period timesheets are verified for ' + A.period + '. '
@@ -355,7 +407,7 @@
       st.ok = { t: 'Synced to payroll', m: tsCount + ' approved timesheets now feed the ' + A.period + ' pay period. Open Payroll to calculate the run.' }; st.modal = 'ok'; render();
     }
     else if (a === 'review') { st.emp = rev[0]; st.modal = 'review'; render(); }
-    else if (a === 'reviewleave') { var rl = st.emp; A.leaves.push({ name: rl.name, type: 'Emergency leave', range: A.date, days: 1, status: 'Approved' }); rl.status = 'On leave'; rl.reviewed = true; A.dirty = true; save(); st.modal = ''; render(); tip('Leave approved for ' + rl.name); }
+    else if (a === 'reviewleave') { var rl = st.emp, leave = { name: rl.name, empId: rl.id, type: 'Emergency leave', range: A.date, days: 1, status: 'Approved' }; if (!approveLeave(leave)) return; A.leaves.push(leave); rl.status = 'On leave'; rl.reviewed = true; A.dirty = true; save(); st.modal = ''; render(); tip('Leave approved for ' + rl.name); }
     else if (a === 'reviewunpaid') { var ru = st.emp; ru.reviewed = true; A.dirty = true; save(); st.modal = ''; render(); tip(ru.name + ' marked as an unpaid absence'); }
     else if (a === 'reviewclock') { var rc = st.emp; st.f = { emp: rc.id, tin: '', tout: '' }; st.modal = ''; render(); tip('Choose the time in for ' + rc.name); }
     else if (a === 'clockin') clock('in');
@@ -363,6 +415,7 @@
     else if (a === 'lapprove' || a === 'ldecline') {
       var p = pending()[0];
       if (!p) { tip('No pending leave requests'); return; }
+      if (a === 'lapprove' && !approveLeave(p)) return;
       p.status = a === 'lapprove' ? 'Approved' : 'Declined';
       A.dirty = true; save();
       st.ok = { t: 'Leave request updated', m: p.name + "'s " + p.type.toLowerCase() + ' (' + p.range + ') was updated. Payroll sync will reflect the change.' }; st.modal = 'ok'; render();
@@ -383,6 +436,8 @@
       // arrived with no explanation and nobody could review it. Store both.
       var coverEl = document.getElementById('atn6');
       A.leaves.push({
+        empId: (A.emps.filter(function (emp) { return emp.name === g(1).value.split(' \u00b7 ')[0]; })[0] || {}).id,
+        start: s.toISOString().slice(0, 10), end: e2.toISOString().slice(0, 10),
         name: g(1).value.split(' \u00b7 ')[0], type: g(2).value, range: rangeLabel(s, e2),
         days: Math.round((ed - sd) / 86400000) + 1, status: 'Pending',
         reason: g(5).value.trim(), cover: coverEl ? coverEl.value.trim() : ''

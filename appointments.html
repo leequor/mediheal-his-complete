@@ -46,7 +46,7 @@ textarea.ap-i{height:88px;padding:12px 14px;line-height:20px;resize:none;font-fa
 <script>
 const $ = id => document.getElementById(id);
 // Appointments saved by appointment-form.html (session key mh_appts_extra via HIS.store, same tab).
-HIS.store.get('mh_appts_extra', []).forEach(r => HIS.appointments.push(r));
+HIS.appointments = HIS.appointmentStore.all();
 // Edits are stored by appointment id. Before this, a status change only mutated the array in memory,
 // so it vanished on reload and no other account ever saw it.
 const APPT_STATE = 'mh_appt_state';
@@ -110,9 +110,9 @@ function render() {
   const slice = list.slice(from, from + PAGE);
 
   $('rows').innerHTML = slice.length ? slice.map(a =>
-    "<div class='a-grid a-row' data-id='" + (a.id || 'APT-' + String(a.i + 1).padStart(4, '0')) + "'><span class='nm'>" + a.patient + '</span><span>' + a.when + "</span><span class='ty'>" + a.kind + '</span><span>' + a.doctor + '</span>' +
+    "<div class='a-grid a-row' data-id='" + (a.id || 'APT-' + String(a.i + 1).padStart(4, '0')) + "'><span class='nm'>" + HIS.kit.esc(a.patient) + '</span><span>' + HIS.kit.esc(a.when) + "</span><span class='ty'>" + HIS.kit.esc(a.kind) + '</span><span>' + HIS.kit.esc(a.doctor) + '</span>' +
     "<span><span class='a-pill " + a.status + "'>" + a.status + '</span></span>' +
-    "<span class='a-act'><button class='a-ib' data-edit='" + a.i + "' aria-label='Edit appointment for " + a.patient + "'>" + svg('edit', 16) + "</button><button class='a-ib' data-more='" + a.i + "' aria-label='More actions'>" + svg('more', 16) + '</button></span></div>').join('')
+    "<span class='a-act'><button class='a-ib' data-edit='" + a.i + "' aria-label='Edit appointment for " + HIS.kit.esc(a.patient) + "'>" + svg('edit', 16) + "</button><button class='a-ib' data-more='" + a.i + "' aria-label='More actions'>" + svg('more', 16) + '</button></span></div>').join('')
     : "<div class='empty'>" + (HIS.appointments.length ? 'No appointments match these filters.' : 'No appointments booked yet.') + '</div>';
 
   $('count').textContent = list.length
