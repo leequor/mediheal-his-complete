@@ -143,7 +143,7 @@
       tin: '123-456-789-004', sss: '34-1234571-4', philhealth: '12-345678905-6', pagibig: '1234-5678-9016'
     },
     {
-      id: 'EMP-006', name: 'Miguel Reyes', role: 'Medical Technologist', dept: 'Laboratory',
+      id: 'EMP-006', name: 'Miguel Reyes', role: 'Pharmacist', dept: 'Pharmacy',
       category: 'rank-and-file', employment: 'regular', hired: '2020-11-03',
       monthlyBasic: 32000,
       allowances: [
@@ -163,7 +163,7 @@
       tin: '123-456-789-005', sss: '34-1234572-5', philhealth: '12-345678906-7', pagibig: '1234-5678-9017'
     },
     {
-      id: 'EMP-007', name: 'Sofia Mendoza', role: 'Pharmacist', dept: 'Pharmacy',
+      id: 'EMP-007', name: 'Sofia Mendoza', role: 'Staff Nurse', dept: 'Nursing',
       category: 'rank-and-file', employment: 'regular', hired: '2022-02-14',
       monthlyBasic: 28000,
       allowances: [
@@ -183,7 +183,7 @@
       tin: '123-456-789-006', sss: '34-1234573-6', philhealth: '12-345678907-8', pagibig: '1234-5678-9018'
     },
     {
-      id: 'EMP-008', name: 'Daniel Cruz', role: 'Administrative Officer', dept: 'Administration',
+      id: 'EMP-008', name: 'Daniel Cruz', role: 'Medical Technologist', dept: 'Laboratory',
       category: 'rank-and-file', employment: 'regular', hired: '2023-04-17',
       monthlyBasic: 26000,
       allowances: [
