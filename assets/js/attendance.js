@@ -323,11 +323,18 @@
       // the hours are published to Accounting. Accounting refuses to compute anything unverified.
       var ap = HIS.attendancePeriod.approveAll('Verified by HR at cut-off');
       var vf = HIS.attendancePeriod.verify(A.activePeriodId, 'HR Officer');
+      // approveAll() reports how many it changed THIS time. On a second verify that is 0, which used to
+      // print "0 of 8 verified" beside a success tick. Report the state of the cut-off instead.
+      var total = HIS.employees.all().length;
+      var left = HIS.attendancePeriod.unapproved().length;
+      var done = total - left;
+      var already = ap.approved === 0 && left === 0;
       st.ok = {
-        t: 'Attendance verified and submitted',
-        m: ap.approved + ' of ' + HIS.employees.all().length + ' pay-period timesheets verified for ' + A.period + '. '
-          + (vf.ok ? 'The cut-off is now locked and the hours are visible to Accounting. ' : '')
-          + (ap.remaining ? ap.remaining + ' still need review.' : 'No timesheet is left open.')
+        t: already ? 'Attendance already verified' : 'Attendance verified and submitted',
+        m: done + ' of ' + total + ' pay-period timesheets are verified for ' + A.period + '. '
+          + (already ? 'This cut-off was locked and sent to Accounting earlier, so nothing changed. '
+                     : (vf.ok ? 'The cut-off is now locked and the hours are visible to Accounting. ' : ''))
+          + (left ? left + ' still need review.' : 'No timesheet is left open.')
           + ' HR has no access to salary or payslip data.'
       };
       st.modal = 'ok'; render();
